@@ -2,7 +2,20 @@ import Link from "next/link";
 
 import { SetPasswordForm } from "@/components/auth/set-password-form";
 
-export default function SetPasswordPage() {
+type SetPasswordPageProps = {
+  searchParams: Promise<{
+    code?: string;
+    token_hash?: string;
+    type?: string;
+    error?: string;
+  }>;
+};
+
+export default async function SetPasswordPage({
+  searchParams,
+}: SetPasswordPageProps) {
+  const params = await searchParams;
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-[var(--color-background)] px-6 py-16">
       <div className="w-full max-w-md rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
@@ -18,7 +31,7 @@ export default function SetPasswordPage() {
         </p>
 
         <div className="mt-8">
-          <SetPasswordForm />
+          <SetPasswordForm searchParams={params} />
         </div>
 
         <div className="mt-6">

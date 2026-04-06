@@ -2,13 +2,21 @@
 
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { useEffect, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 
-export function SetPasswordForm() {
+type SetPasswordFormProps = {
+  searchParams: {
+    code?: string;
+    token_hash?: string;
+    type?: string;
+    error?: string;
+  };
+};
+
+export function SetPasswordForm({ searchParams }: SetPasswordFormProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -21,10 +29,10 @@ export function SetPasswordForm() {
     const initializeSession = async () => {
       const supabase = createClient();
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-      const code = searchParams.get("code");
-      const tokenHash = searchParams.get("token_hash");
-      const type = searchParams.get("type");
-      const urlError = searchParams.get("error");
+      const code = searchParams.code;
+      const tokenHash = searchParams.token_hash;
+      const type = searchParams.type;
+      const urlError = searchParams.error;
       const accessToken = hashParams.get("access_token");
       const refreshToken = hashParams.get("refresh_token");
       const hashType = hashParams.get("type");
