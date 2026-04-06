@@ -24,6 +24,10 @@ export async function POST(request: NextRequest) {
   }
 
   if (!verifyMercadoPagoWebhookSignature(request)) {
+    console.warn("[mercadopago:webhook] invalid signature", {
+      requestId: request.headers.get("x-request-id"),
+      query: request.nextUrl.search,
+    });
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
@@ -37,9 +41,17 @@ export async function POST(request: NextRequest) {
     request.nextUrl.searchParams.get("id");
 
   if (topic !== "payment" || !paymentId) {
+    console.info("[mercadopago:webhook] ignored notification", {
+      topic,
+      paymentId,
+    });
     return NextResponse.json({ received: true });
   }
 
+  console.info("[mercadopago:webhook] syncing payment", {
+    paymentId,
+    topic,
+  });
   await syncMercadoPagoPayment(paymentId, payload);
 
   return NextResponse.json({ received: true });

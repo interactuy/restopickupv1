@@ -5,6 +5,7 @@ import {
   getFormattedPaymentStatus,
   getMercadoPagoReturnLabel,
   syncMercadoPagoPayment,
+  syncMercadoPagoPaymentByExternalReference,
 } from "@/lib/mercadopago/server";
 import { getOrderConfirmation } from "@/lib/supabase/orders";
 
@@ -38,19 +39,38 @@ export default async function ConfirmationPage({
     notFound();
   }
 
-  const returnedPaymentId = payment_id ?? collection_id;
+  const initialConfirmation = await getOrderConfirmation(slug, parsedOrderNumber);
 
-  if (returnedPaymentId) {
-    try {
-      await syncMercadoPagoPayment(returnedPaymentId);
-    } catch {}
-  }
-
-  const confirmation = await getOrderConfirmation(slug, parsedOrderNumber);
-
-  if (!confirmation) {
+  if (!initialConfirmation) {
     notFound();
   }
+
+  const returnedPaymentId = payment_id ?? collection_id;
+  let syncErrorMessage: string | null = null;
+
+  try {
+    if (returnedPaymentId) {
+      await syncMercadoPagoPayment(returnedPaymentId);
+    } else if (checkout_status) {
+      await syncMercadoPagoPaymentByExternalReference(initialConfirmation.order.id);
+    }
+  } catch (error) {
+    syncErrorMessage =
+      error instanceof Error
+        ? error.message
+        : "No pudimos sincronizar el estado del pago.";
+
+    console.error("[mercadopago:return] payment sync failed", {
+      slug,
+      orderNumber: parsedOrderNumber,
+      checkoutStatus: checkout_status,
+      returnedPaymentId,
+      error: syncErrorMessage,
+    });
+  }
+
+  const confirmation =
+    (await getOrderConfirmation(slug, parsedOrderNumber)) ?? initialConfirmation;
 
   const paymentLabel = getMercadoPagoReturnLabel(
     confirmation.order.paymentStatus,
@@ -70,6 +90,12 @@ export default async function ConfirmationPage({
           <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
             {paymentLabel.description}
           </p>
+          {syncErrorMessage ? (
+            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Todavía no pudimos confirmar el pago automáticamente. Reintentá en unos
+              segundos o revisá el webhook de Mercado Pago.
+            </div>
+          ) : null}
 
           <div className="mt-6 flex flex-wrap gap-3">
             <span className="rounded-full bg-[var(--color-surface-strong)] px-4 py-2 text-sm font-semibold text-[var(--color-foreground)]">

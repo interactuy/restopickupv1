@@ -42,6 +42,14 @@ type PaymentSyncResult = {
   paymentReference: string | null;
 };
 
+type MercadoPagoPaymentSearchResponse = {
+  results?: Array<{
+    id?: number;
+    status?: string | null;
+    date_created?: string;
+  }>;
+};
+
 function getMercadoPagoClient() {
   return new MercadoPagoConfig({
     accessToken: getMercadoPagoAccessToken(),
@@ -67,6 +75,42 @@ function mapMercadoPagoStatusToOrderPaymentStatus(status?: string | null) {
     default:
       return "pending";
   }
+}
+
+async function findMercadoPagoPaymentIdByExternalReference(
+  externalReference: string
+) {
+  const searchUrl = new URL("https://api.mercadopago.com/v1/payments/search");
+  searchUrl.searchParams.set("sort", "date_created");
+  searchUrl.searchParams.set("criteria", "desc");
+  searchUrl.searchParams.set("external_reference", externalReference);
+
+  const response = await fetch(searchUrl, {
+    headers: {
+      Authorization: `Bearer ${getMercadoPagoAccessToken()}`,
+      accept: "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(
+      `Mercado Pago no devolvio pagos para external_reference ${externalReference}: ${response.status} ${body}`
+    );
+  }
+
+  const payload =
+    (await response.json()) as MercadoPagoPaymentSearchResponse;
+  const results = payload.results ?? [];
+
+  const prioritizedPayment = results.find((payment) =>
+    ["approved", "authorized", "in_process", "pending"].includes(
+      payment.status ?? ""
+    )
+  );
+
+  return prioritizedPayment?.id ?? results[0]?.id ?? null;
 }
 
 export function getMercadoPagoReturnLabel(
@@ -376,6 +420,21 @@ export async function syncMercadoPagoPayment(
     paymentStatus: orderPaymentStatus,
     paymentReference,
   };
+}
+
+export async function syncMercadoPagoPaymentByExternalReference(
+  externalReference: string,
+  notificationPayload?: unknown
+) {
+  const paymentId = await findMercadoPagoPaymentIdByExternalReference(
+    externalReference
+  );
+
+  if (!paymentId) {
+    return null;
+  }
+
+  return syncMercadoPagoPayment(paymentId, notificationPayload);
 }
 
 export function getFormattedPaymentStatus(paymentStatus: string) {
