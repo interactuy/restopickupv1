@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { formatPrice, type PublicBusiness } from "@/lib/public-catalog";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const checkoutSchema = z.object({
@@ -135,7 +136,7 @@ export async function createGuestOrder(
   rawInput: CheckoutInput
 ): Promise<CreatedGuestOrder> {
   const input = checkoutSchema.parse(rawInput);
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data: business, error: businessError } = await supabase
     .from("businesses")

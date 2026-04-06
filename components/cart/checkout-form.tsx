@@ -72,15 +72,20 @@ export function CheckoutForm({
       });
 
       const payload = (await response.json()) as
-        | { error: string }
+        | { error: string; requestId?: string }
         | {
             checkoutUrl: string;
             orderNumber: number;
+            requestId?: string;
           };
 
       if (!response.ok || "error" in payload) {
         setErrorMessage(
-          "error" in payload ? payload.error : "No se pudo crear el pedido."
+          "error" in payload
+            ? payload.requestId
+              ? `${payload.error} Ref: ${payload.requestId}`
+              : payload.error
+            : "No se pudo crear el pedido."
         );
         return;
       }

@@ -12,7 +12,7 @@ import {
   getMercadoPagoWebhookSecret,
   isMercadoPagoSandboxMode,
 } from "@/lib/mercadopago/server-config";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { PublicBusiness } from "@/lib/public-catalog";
 
 type MercadoPagoOrderItem = {
@@ -193,7 +193,7 @@ export async function createMercadoPagoPreference({
     throw new Error("Mercado Pago no devolvio una preferencia valida.");
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { error: paymentInsertError } = await supabase.from("payments").upsert(
     {
@@ -308,7 +308,7 @@ export async function syncMercadoPagoPayment(
     throw new Error("Mercado Pago devolvio un pago sin external_reference.");
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const orderPaymentStatus = mapMercadoPagoStatusToOrderPaymentStatus(payment.status);
   const paymentReference = payment.id ? String(payment.id) : null;
   const { data: order, error: orderLookupError } = await supabase
