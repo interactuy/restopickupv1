@@ -5,6 +5,13 @@ import crypto from "node:crypto";
 import { MercadoPagoConfig, Payment, Preference } from "mercadopago";
 import type { NextRequest } from "next/server";
 
+import {
+  getMercadoPagoAccessToken,
+  getMercadoPagoAppUrl,
+  getMercadoPagoStatementDescriptor,
+  getMercadoPagoWebhookSecret,
+  isMercadoPagoSandboxMode,
+} from "@/lib/mercadopago/server-config";
 import { createClient } from "@/lib/supabase/server";
 import type { PublicBusiness } from "@/lib/public-catalog";
 
@@ -36,31 +43,9 @@ type PaymentSyncResult = {
 };
 
 function getMercadoPagoClient() {
-  const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-
-  if (!accessToken) {
-    throw new Error(
-      "Falta configurar MERCADOPAGO_ACCESS_TOKEN para crear pagos con Mercado Pago."
-    );
-  }
-
   return new MercadoPagoConfig({
-    accessToken,
+    accessToken: getMercadoPagoAccessToken(),
   });
-}
-
-function getAppUrl() {
-  const appUrl = process.env.APP_URL;
-
-  if (!appUrl) {
-    throw new Error("Falta configurar APP_URL para Mercado Pago.");
-  }
-
-  return appUrl.replace(/\/$/, "");
-}
-
-function shouldUseSandbox() {
-  return process.env.MERCADOPAGO_USE_SANDBOX === "true";
 }
 
 function mapMercadoPagoStatusToOrderPaymentStatus(status?: string | null) {
@@ -162,13 +147,13 @@ export async function createMercadoPagoPreference({
 }: CreatePreferenceInput) {
   const client = getMercadoPagoClient();
   const preference = new Preference(client);
-  const appUrl = getAppUrl();
+  const appUrl = getMercadoPagoAppUrl();
 
   const response = await preference.create({
     body: {
       external_reference: order.id,
       notification_url: `${appUrl}/api/mercadopago/webhook`,
-      statement_descriptor: process.env.MERCADOPAGO_STATEMENT_DESCRIPTOR,
+      statement_descriptor: getMercadoPagoStatementDescriptor(),
       auto_return: "approved",
       back_urls: {
         success: `${appUrl}/locales/${business.slug}/pedido/${order.orderNumber}?checkout_status=success`,
@@ -196,8 +181,11 @@ export async function createMercadoPagoPreference({
     },
   });
 
+  // Checkout Pro redirige al comprador a Mercado Pago.
+  // En este flujo el Access Token se usa solo en backend y la Public Key
+  // queda reservada para integraciones client-side futuras, como Bricks.
   const checkoutUrl =
-    shouldUseSandbox() && response.sandbox_init_point
+    isMercadoPagoSandboxMode() && response.sandbox_init_point
       ? response.sandbox_init_point
       : response.init_point;
 
@@ -266,7 +254,7 @@ function parseSignatureHeader(signatureHeader: string) {
 }
 
 export function verifyMercadoPagoWebhookSignature(request: NextRequest) {
-  const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+  const secret = getMercadoPagoWebhookSecret();
 
   if (!secret) {
     return false;

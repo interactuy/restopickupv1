@@ -5,6 +5,7 @@ import {
 } from "@/lib/dashboard/server";
 
 import { EmptyState } from "@/components/public/empty-state";
+import { OrderReadyTimeForm } from "@/components/dashboard/order-ready-time-form";
 import { OrderStatusForm } from "@/components/dashboard/order-status-form";
 
 const statusLabels: Record<string, string> = {
@@ -56,6 +57,15 @@ export default async function DashboardOrdersPage() {
                     {order.customerPhone ?? "Sin celular"} ·{" "}
                     {new Date(order.placedAt).toLocaleString("es-UY")}
                   </p>
+                  {order.estimatedReadyAt ? (
+                    <p className="mt-2 text-sm text-[var(--color-muted)]">
+                      Estimado de retiro:{" "}
+                      {new Date(order.estimatedReadyAt).toLocaleTimeString("es-UY", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-[var(--color-muted)]">
@@ -73,8 +83,57 @@ export default async function DashboardOrdersPage() {
                 </div>
               </div>
 
-              <div className="mt-5">
-                <OrderStatusForm orderId={order.id} statusCode={order.statusCode} />
+              <div className="mt-5 rounded-[1.5rem] border border-[var(--color-border)] bg-white/70 p-4">
+                <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                  Qué pidió el cliente
+                </p>
+                <div className="mt-4 space-y-3">
+                  {order.items.map((item) => (
+                    <div
+                      key={`${order.id}-${item.productName}`}
+                      className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] pb-3 last:border-b-0 last:pb-0"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-[var(--color-foreground)]">
+                          {item.productName}
+                        </p>
+                        <p className="mt-1 text-sm text-[var(--color-muted)]">
+                          {item.quantity} x{" "}
+                          {formatPrice(item.unitPriceAmount, order.currencyCode)}
+                        </p>
+                      </div>
+                      <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                        {formatPrice(item.lineTotalAmount, order.currencyCode)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {order.customerNotes ? (
+                  <div className="mt-4 rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                      Comentario del cliente
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+                      {order.customerNotes}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+                <OrderReadyTimeForm
+                  orderId={order.id}
+                  businessSlug={context.business.slug}
+                  orderNumber={order.orderNumber}
+                  defaultMinutes={order.estimatedReadyInMinutes}
+                />
+                <OrderStatusForm
+                  orderId={order.id}
+                  statusCode={order.statusCode}
+                  businessSlug={context.business.slug}
+                  orderNumber={order.orderNumber}
+                />
               </div>
             </article>
           ))}

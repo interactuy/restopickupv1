@@ -6,6 +6,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useCart } from "@/components/cart/cart-provider";
+import { MercadoPagoTestModeNote } from "@/components/cart/mercadopago-test-mode-note";
 import { formatPrice, type PublicBusiness } from "@/lib/public-catalog";
 
 const checkoutFormSchema = z.object({
@@ -18,9 +19,13 @@ type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
 
 type CheckoutFormProps = {
   business: PublicBusiness;
+  isMercadoPagoTestMode: boolean;
 };
 
-export function CheckoutForm({ business }: CheckoutFormProps) {
+export function CheckoutForm({
+  business,
+  isMercadoPagoTestMode,
+}: CheckoutFormProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { getCart, clearCart, isReady } = useCart();
@@ -98,6 +103,10 @@ export function CheckoutForm({ business }: CheckoutFormProps) {
           No necesitas crear una cuenta. Solo dejanos tu nombre y, si querés,
           un celular o comentario para el pedido.
         </p>
+
+        <div className="mt-6">
+          <MercadoPagoTestModeNote enabled={isMercadoPagoTestMode} />
+        </div>
 
         <form
           onSubmit={form.handleSubmit(onSubmit)}

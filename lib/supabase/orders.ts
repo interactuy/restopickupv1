@@ -52,6 +52,7 @@ type OrderInsertRow = {
   currency_code: string;
   placed_at: string;
   payment_status: string;
+  estimated_ready_at: string | null;
 };
 
 export type OrderConfirmation = {
@@ -69,8 +70,11 @@ export type OrderConfirmation = {
     paymentStatus: string;
     paymentProvider: string | null;
     paymentReference: string | null;
+    estimatedReadyAt: string | null;
     pickupAddress: string;
     pickupInstructions: string | null;
+    businessName: string;
+    contactPhone: string | null;
     items: {
       id: string;
       productName: string;
@@ -98,6 +102,7 @@ export type CreatedGuestOrder = {
     currencyCode: string;
     placedAt: string;
     paymentStatus: string;
+    estimatedReadyAt: string | null;
   };
   items: {
     productId: string;
@@ -120,6 +125,10 @@ function mapBusiness(row: BusinessRow): PublicBusiness {
     timezone: row.timezone,
     currencyCode: row.currency_code,
   };
+}
+
+function buildDefaultEstimatedReadyAt() {
+  return new Date(Date.now() + 25 * 60 * 1000).toISOString();
 }
 
 export async function createGuestOrder(
@@ -219,9 +228,10 @@ export async function createGuestOrder(
       discount_amount: 0,
       total_amount: subtotal,
       payment_status: "pending",
+      estimated_ready_at: buildDefaultEstimatedReadyAt(),
     })
     .select(
-      "id, order_number, status_code, customer_name, customer_phone, customer_notes, total_amount, currency_code, placed_at, payment_status"
+      "id, order_number, status_code, customer_name, customer_phone, customer_notes, total_amount, currency_code, placed_at, payment_status, estimated_ready_at"
     )
     .single<OrderInsertRow>();
 
@@ -260,6 +270,7 @@ export async function createGuestOrder(
       currencyCode: order.currency_code,
       placedAt: order.placed_at,
       paymentStatus: order.payment_status,
+      estimatedReadyAt: order.estimated_ready_at,
     },
     items: orderItems,
   };
@@ -293,7 +304,7 @@ export async function getOrderConfirmation(
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .select(
-      "id, order_number, status_code, customer_name, customer_phone, customer_notes, total_amount, currency_code, placed_at, payment_status, payment_provider, payment_reference, order_items(id, product_name, quantity, unit_price_amount, line_total_amount)"
+      "id, order_number, status_code, customer_name, customer_phone, customer_notes, total_amount, currency_code, placed_at, payment_status, payment_provider, payment_reference, estimated_ready_at, order_items(id, product_name, quantity, unit_price_amount, line_total_amount)"
     )
     .eq("business_id", business.id)
     .eq("order_number", orderNumber)
@@ -310,6 +321,7 @@ export async function getOrderConfirmation(
       payment_status: string;
       payment_provider: string | null;
       payment_reference: string | null;
+      estimated_ready_at: string | null;
       order_items: {
         id: string;
         product_name: string;
@@ -342,8 +354,11 @@ export async function getOrderConfirmation(
       paymentStatus: order.payment_status,
       paymentProvider: order.payment_provider,
       paymentReference: order.payment_reference,
+      estimatedReadyAt: order.estimated_ready_at,
       pickupAddress: business.pickup_address,
       pickupInstructions: business.pickup_instructions,
+      businessName: business.name,
+      contactPhone: business.contact_phone,
       items: order.order_items.map((item) => ({
         id: item.id,
         productName: item.product_name,

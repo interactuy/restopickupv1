@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { createMercadoPagoPreference } from "@/lib/mercadopago/server";
 import { createGuestOrder } from "@/lib/supabase/orders";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
     const payload = await request.json();

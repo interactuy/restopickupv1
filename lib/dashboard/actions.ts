@@ -254,6 +254,8 @@ export async function updateOrderStatusAction(formData: FormData) {
   const context = await requireDashboardContext();
   const orderId = String(formData.get("orderId") ?? "");
   const statusCode = String(formData.get("statusCode") ?? "");
+  const businessSlug = String(formData.get("businessSlug") ?? "").trim();
+  const orderNumber = String(formData.get("orderNumber") ?? "").trim();
 
   const allowedStatuses = new Set([
     "pending",
@@ -296,6 +298,55 @@ export async function updateOrderStatusAction(formData: FormData) {
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/pedidos");
+
+  if (businessSlug && orderNumber) {
+    revalidatePath(`/locales/${businessSlug}/pedido/${orderNumber}`);
+  }
+}
+
+export async function updateOrderEstimatedReadyAtAction(formData: FormData) {
+  const context = await requireDashboardContext();
+  const orderId = String(formData.get("orderId") ?? "").trim();
+  const businessSlug = String(formData.get("businessSlug") ?? "").trim();
+  const orderNumber = String(formData.get("orderNumber") ?? "").trim();
+  const estimatedMinutes = Number.parseInt(
+    String(formData.get("estimatedMinutes") ?? "").trim(),
+    10
+  );
+
+  if (!orderId || Number.isNaN(estimatedMinutes) || estimatedMinutes < 0) {
+    throw new Error("Tiempo estimado inválido.");
+  }
+
+  if (estimatedMinutes > 240) {
+    throw new Error("El tiempo estimado no puede superar 240 minutos.");
+  }
+
+  const estimatedReadyAt = new Date(
+    Date.now() + estimatedMinutes * 60 * 1000
+  ).toISOString();
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("orders")
+    .update({
+      estimated_ready_at: estimatedReadyAt,
+    })
+    .eq("id", orderId)
+    .eq("business_id", context.business.id);
+
+  if (error) {
+    throw new Error(
+      `No se pudo actualizar el tiempo estimado: ${error.message}`
+    );
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/pedidos");
+
+  if (businessSlug && orderNumber) {
+    revalidatePath(`/locales/${businessSlug}/pedido/${orderNumber}`);
+  }
 }
 
 export async function toggleProductAvailabilityAction(formData: FormData) {

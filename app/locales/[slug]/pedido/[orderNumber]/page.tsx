@@ -82,6 +82,18 @@ export default async function ConfirmationPage({
             <span className="rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm text-[var(--color-muted)]">
               Total {confirmation.order.formattedTotal}
             </span>
+            {confirmation.order.estimatedReadyAt ? (
+              <span className="rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm text-[var(--color-muted)]">
+                Retiro aprox.{" "}
+                {new Date(confirmation.order.estimatedReadyAt).toLocaleTimeString(
+                  "es-UY",
+                  {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }
+                )}
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -90,6 +102,38 @@ export default async function ConfirmationPage({
             <h2 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
               Resumen del pedido
             </h2>
+            <div className="mt-4 grid gap-4 rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                  Cliente
+                </p>
+                <p className="mt-2 text-sm font-medium text-[var(--color-foreground)]">
+                  {confirmation.order.customerName}
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                  {confirmation.order.customerPhone ?? "Sin celular cargado"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                  Pedido realizado
+                </p>
+                <p className="mt-2 text-sm font-medium text-[var(--color-foreground)]">
+                  {new Date(confirmation.order.placedAt).toLocaleString("es-UY")}
+                </p>
+                {confirmation.order.estimatedReadyAt ? (
+                  <p className="mt-1 text-sm text-[var(--color-muted)]">
+                    Estimado de retiro:{" "}
+                    {new Date(
+                      confirmation.order.estimatedReadyAt
+                    ).toLocaleTimeString("es-UY", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                ) : null}
+              </div>
+            </div>
             <div className="mt-6 space-y-4">
               {confirmation.order.items.map((item) => (
                 <div
@@ -115,6 +159,17 @@ export default async function ConfirmationPage({
               <span>Total</span>
               <span>{confirmation.order.formattedTotal}</span>
             </div>
+
+            {confirmation.order.customerNotes ? (
+              <div className="mt-6 rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                  Comentario para el local
+                </p>
+                <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+                  {confirmation.order.customerNotes}
+                </p>
+              </div>
+            ) : null}
           </section>
 
           <aside className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-7 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
@@ -122,17 +177,49 @@ export default async function ConfirmationPage({
               Pago y retiro
             </h2>
             <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
+              Retirás en{" "}
+              <span className="text-[var(--color-accent)]">
+                {confirmation.order.businessName}
+              </span>
+            </p>
+            <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
               Estado del pago:{" "}
               <span className="text-[var(--color-accent)]">
                 {getFormattedPaymentStatus(confirmation.order.paymentStatus)}
               </span>
             </p>
+            <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
+              Estado del pedido:{" "}
+              <span className="text-[var(--color-accent)]">
+                {statusLabels[confirmation.order.statusCode] ??
+                  confirmation.order.statusCode}
+              </span>
+            </p>
+            {confirmation.order.estimatedReadyAt ? (
+              <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
+                Tiempo aproximado:{" "}
+                <span className="text-[var(--color-accent)]">
+                  hasta las{" "}
+                  {new Date(
+                    confirmation.order.estimatedReadyAt
+                  ).toLocaleTimeString("es-UY", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </p>
+            ) : null}
             <p className="mt-4 text-sm leading-7 text-[var(--color-muted)]">
               {confirmation.order.pickupAddress}
             </p>
             {confirmation.order.pickupInstructions ? (
               <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
                 {confirmation.order.pickupInstructions}
+              </p>
+            ) : null}
+            {confirmation.order.contactPhone ? (
+              <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
+                Contacto del local: {confirmation.order.contactPhone}
               </p>
             ) : null}
             <p className="mt-6 text-sm text-[var(--color-muted)]">

@@ -5,6 +5,8 @@ import {
   verifyMercadoPagoWebhookSignature,
 } from "@/lib/mercadopago/server";
 
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CheckoutForm } from "@/components/cart/checkout-form";
+import { isMercadoPagoSandboxMode } from "@/lib/mercadopago/server-config";
 import { getPublicBusinessCatalog } from "@/lib/supabase/public";
 
 type CheckoutPageProps = {
@@ -31,7 +32,10 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
           </span>
         </div>
 
-        <CheckoutForm business={catalog.business} />
+        <CheckoutForm
+          business={catalog.business}
+          isMercadoPagoTestMode={isMercadoPagoSandboxMode()}
+        />
       </div>
     </main>
   );

@@ -51,11 +51,20 @@ export type DashboardOrder = {
   orderNumber: number;
   customerName: string;
   customerPhone: string | null;
+  customerNotes: string | null;
   statusCode: string;
   totalAmount: number;
   currencyCode: string;
   paymentStatus: string;
   placedAt: string;
+  estimatedReadyAt: string | null;
+  estimatedReadyInMinutes: number;
+  items: {
+    productName: string;
+    quantity: number;
+    unitPriceAmount: number;
+    lineTotalAmount: number;
+  }[];
 };
 
 export type DashboardProduct = {
@@ -169,7 +178,7 @@ export async function getDashboardOrders(businessId: string) {
   const { data, error } = await admin
     .from("orders")
     .select(
-      "id, order_number, customer_name, customer_phone, status_code, total_amount, currency_code, payment_status, placed_at"
+      "id, order_number, customer_name, customer_phone, customer_notes, status_code, total_amount, currency_code, payment_status, placed_at, estimated_ready_at, order_items(product_name, quantity, unit_price_amount, line_total_amount)"
     )
     .eq("business_id", businessId)
     .order("placed_at", { ascending: false })
@@ -179,11 +188,19 @@ export async function getDashboardOrders(businessId: string) {
         order_number: number;
         customer_name: string;
         customer_phone: string | null;
+        customer_notes: string | null;
         status_code: string;
         total_amount: number;
         currency_code: string;
         payment_status: string;
         placed_at: string;
+        estimated_ready_at: string | null;
+        order_items: {
+          product_name: string;
+          quantity: number;
+          unit_price_amount: number;
+          line_total_amount: number;
+        }[];
       }[]
     >();
 
@@ -196,11 +213,27 @@ export async function getDashboardOrders(businessId: string) {
     orderNumber: order.order_number,
     customerName: order.customer_name,
     customerPhone: order.customer_phone,
+    customerNotes: order.customer_notes,
     statusCode: order.status_code,
     totalAmount: order.total_amount,
     currencyCode: order.currency_code,
     paymentStatus: order.payment_status,
     placedAt: order.placed_at,
+    estimatedReadyAt: order.estimated_ready_at,
+    estimatedReadyInMinutes: order.estimated_ready_at
+      ? Math.max(
+          0,
+          Math.round(
+            (new Date(order.estimated_ready_at).getTime() - Date.now()) / 60000
+          )
+        )
+      : 25,
+    items: order.order_items.map((item) => ({
+      productName: item.product_name,
+      quantity: item.quantity,
+      unitPriceAmount: item.unit_price_amount,
+      lineTotalAmount: item.line_total_amount,
+    })),
   }));
 }
 
