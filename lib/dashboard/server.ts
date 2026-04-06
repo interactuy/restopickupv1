@@ -67,6 +67,8 @@ export type DashboardOrder = {
   }[];
 };
 
+const DELIVERED_ORDER_RETENTION_DAYS = 10;
+
 export type DashboardProduct = {
   id: string;
   name: string;
@@ -181,6 +183,7 @@ export async function getDashboardOrders(businessId: string) {
       "id, order_number, customer_name, customer_phone, customer_notes, status_code, total_amount, currency_code, payment_status, placed_at, estimated_ready_at, order_items(product_name, quantity, unit_price_amount, line_total_amount)"
     )
     .eq("business_id", businessId)
+    .in("payment_status", ["paid", "authorized"])
     .order("placed_at", { ascending: false })
     .returns<
       {
@@ -235,6 +238,40 @@ export async function getDashboardOrders(businessId: string) {
       lineTotalAmount: item.line_total_amount,
     })),
   }));
+}
+
+export function getDeliveredOrderRetentionCutoff() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - DELIVERED_ORDER_RETENTION_DAYS);
+  return cutoff;
+}
+
+export function partitionDashboardOrders(orders: DashboardOrder[]) {
+  const deliveredCutoff = getDeliveredOrderRetentionCutoff();
+
+  return {
+    pending: orders.filter((order) =>
+      ["pending", "confirmed"].includes(order.statusCode)
+    ),
+    preparing: orders.filter((order) =>
+      ["preparing", "ready_for_pickup"].includes(order.statusCode)
+    ),
+    delivered: orders.filter((order) => {
+      if (!["completed", "canceled"].includes(order.statusCode)) {
+        return false;
+      }
+
+      return new Date(order.placedAt) >= deliveredCutoff;
+    }),
+  };
+}
+
+export async function getDashboardOrderById(
+  businessId: string,
+  orderId: string
+) {
+  const orders = await getDashboardOrders(businessId);
+  return orders.find((order) => order.id === orderId) ?? null;
 }
 
 export async function getDashboardProducts(businessId: string) {
@@ -363,10 +400,10 @@ export async function getDashboardOverview(businessId: string) {
     getDashboardProducts(businessId),
   ]);
 
+  const groupedOrders = partitionDashboardOrders(orders);
+
   return {
-    pendingOrders: orders.filter((order) =>
-      ["pending", "confirmed", "preparing"].includes(order.statusCode)
-    ).length,
+    pendingOrders: groupedOrders.pending.length + groupedOrders.preparing.length,
     readyOrders: orders.filter((order) => order.statusCode === "ready_for_pickup")
       .length,
     availableProducts: products.filter((product) => product.isAvailable).length,

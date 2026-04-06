@@ -349,6 +349,49 @@ export async function updateOrderEstimatedReadyAtAction(formData: FormData) {
   }
 }
 
+export async function deleteOrderAction(formData: FormData) {
+  const context = await requireDashboardContext();
+  const orderId = String(formData.get("orderId") ?? "").trim();
+
+  if (!orderId) {
+    throw new Error("Pedido inválido.");
+  }
+
+  const admin = createAdminClient();
+  const { data: order, error: orderLookupError } = await admin
+    .from("orders")
+    .select("id, status_code")
+    .eq("id", orderId)
+    .eq("business_id", context.business.id)
+    .maybeSingle<{ id: string; status_code: string }>();
+
+  if (orderLookupError) {
+    throw new Error(`No se pudo validar el pedido: ${orderLookupError.message}`);
+  }
+
+  if (!order) {
+    throw new Error("No encontramos el pedido para eliminar.");
+  }
+
+  if (!["completed", "canceled"].includes(order.status_code)) {
+    throw new Error("Solo se pueden eliminar pedidos entregados o cancelados.");
+  }
+
+  const { error } = await admin
+    .from("orders")
+    .delete()
+    .eq("id", orderId)
+    .eq("business_id", context.business.id);
+
+  if (error) {
+    throw new Error(`No se pudo eliminar el pedido: ${error.message}`);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/pedidos");
+  redirect("/dashboard/pedidos?tab=delivered");
+}
+
 export async function toggleProductAvailabilityAction(formData: FormData) {
   const context = await requireDashboardContext();
   const productId = String(formData.get("productId") ?? "");
