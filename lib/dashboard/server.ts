@@ -129,6 +129,13 @@ export type DashboardSalesStats = {
   averageTicketAmount: number;
   busiestHourLabel: string | null;
   busiestWeekdayLabel: string | null;
+  dayHourHeatmap: {
+    dayLabel: string;
+    hours: {
+      hourLabel: string;
+      count: number;
+    }[];
+  }[];
   hourlySales: {
     label: string;
     count: number;
@@ -569,6 +576,7 @@ export async function getDashboardSalesStats(
       averageTicketAmount: 0,
       busiestHourLabel: null,
       busiestWeekdayLabel: null,
+      dayHourHeatmap: [],
       hourlySales: [],
       weekdaySales: [],
       topProducts: [],
@@ -580,13 +588,28 @@ export async function getDashboardSalesStats(
     hourCycle: "h23",
     timeZone: timezone,
   });
+  const weekdayKeyFormatter = new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    timeZone: timezone,
+  });
   const weekdayFormatter = new Intl.DateTimeFormat("es-UY", {
     weekday: "long",
     timeZone: timezone,
   });
+  const weekdayOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const weekdayLabelMap: Record<string, string> = {
+    Mon: "L",
+    Tue: "M",
+    Wed: "M",
+    Thu: "J",
+    Fri: "V",
+    Sat: "S",
+    Sun: "D",
+  };
 
   const hourCounts = new Map<string, number>();
   const weekdayCounts = new Map<string, number>();
+  const dayHourCounts = new Map<string, number>();
   const productStats = new Map<
     string,
     { name: string; quantity: number; revenueAmount: number }
@@ -599,10 +622,15 @@ export async function getDashboardSalesStats(
 
     const placedAt = new Date(order.placedAt);
     const hourKey = hourFormatter.format(placedAt);
+    const weekdayShortKey = weekdayKeyFormatter.format(placedAt);
     const weekdayKey = weekdayFormatter.format(placedAt);
 
     hourCounts.set(hourKey, (hourCounts.get(hourKey) ?? 0) + 1);
     weekdayCounts.set(weekdayKey, (weekdayCounts.get(weekdayKey) ?? 0) + 1);
+    dayHourCounts.set(
+      `${weekdayShortKey}-${hourKey}`,
+      (dayHourCounts.get(`${weekdayShortKey}-${hourKey}`) ?? 0) + 1
+    );
 
     for (const item of order.items) {
       const existing = productStats.get(item.productName) ?? {
@@ -638,6 +666,16 @@ export async function getDashboardSalesStats(
     busiestWeekdayLabel: busiestWeekdayEntry
       ? busiestWeekdayEntry[0].charAt(0).toUpperCase() + busiestWeekdayEntry[0].slice(1)
       : null,
+    dayHourHeatmap: weekdayOrder.map((weekdayShortKey) => ({
+      dayLabel: weekdayLabelMap[weekdayShortKey] ?? weekdayShortKey,
+      hours: Array.from({ length: 24 }, (_, hour) => {
+        const hourKey = String(hour).padStart(2, "0");
+        return {
+          hourLabel: `${hourKey}:00`,
+          count: dayHourCounts.get(`${weekdayShortKey}-${hourKey}`) ?? 0,
+        };
+      }),
+    })),
     hourlySales: [...hourCounts.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([label, count]) => ({

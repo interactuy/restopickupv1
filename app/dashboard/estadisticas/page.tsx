@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { SimpleBarChart } from "@/components/dashboard/simple-bar-chart";
+import { DayHourHeatmap } from "@/components/dashboard/day-hour-heatmap";
 import { formatPrice } from "@/lib/public-catalog";
 import {
   getDashboardSalesStats,
@@ -117,24 +117,13 @@ export default async function DashboardStatisticsPage({
         ))}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <SimpleBarChart
-          title="Ventas por hora"
-          description="Te ayuda a detectar las franjas del día donde más entran pedidos."
-          items={salesStats.hourlySales.map((item) => ({
-            label: item.label,
-            value: item.count,
-          }))}
-        />
-        <SimpleBarChart
-          title="Ventas por día"
-          description="Ideal para identificar los días más fuertes del local."
-          items={salesStats.weekdaySales.map((item) => ({
-            label: item.label,
-            value: item.count,
-          }))}
-        />
-      </section>
+      <DayHourHeatmap
+        title="Actividad por día y hora"
+        description="Te ayuda a detectar patrones combinados, como picos de viernes noche o mediodías fuertes."
+        totalOrders={salesStats.totalPaidOrders}
+        rangeLabel={salesStats.rangeLabel}
+        rows={salesStats.dayHourHeatmap}
+      />
 
       <section className="rounded-[1.75rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)]">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AutoRefresh } from "@/components/live/auto-refresh";
 import { formatPrice } from "@/lib/public-catalog";
 import {
   getDashboardOrders,
@@ -214,6 +215,7 @@ export default async function DashboardOrdersPage({
 
   return (
     <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
+      <AutoRefresh intervalMs={10000} />
       <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
         Pedidos
       </p>

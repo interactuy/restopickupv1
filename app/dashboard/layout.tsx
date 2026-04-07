@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { DashboardLiveNotifier } from "@/components/dashboard/dashboard-live-notifier";
 import { SubmitButton } from "@/components/dashboard/submit-button";
 import { logoutAction } from "@/lib/dashboard/actions";
 import { requireDashboardContext } from "@/lib/dashboard/server";
@@ -30,6 +31,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
+      <DashboardLiveNotifier businessId={context.business.id} />
       <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 py-8 md:px-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:px-12">
         <aside className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
           <Link href="/" className="text-lg font-semibold tracking-tight text-[var(--color-foreground)]">
