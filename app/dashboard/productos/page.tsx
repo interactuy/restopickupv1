@@ -41,12 +41,20 @@ export default async function DashboardProductsPage({
             Gestioná el menú visible del local, la disponibilidad y el orden de cada producto.
           </p>
         </div>
-        <Link
-          href="/dashboard/productos/nuevo"
-          className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
-        >
-          Nuevo producto
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/dashboard/categorias"
+            className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+          >
+            Gestionar categorías
+          </Link>
+          <Link
+            href="/dashboard/productos/nuevo"
+            className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+          >
+            Nuevo producto
+          </Link>
+        </div>
       </div>
 
       {query.error ? (

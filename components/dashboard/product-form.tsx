@@ -202,6 +202,7 @@ export function ProductForm({
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
+                  {!category.isActive ? " (oculta)" : ""}
                 </option>
               ))}
             </select>

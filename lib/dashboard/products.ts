@@ -16,6 +16,10 @@ export function slugifyProduct(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+export function slugifyCategory(value: string) {
+  return slugifyProduct(value);
+}
+
 export function parseMoneyInput(value: string, fieldLabel: string) {
   const trimmed = value.trim();
 

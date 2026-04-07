@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 
-import { CartSummaryPanel } from "@/components/cart/cart-summary-panel";
 import { useCart } from "@/components/cart/cart-provider";
+import { FloatingCartButton } from "@/components/cart/floating-cart-button";
 import type {
   PublicBusinessCatalog,
   PublicCategory,
@@ -61,9 +61,18 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
               Restopickup
             </Link>
             <div className="flex flex-wrap gap-3">
-              <span className="rounded-full border border-[var(--color-border)] bg-white/70 px-4 py-2 text-sm text-[var(--color-muted)]">
-                {cartCount} en carrito
-              </span>
+              {cartCount > 0 ? (
+                <Link
+                  href={`/locales/${business.slug}/carrito`}
+                  className="rounded-full border border-[var(--color-border)] bg-white/70 px-4 py-2 text-sm text-[var(--color-muted)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                >
+                  {cartCount} en carrito
+                </Link>
+              ) : (
+                <span className="rounded-full border border-[var(--color-border)] bg-white/70 px-4 py-2 text-sm text-[var(--color-muted)]">
+                  {cartCount} en carrito
+                </span>
+              )}
               <span className="rounded-full border border-[var(--color-border)] bg-white/70 px-4 py-2 text-sm text-[var(--color-muted)]">
                 Retiro en local
               </span>
@@ -133,7 +142,7 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
         </div>
       </section>
 
-      <main className="mx-auto grid w-full max-w-7xl gap-8 px-6 py-12 md:px-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-12">
+      <main className="mx-auto w-full max-w-7xl px-6 py-12 md:px-10 lg:px-12">
         <div className="flex flex-col gap-12">
           {categoriesWithProducts.length === 0 && uncategorizedProducts.length === 0 ? (
             <EmptyState
@@ -240,13 +249,13 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
             </section>
           ) : null}
         </div>
-
-        <CartSummaryPanel
-          businessId={business.id}
-          businessSlug={business.slug}
-          currencyCode={business.currencyCode}
-        />
       </main>
+
+      <FloatingCartButton
+        businessId={business.id}
+        businessSlug={business.slug}
+        currencyCode={business.currencyCode}
+      />
     </div>
   );
 }

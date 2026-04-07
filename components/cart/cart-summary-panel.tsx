@@ -8,30 +8,44 @@ import { formatPrice } from "@/lib/public-catalog";
 type CartSummaryPanelProps = {
   businessId: string;
   businessSlug: string;
+  businessName?: string;
   currencyCode: string;
+  variant?: "sidebar" | "page";
 };
 
 export function CartSummaryPanel({
   businessId,
   businessSlug,
+  businessName,
   currencyCode,
+  variant = "sidebar",
 }: CartSummaryPanelProps) {
   const { getCart, updateQuantity, removeItem, getItemCount, getSubtotal, isReady } =
     useCart();
   const cart = getCart(businessId);
   const itemCount = getItemCount(businessId);
   const subtotal = getSubtotal(businessId);
+  const isPage = variant === "page";
 
   return (
-    <aside className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm lg:sticky lg:top-6">
+    <aside
+      className={`rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm ${
+        isPage ? "" : "lg:sticky lg:top-6"
+      }`}
+    >
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
             Tu carrito
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-            Pedido para retirar
+            {isPage ? `Pedido en ${businessName ?? "el local"}` : "Pedido para retirar"}
           </h2>
+          {isPage ? (
+            <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+              Revisá cantidades, opciones y notas por producto antes de pasar al checkout.
+            </p>
+          ) : null}
         </div>
         <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2 text-sm font-semibold text-[var(--color-foreground)]">
           {itemCount}
@@ -41,9 +55,17 @@ export function CartSummaryPanel({
       {!isReady || !cart || cart.items.length === 0 ? (
         <div className="mt-6 rounded-[1.5rem] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <p className="text-sm leading-7 text-[var(--color-muted)]">
-            Agregá productos del menú para ver el resumen del pedido acá antes de
-            pasar al checkout.
+            Agregá productos del menú para ver el resumen del pedido antes de pasar
+            al checkout.
           </p>
+          <div className="mt-5">
+            <Link
+              href={`/locales/${businessSlug}`}
+              className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+            >
+              Volver al menú
+            </Link>
+          </div>
         </div>
       ) : (
         <>
@@ -141,10 +163,18 @@ export function CartSummaryPanel({
             <p className="mt-3 text-xs leading-6 text-[var(--color-muted)]">
               Revisá las opciones y notas por producto antes de pasar al checkout.
             </p>
-            <div className="mt-5">
+            <div className="mt-5 flex flex-wrap gap-3">
+              {isPage ? (
+                <Link
+                  href={`/locales/${businessSlug}`}
+                  className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                >
+                  Seguir eligiendo
+                </Link>
+              ) : null}
               <Link
                 href={`/locales/${businessSlug}/checkout`}
-                className="inline-flex w-full items-center justify-center rounded-full bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-95"
+                className="inline-flex flex-1 items-center justify-center rounded-full bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-95"
               >
                 Continuar al checkout
               </Link>

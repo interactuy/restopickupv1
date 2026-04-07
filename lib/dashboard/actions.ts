@@ -9,9 +9,14 @@ import {
   parseMoneyInput,
   parseOptionalMoneyInput,
   parsePositionInput,
+  slugifyCategory,
   slugifyProduct,
 } from "@/lib/dashboard/products";
-import { getDashboardProductById, requireDashboardContext } from "@/lib/dashboard/server";
+import {
+  getDashboardCategoryById,
+  getDashboardProductById,
+  requireDashboardContext,
+} from "@/lib/dashboard/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,6 +26,12 @@ function buildDashboardProductsRedirect(params: Record<string, string>) {
   const searchParams = new URLSearchParams(params);
   const query = searchParams.toString();
   return `/dashboard/productos${query ? `?${query}` : ""}`;
+}
+
+function buildDashboardCategoriesRedirect(params: Record<string, string>) {
+  const searchParams = new URLSearchParams(params);
+  const query = searchParams.toString();
+  return `/dashboard/categorias${query ? `?${query}` : ""}`;
 }
 
 function buildDashboardNewProductRedirect(params: Record<string, string>) {
@@ -36,6 +47,15 @@ function buildDashboardProductEditRedirect(
   const searchParams = new URLSearchParams(params);
   const query = searchParams.toString();
   return `/dashboard/productos/${productId}/editar${query ? `?${query}` : ""}`;
+}
+
+function buildDashboardCategoryEditRedirect(
+  categoryId: string,
+  params: Record<string, string>
+) {
+  const searchParams = new URLSearchParams(params);
+  const query = searchParams.toString();
+  return `/dashboard/categorias/${categoryId}/editar${query ? `?${query}` : ""}`;
 }
 
 async function ensureBusinessCategory(
@@ -84,6 +104,28 @@ async function ensureUniqueProductSlug(
 
   if (data && data.id !== currentProductId) {
     throw new Error("Ya existe otro producto con ese slug.");
+  }
+}
+
+async function ensureUniqueCategorySlug(
+  businessId: string,
+  slug: string,
+  currentCategoryId?: string
+) {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("product_categories")
+    .select("id")
+    .eq("business_id", businessId)
+    .eq("slug", slug)
+    .maybeSingle<{ id: string }>();
+
+  if (error) {
+    throw new Error(`No se pudo validar el slug de la categoría: ${error.message}`);
+  }
+
+  if (data && data.id !== currentCategoryId) {
+    throw new Error("Ya existe otra categoría con ese slug.");
   }
 }
 
@@ -286,6 +328,31 @@ function parseProductFormData(formData: FormData) {
     position,
     categoryId: categoryIdValue || null,
     isAvailable,
+  };
+}
+
+function parseCategoryFormData(formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  const slugInput = String(formData.get("slug") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const position = parsePositionInput(String(formData.get("position") ?? ""));
+  const isActive = String(formData.get("isActive") ?? "true") === "true";
+  const normalizedSlug = slugifyCategory(slugInput || name);
+
+  if (!name) {
+    throw new Error("El nombre de la categoría es obligatorio.");
+  }
+
+  if (!normalizedSlug) {
+    throw new Error("El slug de la categoría no es válido.");
+  }
+
+  return {
+    name,
+    slug: normalizedSlug,
+    description: description || null,
+    position,
+    isActive,
   };
 }
 
@@ -764,6 +831,186 @@ export async function deleteProductAction(formData: FormData) {
       buildDashboardProductEditRedirect(productId, {
         error: message,
       }),
+    );
+  }
+}
+
+export async function createCategoryAction(formData: FormData) {
+  const context = await requireDashboardContext();
+
+  try {
+    const categoryData = parseCategoryFormData(formData);
+    await ensureUniqueCategorySlug(context.business.id, categoryData.slug);
+
+    const admin = createAdminClient();
+    const { data: category, error } = await admin
+      .from("product_categories")
+      .insert({
+        business_id: context.business.id,
+        name: categoryData.name,
+        slug: categoryData.slug,
+        description: categoryData.description,
+        position: categoryData.position,
+        is_active: categoryData.isActive,
+      })
+      .select("id")
+      .single<{ id: string }>();
+
+    if (error || !category) {
+      throw new Error(error?.message ?? "No se pudo crear la categoría.");
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/categorias");
+    revalidatePath("/dashboard/productos");
+    revalidatePath(`/locales/${context.business.slug}`);
+
+    redirect(
+      buildDashboardCategoryEditRedirect(category.id, {
+        success: "created",
+      })
+    );
+  } catch (error) {
+    unstable_rethrow(error);
+
+    const message =
+      error instanceof Error ? error.message : "No se pudo crear la categoría.";
+
+    redirect(
+      buildDashboardCategoriesRedirect({
+        error: message,
+      })
+    );
+  }
+}
+
+export async function updateCategoryAction(formData: FormData) {
+  const context = await requireDashboardContext();
+  const categoryId = String(formData.get("categoryId") ?? "").trim();
+
+  if (!categoryId) {
+    redirect(
+      buildDashboardCategoriesRedirect({
+        error: "Categoría inválida.",
+      })
+    );
+  }
+
+  try {
+    const existingCategory = await getDashboardCategoryById(
+      context.business.id,
+      categoryId
+    );
+
+    if (!existingCategory) {
+      throw new Error("La categoría no existe o no pertenece a este negocio.");
+    }
+
+    const categoryData = parseCategoryFormData(formData);
+    await ensureUniqueCategorySlug(
+      context.business.id,
+      categoryData.slug,
+      existingCategory.id
+    );
+
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("product_categories")
+      .update({
+        name: categoryData.name,
+        slug: categoryData.slug,
+        description: categoryData.description,
+        position: categoryData.position,
+        is_active: categoryData.isActive,
+      })
+      .eq("id", existingCategory.id)
+      .eq("business_id", context.business.id);
+
+    if (error) {
+      throw new Error(`No se pudo actualizar la categoría: ${error.message}`);
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/categorias");
+    revalidatePath("/dashboard/productos");
+    revalidatePath(`/locales/${context.business.slug}`);
+
+    redirect(
+      buildDashboardCategoryEditRedirect(existingCategory.id, {
+        success: "updated",
+      })
+    );
+  } catch (error) {
+    unstable_rethrow(error);
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "No se pudo actualizar la categoría.";
+
+    redirect(
+      buildDashboardCategoryEditRedirect(categoryId, {
+        error: message,
+      })
+    );
+  }
+}
+
+export async function deleteCategoryAction(formData: FormData) {
+  const context = await requireDashboardContext();
+  const categoryId = String(formData.get("categoryId") ?? "").trim();
+
+  if (!categoryId) {
+    redirect(
+      buildDashboardCategoriesRedirect({
+        error: "Categoría inválida.",
+      })
+    );
+  }
+
+  try {
+    const existingCategory = await getDashboardCategoryById(
+      context.business.id,
+      categoryId
+    );
+
+    if (!existingCategory) {
+      throw new Error("La categoría no existe o no pertenece a este negocio.");
+    }
+
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("product_categories")
+      .delete()
+      .eq("id", existingCategory.id)
+      .eq("business_id", context.business.id);
+
+    if (error) {
+      throw new Error(`No se pudo eliminar la categoría: ${error.message}`);
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/categorias");
+    revalidatePath("/dashboard/productos");
+    revalidatePath(`/locales/${context.business.slug}`);
+
+    redirect(
+      buildDashboardCategoriesRedirect({
+        success: "deleted",
+      })
+    );
+  } catch (error) {
+    unstable_rethrow(error);
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "No se pudo eliminar la categoría.";
+
+    redirect(
+      buildDashboardCategoryEditRedirect(categoryId, {
+        error: message,
+      })
     );
   }
 }

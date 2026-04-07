@@ -1,15 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { CheckoutForm } from "@/components/cart/checkout-form";
-import { isMercadoPagoSandboxMode } from "@/lib/mercadopago/server-config";
+import { CartSummaryPanel } from "@/components/cart/cart-summary-panel";
 import { getPublicBusinessCatalog } from "@/lib/supabase/public";
 
-type CheckoutPageProps = {
+type CartPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export default async function CheckoutPage({ params }: CheckoutPageProps) {
+export default async function CartPage({ params }: CartPageProps) {
   const { slug } = await params;
   const catalog = await getPublicBusinessCatalog(slug);
 
@@ -19,22 +18,25 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] px-6 py-10 md:px-10 lg:px-12">
-      <div className="mx-auto w-full max-w-7xl">
+      <div className="mx-auto w-full max-w-5xl">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Link
-            href={`/locales/${catalog.business.slug}/carrito`}
+            href={`/locales/${catalog.business.slug}`}
             className="text-sm font-medium text-[var(--color-muted)] transition hover:text-[var(--color-foreground)]"
           >
-            Volver al carrito
+            Volver al menú
           </Link>
           <span className="rounded-full border border-[var(--color-border)] bg-white/80 px-4 py-2 text-sm text-[var(--color-muted)]">
-            Paso 2 de 2 · Checkout invitado
+            Paso 1 de 2 · Revisar pedido
           </span>
         </div>
 
-        <CheckoutForm
-          business={catalog.business}
-          isMercadoPagoTestMode={isMercadoPagoSandboxMode()}
+        <CartSummaryPanel
+          businessId={catalog.business.id}
+          businessSlug={catalog.business.slug}
+          businessName={catalog.business.name}
+          currencyCode={catalog.business.currencyCode}
+          variant="page"
         />
       </div>
     </main>

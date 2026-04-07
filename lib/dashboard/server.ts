@@ -117,7 +117,9 @@ export type DashboardCategory = {
   id: string;
   name: string;
   slug: string;
+  description: string | null;
   position: number;
+  isActive: boolean;
 };
 
 function mapBusiness(
@@ -436,23 +438,32 @@ export async function getDashboardProducts(businessId: string) {
   }));
 }
 
-export async function getDashboardCategories(businessId: string) {
+export async function getDashboardCategories(
+  businessId: string,
+  options?: { activeOnly?: boolean }
+) {
   const admin = createAdminClient();
-  const { data, error } = await admin
+  let query = admin
     .from("product_categories")
-    .select("id, name, slug, position")
+    .select("id, name, slug, description, position, is_active")
     .eq("business_id", businessId)
-    .eq("is_active", true)
     .order("position", { ascending: true })
-    .order("created_at", { ascending: true })
-    .returns<
-      {
-        id: string;
-        name: string;
-        slug: string;
-        position: number;
-      }[]
-    >();
+    .order("created_at", { ascending: true });
+
+  if (options?.activeOnly) {
+    query = query.eq("is_active", true);
+  }
+
+  const { data, error } = await query.returns<
+    {
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+      position: number;
+      is_active: boolean;
+    }[]
+  >();
 
   if (error) {
     throw new Error(`No se pudieron cargar las categorías: ${error.message}`);
@@ -462,8 +473,18 @@ export async function getDashboardCategories(businessId: string) {
     id: category.id,
     name: category.name,
     slug: category.slug,
+    description: category.description,
     position: category.position,
+    isActive: category.is_active,
   }));
+}
+
+export async function getDashboardCategoryById(
+  businessId: string,
+  categoryId: string
+) {
+  const categories = await getDashboardCategories(businessId);
+  return categories.find((category) => category.id === categoryId) ?? null;
 }
 
 export async function getDashboardProductById(
@@ -525,8 +546,8 @@ export async function getDashboardOnboardingItems(
       title: "Definir categorías del menú",
       description:
         "Organizá el menú en secciones claras para que después la carga de productos sea más ordenada.",
-      href: "/dashboard/productos",
-      done: categories.length > 0,
+      href: "/dashboard/categorias",
+      done: categories.some((category) => category.isActive),
     },
     {
       id: "products",

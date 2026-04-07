@@ -13,15 +13,17 @@ export default async function DashboardLayout({
 }: DashboardLayoutProps) {
   const context = await requireDashboardContext();
   const links = context.business.onboardingCompletedAt
-    ? [
+      ? [
         { href: "/dashboard", label: "Resumen" },
         { href: "/dashboard/pedidos", label: "Pedidos" },
+        { href: "/dashboard/categorias", label: "Categorias" },
         { href: "/dashboard/productos", label: "Productos" },
         { href: "/dashboard/configuracion", label: "Configuracion" },
       ]
     : [
         { href: "/dashboard/onboarding", label: "Primeros pasos" },
         { href: "/dashboard/configuracion", label: "Configuracion" },
+        { href: "/dashboard/categorias", label: "Categorias" },
         { href: "/dashboard/productos", label: "Productos" },
       ];
 
