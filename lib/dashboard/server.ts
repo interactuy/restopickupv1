@@ -122,6 +122,22 @@ export type DashboardCategory = {
   isActive: boolean;
 };
 
+export type DashboardSalesStats = {
+  rangeLabel: string;
+  totalPaidOrders: number;
+  grossRevenueAmount: number;
+  averageTicketAmount: number;
+  busiestHourLabel: string | null;
+  busiestWeekdayLabel: string | null;
+  topProducts: {
+    name: string;
+    quantity: number;
+    revenueAmount: number;
+  }[];
+};
+
+export type DashboardSalesRange = "7d" | "30d" | "all";
+
 function mapBusiness(
   row: NonNullable<BusinessMembershipRow["business"]>
 ): DashboardContext["business"] {
@@ -509,6 +525,112 @@ export async function getDashboardOverview(businessId: string) {
       .length,
     availableProducts: products.filter((product) => product.isAvailable).length,
     totalProducts: products.length,
+  };
+}
+
+export async function getDashboardSalesStats(
+  businessId: string,
+  timezone = "America/Montevideo",
+  range: DashboardSalesRange = "30d"
+): Promise<DashboardSalesStats> {
+  const orders = await getDashboardOrders(businessId);
+  const now = Date.now();
+  const rangeMs =
+    range === "7d"
+      ? 7 * 24 * 60 * 60 * 1000
+      : range === "30d"
+        ? 30 * 24 * 60 * 60 * 1000
+        : null;
+  const filteredOrders =
+    rangeMs === null
+      ? orders
+      : orders.filter(
+          (order) => now - new Date(order.placedAt).getTime() <= rangeMs
+        );
+
+  if (filteredOrders.length === 0) {
+    return {
+      rangeLabel:
+        range === "7d"
+          ? "Últimos 7 días"
+          : range === "30d"
+            ? "Últimos 30 días"
+            : "Histórico completo",
+      totalPaidOrders: 0,
+      grossRevenueAmount: 0,
+      averageTicketAmount: 0,
+      busiestHourLabel: null,
+      busiestWeekdayLabel: null,
+      topProducts: [],
+    };
+  }
+
+  const hourFormatter = new Intl.DateTimeFormat("es-UY", {
+    hour: "2-digit",
+    hourCycle: "h23",
+    timeZone: timezone,
+  });
+  const weekdayFormatter = new Intl.DateTimeFormat("es-UY", {
+    weekday: "long",
+    timeZone: timezone,
+  });
+
+  const hourCounts = new Map<string, number>();
+  const weekdayCounts = new Map<string, number>();
+  const productStats = new Map<
+    string,
+    { name: string; quantity: number; revenueAmount: number }
+  >();
+
+  let grossRevenueAmount = 0;
+
+  for (const order of filteredOrders) {
+    grossRevenueAmount += order.totalAmount;
+
+    const placedAt = new Date(order.placedAt);
+    const hourKey = hourFormatter.format(placedAt);
+    const weekdayKey = weekdayFormatter.format(placedAt);
+
+    hourCounts.set(hourKey, (hourCounts.get(hourKey) ?? 0) + 1);
+    weekdayCounts.set(weekdayKey, (weekdayCounts.get(weekdayKey) ?? 0) + 1);
+
+    for (const item of order.items) {
+      const existing = productStats.get(item.productName) ?? {
+        name: item.productName,
+        quantity: 0,
+        revenueAmount: 0,
+      };
+
+      existing.quantity += item.quantity;
+      existing.revenueAmount += item.lineTotalAmount;
+      productStats.set(item.productName, existing);
+    }
+  }
+
+  const busiestHourEntry = [...hourCounts.entries()].sort(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
+  )[0];
+  const busiestWeekdayEntry = [...weekdayCounts.entries()].sort(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es")
+  )[0];
+
+  return {
+    rangeLabel:
+      range === "7d"
+        ? "Últimos 7 días"
+        : range === "30d"
+          ? "Últimos 30 días"
+          : "Histórico completo",
+    totalPaidOrders: filteredOrders.length,
+    grossRevenueAmount,
+    averageTicketAmount: Math.round(grossRevenueAmount / filteredOrders.length),
+    busiestHourLabel: busiestHourEntry ? `${busiestHourEntry[0]}:00` : null,
+    busiestWeekdayLabel: busiestWeekdayEntry
+      ? busiestWeekdayEntry[0].charAt(0).toUpperCase() + busiestWeekdayEntry[0].slice(1)
+      : null,
+    topProducts: [...productStats.values()]
+      .sort((a, b) => b.quantity - a.quantity || b.revenueAmount - a.revenueAmount)
+      .slice(0, 5),
   };
 }
 

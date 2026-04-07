@@ -69,7 +69,7 @@ export function CheckoutForm({
             productId: item.productId,
             quantity: item.quantity,
             selectedOptionItemIds: item.selectedOptions.map((option) => option.itemId),
-            itemNotes: item.customerNote,
+            itemNotes: item.customerNote ?? "",
           })),
         }),
       });

@@ -100,7 +100,10 @@ export async function POST(request: Request) {
       requestId,
       error:
         error instanceof ZodError
-          ? error.flatten()
+          ? {
+              issues: error.issues,
+              flattened: error.flatten(),
+            }
           : error instanceof Error
             ? { message: error.message, stack: error.stack }
             : error,

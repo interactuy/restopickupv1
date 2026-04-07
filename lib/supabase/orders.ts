@@ -17,7 +17,13 @@ const checkoutSchema = z.object({
         productId: z.string().uuid(),
         quantity: z.number().int().positive(),
         selectedOptionItemIds: z.array(z.string().uuid()).default([]),
-        itemNotes: z.string().trim().max(200).optional().or(z.literal("")),
+        itemNotes: z
+          .string()
+          .trim()
+          .max(200)
+          .optional()
+          .nullable()
+          .or(z.literal("")),
       })
     )
     .min(1, "El carrito esta vacio."),
