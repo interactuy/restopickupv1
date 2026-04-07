@@ -1,41 +1,17 @@
 import Link from "next/link";
 
+import { formatPrice } from "@/lib/public-catalog";
 import {
   getDashboardOverview,
-  type DashboardSalesRange,
   getDashboardSalesStats,
   requireCompletedDashboardContext,
 } from "@/lib/dashboard/server";
-import { formatPrice } from "@/lib/public-catalog";
 
-type DashboardHomePageProps = {
-  searchParams: Promise<{
-    range?: string;
-  }>;
-};
-
-const salesRangeOptions: Array<{ value: DashboardSalesRange; label: string }> = [
-  { value: "7d", label: "7 días" },
-  { value: "30d", label: "30 días" },
-  { value: "all", label: "Histórico" },
-];
-
-function getSalesRange(range?: string): DashboardSalesRange {
-  if (range === "7d" || range === "all") {
-    return range;
-  }
-
-  return "30d";
-}
-
-export default async function DashboardHomePage({
-  searchParams,
-}: DashboardHomePageProps) {
+export default async function DashboardHomePage() {
   const context = await requireCompletedDashboardContext();
-  const range = getSalesRange((await searchParams).range);
   const [overview, salesStats] = await Promise.all([
     getDashboardOverview(context.business.id),
-    getDashboardSalesStats(context.business.id, context.business.timezone, range),
+    getDashboardSalesStats(context.business.id, context.business.timezone, "30d"),
   ]);
 
   return (
@@ -80,124 +56,67 @@ export default async function DashboardHomePage({
         ))}
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-        <article className="rounded-[1.75rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)]">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-                Estadísticas
-              </p>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-                Rendimiento del local
-              </h2>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {salesRangeOptions.map((option) => {
-                const isActive = range === option.value;
-                return (
-                  <Link
-                    key={option.value}
-                    href={`/dashboard?range=${option.value}`}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      isActive
-                        ? "bg-[var(--color-accent)] text-white"
-                        : "border border-[var(--color-border)] bg-white text-[var(--color-foreground)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-                    }`}
-                  >
-                    {option.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-          <p className="mt-4 text-sm leading-7 text-[var(--color-muted)]">
-            {salesStats.rangeLabel} · {salesStats.totalPaidOrders} pedido
-            {salesStats.totalPaidOrders === 1 ? "" : "s"} cobrados
-          </p>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {[
-              {
-                label: "Ventas cobradas",
-                value: formatPrice(
-                  salesStats.grossRevenueAmount,
-                  context.business.currencyCode
-                ),
-              },
-              {
-                label: "Ticket promedio",
-                value: formatPrice(
-                  salesStats.averageTicketAmount,
-                  context.business.currencyCode
-                ),
-              },
-              {
-                label: "Hora con más ventas",
-                value: salesStats.busiestHourLabel ?? "Sin datos",
-              },
-              {
-                label: "Día más fuerte",
-                value: salesStats.busiestWeekdayLabel ?? "Sin datos",
-              },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
-              >
-                <p className="text-sm text-[var(--color-muted)]">{item.label}</p>
-                <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-                  {item.value}
-                </p>
-              </div>
-            ))}
-          </div>
-          <p className="mt-5 text-sm leading-7 text-[var(--color-muted)]">
-            Métricas armadas sobre pedidos pagados para que el panel refleje actividad
-            real del negocio.
-          </p>
-        </article>
-
-        <article className="rounded-[1.75rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-            Top productos
-          </p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-            Lo que más se vende
-          </h2>
-
-          {salesStats.topProducts.length === 0 ? (
-            <p className="mt-5 text-sm leading-7 text-[var(--color-muted)]">
-              Cuando entren pedidos pagados vas a ver acá cuáles empujan más la venta.
+      <section className="rounded-[1.75rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)]">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
+              Estadísticas
             </p>
-          ) : (
-            <div className="mt-6 space-y-3">
-              {salesStats.topProducts.map((product, index) => (
-                <div
-                  key={`${product.name}-${index}`}
-                  className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--color-foreground)]">
-                      {product.name}
-                    </p>
-                    <p className="mt-1 text-sm text-[var(--color-muted)]">
-                      {product.quantity} unidades vendidas
-                    </p>
-                  </div>
-                  <p className="text-sm font-semibold text-[var(--color-foreground)]">
-                    {formatPrice(product.revenueAmount, context.business.currencyCode)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+              Pantallazo rápido
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
+              Resumen de los últimos 30 días. Desde la sección completa vas a poder
+              profundizar por rango, horarios, días y top productos.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/estadisticas"
+            className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+          >
+            Ver estadísticas
+          </Link>
+        </div>
 
-          <p className="mt-5 text-sm leading-7 text-[var(--color-muted)]">
-            Útil para decidir qué destacar en la portada o qué conviene mantener siempre disponible.
-          </p>
-        </article>
+        <div className="mt-6 grid gap-4 md:grid-cols-4">
+          {[
+            {
+              label: "Ventas cobradas",
+              value: formatPrice(
+                salesStats.grossRevenueAmount,
+                context.business.currencyCode
+              ),
+            },
+            {
+              label: "Ticket promedio",
+              value: formatPrice(
+                salesStats.averageTicketAmount,
+                context.business.currencyCode
+              ),
+            },
+            {
+              label: "Hora pico",
+              value: salesStats.busiestHourLabel ?? "Sin datos",
+            },
+            {
+              label: "Mejor día",
+              value: salesStats.busiestWeekdayLabel ?? "Sin datos",
+            },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+            >
+              <p className="text-sm text-[var(--color-muted)]">{item.label}</p>
+              <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+                {item.value}
+              </p>
+            </div>
+          ))}
+        </div>
       </section>
 
-      <section className="grid gap-5 md:grid-cols-3">
+      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {[
           {
             href: "/dashboard/pedidos",
@@ -208,6 +127,11 @@ export default async function DashboardHomePage({
             href: "/dashboard/productos",
             title: "Revisar catálogo",
             description: "Activar o desactivar productos en segundos.",
+          },
+          {
+            href: "/dashboard/estadisticas",
+            title: "Analizar ventas",
+            description: "Ver horas pico, ticket promedio y productos más vendidos.",
           },
           {
             href: "/dashboard/configuracion",

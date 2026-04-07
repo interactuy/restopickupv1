@@ -129,6 +129,14 @@ export type DashboardSalesStats = {
   averageTicketAmount: number;
   busiestHourLabel: string | null;
   busiestWeekdayLabel: string | null;
+  hourlySales: {
+    label: string;
+    count: number;
+  }[];
+  weekdaySales: {
+    label: string;
+    count: number;
+  }[];
   topProducts: {
     name: string;
     quantity: number;
@@ -561,6 +569,8 @@ export async function getDashboardSalesStats(
       averageTicketAmount: 0,
       busiestHourLabel: null,
       busiestWeekdayLabel: null,
+      hourlySales: [],
+      weekdaySales: [],
       topProducts: [],
     };
   }
@@ -628,6 +638,18 @@ export async function getDashboardSalesStats(
     busiestWeekdayLabel: busiestWeekdayEntry
       ? busiestWeekdayEntry[0].charAt(0).toUpperCase() + busiestWeekdayEntry[0].slice(1)
       : null,
+    hourlySales: [...hourCounts.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([label, count]) => ({
+        label: `${label}:00`,
+        count,
+      })),
+    weekdaySales: [...weekdayCounts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es"))
+      .map(([label, count]) => ({
+        label: label.charAt(0).toUpperCase() + label.slice(1),
+        count,
+      })),
     topProducts: [...productStats.values()]
       .sort((a, b) => b.quantity - a.quantity || b.revenueAmount - a.revenueAmount)
       .slice(0, 5),
