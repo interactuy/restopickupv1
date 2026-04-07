@@ -40,6 +40,8 @@ type BusinessRow = {
   pickup_instructions: string | null;
   timezone: string;
   currency_code: string;
+  profile_image_url: string | null;
+  cover_image_url: string | null;
 };
 
 type ProductRow = {
@@ -166,6 +168,8 @@ function mapBusiness(row: BusinessRow): PublicBusiness {
     pickupInstructions: row.pickup_instructions,
     timezone: row.timezone,
     currencyCode: row.currency_code,
+    profileImageUrl: row.profile_image_url,
+    coverImageUrl: row.cover_image_url,
   };
 }
 
@@ -182,7 +186,7 @@ export async function createGuestOrder(
   const { data: business, error: businessError } = await supabase
     .from("businesses")
     .select(
-      "id, name, slug, contact_phone, pickup_address, pickup_instructions, timezone, currency_code"
+      "id, name, slug, contact_phone, pickup_address, pickup_instructions, timezone, currency_code, profile_image_url, cover_image_url"
     )
     .eq("slug", input.businessSlug)
     .eq("is_active", true)
@@ -401,7 +405,7 @@ export async function getOrderConfirmation(
   const { data: business, error: businessError } = await supabase
     .from("businesses")
     .select(
-      "id, name, slug, contact_phone, pickup_address, pickup_instructions, timezone, currency_code"
+      "id, name, slug, contact_phone, pickup_address, pickup_instructions, timezone, currency_code, profile_image_url, cover_image_url"
     )
     .eq("slug", businessSlug)
     .eq("is_active", true)

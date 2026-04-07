@@ -51,12 +51,30 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
       <section className="relative overflow-hidden border-b border-[var(--color-border)]">
-        <div className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,_rgba(198,122,48,0.18),_transparent_60%)]" />
+        {business.coverImageUrl ? (
+          <>
+            <div className="absolute inset-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={business.coverImageUrl}
+                alt={`Portada de ${business.name}`}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(26,18,12,0.36)_0%,rgba(26,18,12,0.64)_100%)]" />
+          </>
+        ) : (
+          <div className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,_rgba(198,122,48,0.18),_transparent_60%)]" />
+        )}
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-14 md:px-10 lg:px-12">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <Link
               href="/"
-              className="text-sm font-medium text-[var(--color-muted)] transition hover:text-[var(--color-foreground)]"
+              className={`text-sm font-medium transition ${
+                business.coverImageUrl
+                  ? "text-white/80 hover:text-white"
+                  : "text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+              }`}
             >
               Restopickup
             </Link>
@@ -84,13 +102,43 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
 
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.8fr)] lg:items-end">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-                Local abierto para retirar
-              </p>
-              <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-tight text-[var(--color-foreground)] sm:text-5xl">
+              <div className="flex items-center gap-4">
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-[1.5rem] border border-white/20 bg-white/85 shadow-[0_20px_60px_rgba(39,24,13,0.18)]">
+                  {business.profileImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={business.profileImageUrl}
+                      alt={business.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-lg font-semibold text-[var(--color-foreground)]">
+                      {business.name.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <p
+                  className={`text-sm font-semibold uppercase tracking-[0.28em] ${
+                    business.coverImageUrl
+                      ? "text-white/85"
+                      : "text-[var(--color-accent)]"
+                  }`}
+                >
+                  Local abierto para retirar
+                </p>
+              </div>
+              <h1
+                className={`mt-4 max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl ${
+                  business.coverImageUrl ? "text-white" : "text-[var(--color-foreground)]"
+                }`}
+              >
                 {business.name}
               </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--color-muted)]">
+              <p
+                className={`mt-5 max-w-2xl text-base leading-8 ${
+                  business.coverImageUrl ? "text-white/80" : "text-[var(--color-muted)]"
+                }`}
+              >
                 Pedí online y pasá a buscar tu pedido por mostrador. El catálogo
                 se carga en tiempo real desde Supabase y refleja los productos
                 activos del local.

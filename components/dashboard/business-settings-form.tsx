@@ -90,6 +90,66 @@ export function BusinessSettingsForm({ business }: BusinessSettingsFormProps) {
         />
       </div>
 
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <label
+            htmlFor="profileImage"
+            className="mb-2 block text-sm font-medium text-[var(--color-foreground)]"
+          >
+            Foto de perfil
+          </label>
+          <input
+            id="profileImage"
+            name="profileImage"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="block w-full rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm text-[var(--color-foreground)] outline-none file:mr-3 file:rounded-full file:border-0 file:bg-[var(--color-surface)] file:px-3 file:py-2 file:text-sm file:font-medium"
+          />
+          <p className="mt-2 text-xs text-[var(--color-muted)]">
+            Ideal para logo o avatar del local.
+          </p>
+          {business.profileImageUrl ? (
+            <div className="mt-4 overflow-hidden rounded-[1.25rem] border border-[var(--color-border)] bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={business.profileImageUrl}
+                alt={business.name}
+                className="h-32 w-full object-cover"
+              />
+            </div>
+          ) : null}
+        </div>
+
+        <div className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <label
+            htmlFor="coverImage"
+            className="mb-2 block text-sm font-medium text-[var(--color-foreground)]"
+          >
+            Portada del menú
+          </label>
+          <input
+            id="coverImage"
+            name="coverImage"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="block w-full rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm text-[var(--color-foreground)] outline-none file:mr-3 file:rounded-full file:border-0 file:bg-[var(--color-surface)] file:px-3 file:py-2 file:text-sm file:font-medium"
+          />
+          <p className="mt-2 text-xs text-[var(--color-muted)]">
+            Se usa en el hero público del menú.
+          </p>
+          {business.coverImageUrl ? (
+            <div className="mt-4 overflow-hidden rounded-[1.25rem] border border-[var(--color-border)] bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={business.coverImageUrl}
+                alt={`Portada de ${business.name}`}
+                className="h-32 w-full object-cover"
+              />
+            </div>
+          ) : null}
+        </div>
+      </div>
+
       <SubmitButton label="Guardar cambios" pendingLabel="Guardando..." />
     </form>
   );

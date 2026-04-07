@@ -28,6 +28,16 @@ const statusLabels: Record<string, string> = {
   canceled: "Cancelado",
 };
 
+function buildGoogleMapsUrl(address: string) {
+  const encodedAddress = encodeURIComponent(address);
+  return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+}
+
+function buildAppleMapsUrl(address: string) {
+  const encodedAddress = encodeURIComponent(address);
+  return `https://maps.apple.com/?q=${encodedAddress}`;
+}
+
 export default async function ConfirmationPage({
   params,
   searchParams,
@@ -80,6 +90,8 @@ export default async function ConfirmationPage({
   const shouldAutoRefresh =
     !["completed", "canceled"].includes(confirmation.order.statusCode) ||
     !["paid", "authorized"].includes(confirmation.order.paymentStatus);
+  const googleMapsUrl = buildGoogleMapsUrl(confirmation.order.pickupAddress);
+  const appleMapsUrl = buildAppleMapsUrl(confirmation.order.pickupAddress);
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] px-6 py-10 md:px-10 lg:px-12">
@@ -224,6 +236,37 @@ export default async function ConfirmationPage({
             <h2 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
               Pago y retiro
             </h2>
+            <div className="mt-5 overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
+              <div className="bg-[radial-gradient(circle_at_top_left,_rgba(198,122,48,0.2),_transparent_55%),linear-gradient(135deg,#f5e7d4_0%,#efe4d3_50%,#e6d6be_100%)] p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                  Punto de retiro
+                </p>
+                <p className="mt-3 text-lg font-semibold text-[var(--color-foreground)]">
+                  {confirmation.order.businessName}
+                </p>
+                <p className="mt-2 text-sm leading-7 text-[var(--color-foreground)]">
+                  {confirmation.order.pickupAddress}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3 p-4">
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex flex-1 items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+                >
+                  Cómo llegar
+                </a>
+                <a
+                  href={appleMapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex flex-1 items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                >
+                  Abrir en mapas
+                </a>
+              </div>
+            </div>
             <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
               Retirás en{" "}
               <span className="text-[var(--color-accent)]">
@@ -257,13 +300,15 @@ export default async function ConfirmationPage({
                 </span>
               </p>
             ) : null}
-            <p className="mt-4 text-sm leading-7 text-[var(--color-muted)]">
-              {confirmation.order.pickupAddress}
-            </p>
             {confirmation.order.pickupInstructions ? (
-              <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
-                {confirmation.order.pickupInstructions}
-              </p>
+              <div className="mt-4 rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                  Instrucciones de retiro
+                </p>
+                <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+                  {confirmation.order.pickupInstructions}
+                </p>
+              </div>
             ) : null}
             {confirmation.order.contactPhone ? (
               <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">

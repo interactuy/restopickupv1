@@ -19,6 +19,8 @@ type BusinessRow = {
   pickup_instructions: string | null;
   timezone: string;
   currency_code: string;
+  profile_image_url: string | null;
+  cover_image_url: string | null;
 };
 
 type CategoryRow = {
@@ -80,6 +82,8 @@ function mapBusiness(row: BusinessRow): PublicBusiness {
     pickupInstructions: row.pickup_instructions,
     timezone: row.timezone,
     currencyCode: row.currency_code,
+    profileImageUrl: row.profile_image_url,
+    coverImageUrl: row.cover_image_url,
   };
 }
 
@@ -149,7 +153,7 @@ export async function getFeaturedBusiness() {
   const { data, error } = await supabase
     .from("businesses")
     .select(
-      "id, name, slug, contact_phone, pickup_address, pickup_instructions, timezone, currency_code"
+      "id, name, slug, contact_phone, pickup_address, pickup_instructions, timezone, currency_code, profile_image_url, cover_image_url"
     )
     .eq("is_active", true)
     .order("created_at", { ascending: true })
@@ -171,7 +175,7 @@ export async function getPublicBusinessCatalog(
   const { data: business, error: businessError } = await supabase
     .from("businesses")
     .select(
-      "id, name, slug, contact_phone, pickup_address, pickup_instructions, timezone, currency_code"
+      "id, name, slug, contact_phone, pickup_address, pickup_instructions, timezone, currency_code, profile_image_url, cover_image_url"
     )
     .eq("slug", slug)
     .eq("is_active", true)

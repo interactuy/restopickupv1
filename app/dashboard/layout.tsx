@@ -3,7 +3,10 @@ import Link from "next/link";
 import { DashboardLiveNotifier } from "@/components/dashboard/dashboard-live-notifier";
 import { SubmitButton } from "@/components/dashboard/submit-button";
 import { logoutAction } from "@/lib/dashboard/actions";
-import { requireDashboardContext } from "@/lib/dashboard/server";
+import {
+  getDashboardOverview,
+  requireDashboardContext,
+} from "@/lib/dashboard/server";
 
 type DashboardLayoutProps = {
   children: React.ReactNode;
@@ -13,10 +16,17 @@ export default async function DashboardLayout({
   children,
 }: DashboardLayoutProps) {
   const context = await requireDashboardContext();
+  const overview = context.business.onboardingCompletedAt
+    ? await getDashboardOverview(context.business.id)
+    : null;
   const links = context.business.onboardingCompletedAt
       ? [
         { href: "/dashboard", label: "Resumen" },
-        { href: "/dashboard/pedidos", label: "Pedidos" },
+        {
+          href: "/dashboard/pedidos",
+          label: "Pedidos",
+          badge: overview && overview.pendingOrders > 0 ? overview.pendingOrders : null,
+        },
         { href: "/dashboard/estadisticas", label: "Estadisticas" },
         { href: "/dashboard/categorias", label: "Categorias" },
         { href: "/dashboard/productos", label: "Productos" },
@@ -59,9 +69,14 @@ export default async function DashboardLayout({
               <Link
                 key={link.href}
                 href={link.href}
-                className="block rounded-full px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition hover:bg-[var(--color-surface)]"
+                className="flex items-center justify-between gap-3 rounded-full px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition hover:bg-[var(--color-surface)]"
               >
-                {link.label}
+                <span>{link.label}</span>
+                {"badge" in link && link.badge ? (
+                  <span className="inline-flex min-w-7 items-center justify-center rounded-full bg-[var(--color-accent)] px-2.5 py-1 text-xs font-semibold text-white">
+                    {link.badge}
+                  </span>
+                ) : null}
               </Link>
             ))}
           </nav>

@@ -20,6 +20,10 @@ type BusinessMembershipRow = {
     currency_code: string;
     is_active: boolean;
     onboarding_completed_at: string | null;
+    profile_image_path: string | null;
+    profile_image_url: string | null;
+    cover_image_path: string | null;
+    cover_image_url: string | null;
   } | null;
 };
 
@@ -35,6 +39,8 @@ export type DashboardContext = {
     contactEmail: string | null;
     isActive: boolean;
     onboardingCompletedAt: string | null;
+    profileImagePath: string | null;
+    coverImagePath: string | null;
   };
 };
 
@@ -131,6 +137,7 @@ export type DashboardSalesStats = {
   busiestWeekdayLabel: string | null;
   dayHourHeatmap: {
     dayLabel: string;
+    fullDayLabel: string;
     hours: {
       hourLabel: string;
       count: number;
@@ -166,8 +173,12 @@ function mapBusiness(
     pickupInstructions: row.pickup_instructions,
     timezone: row.timezone,
     currencyCode: row.currency_code,
+    profileImageUrl: row.profile_image_url,
+    coverImageUrl: row.cover_image_url,
     isActive: row.is_active,
     onboardingCompletedAt: row.onboarding_completed_at,
+    profileImagePath: row.profile_image_path,
+    coverImagePath: row.cover_image_path,
   };
 }
 
@@ -185,7 +196,7 @@ export async function getDashboardContext(): Promise<DashboardContext | null> {
   const { data: memberships, error } = await admin
     .from("business_users")
     .select(
-      "role, business:businesses(id, name, slug, contact_email, contact_phone, pickup_address, pickup_instructions, timezone, currency_code, is_active, onboarding_completed_at)"
+      "role, business:businesses(id, name, slug, contact_email, contact_phone, pickup_address, pickup_instructions, timezone, currency_code, is_active, onboarding_completed_at, profile_image_path, profile_image_url, cover_image_path, cover_image_url)"
     )
     .eq("user_id", user.id)
     .returns<BusinessMembershipRow[]>();
@@ -598,13 +609,22 @@ export async function getDashboardSalesStats(
   });
   const weekdayOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const weekdayLabelMap: Record<string, string> = {
-    Mon: "L",
-    Tue: "M",
-    Wed: "M",
-    Thu: "J",
-    Fri: "V",
-    Sat: "S",
-    Sun: "D",
+    Mon: "Lu",
+    Tue: "Ma",
+    Wed: "Mi",
+    Thu: "Ju",
+    Fri: "Vi",
+    Sat: "Sa",
+    Sun: "Do",
+  };
+  const weekdayFullLabelMap: Record<string, string> = {
+    Mon: "Lunes",
+    Tue: "Martes",
+    Wed: "Miércoles",
+    Thu: "Jueves",
+    Fri: "Viernes",
+    Sat: "Sábado",
+    Sun: "Domingo",
   };
 
   const hourCounts = new Map<string, number>();
@@ -668,6 +688,8 @@ export async function getDashboardSalesStats(
       : null,
     dayHourHeatmap: weekdayOrder.map((weekdayShortKey) => ({
       dayLabel: weekdayLabelMap[weekdayShortKey] ?? weekdayShortKey,
+      fullDayLabel:
+        weekdayFullLabelMap[weekdayShortKey] ?? weekdayShortKey,
       hours: Array.from({ length: 24 }, (_, hour) => {
         const hourKey = String(hour).padStart(2, "0");
         return {

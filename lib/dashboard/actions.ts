@@ -21,6 +21,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const PRODUCT_IMAGES_BUCKET = "product-images";
+const BUSINESS_BRANDING_BUCKET = "business-branding";
 
 function buildDashboardProductsRedirect(params: Record<string, string>) {
   const searchParams = new URLSearchParams(params);
@@ -156,6 +157,42 @@ async function uploadProductImage(
   }
 
   const { data } = admin.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(storagePath);
+
+  return {
+    storagePath,
+    publicUrl: data.publicUrl,
+  };
+}
+
+async function uploadBusinessBrandingImage(
+  businessId: string,
+  file: File,
+  variant: "profile" | "cover"
+) {
+  const extension = getImageExtension(file.type);
+
+  if (!extension) {
+    throw new Error("La imagen debe ser JPG, PNG o WEBP.");
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const storagePath = `${businessId}/${variant}/${Date.now()}.${extension}`;
+  const admin = createAdminClient();
+
+  const { error } = await admin.storage
+    .from(BUSINESS_BRANDING_BUCKET)
+    .upload(storagePath, bytes, {
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (error) {
+    throw new Error(`No se pudo subir la imagen: ${error.message}`);
+  }
+
+  const { data } = admin.storage
+    .from(BUSINESS_BRANDING_BUCKET)
+    .getPublicUrl(storagePath);
 
   return {
     storagePath,
@@ -556,12 +593,43 @@ export async function updateBusinessSettingsAction(formData: FormData) {
   const contactPhone = String(formData.get("contactPhone") ?? "").trim();
   const pickupAddress = String(formData.get("pickupAddress") ?? "").trim();
   const pickupInstructions = String(formData.get("pickupInstructions") ?? "").trim();
+  const profileImageFile = formData.get("profileImage");
+  const coverImageFile = formData.get("coverImage");
 
   if (!name || !pickupAddress) {
     throw new Error("Nombre y dirección de retiro son obligatorios.");
   }
 
   const admin = createAdminClient();
+  let profileImageUpdate:
+    | { profile_image_path: string; profile_image_url: string }
+    | undefined;
+  let coverImageUpdate:
+    | { cover_image_path: string; cover_image_url: string }
+    | undefined;
+
+  if (profileImageFile instanceof File && profileImageFile.size > 0) {
+    profileImageUpdate = await uploadBusinessBrandingImage(
+      context.business.id,
+      profileImageFile,
+      "profile"
+    ).then((image) => ({
+      profile_image_path: image.storagePath,
+      profile_image_url: image.publicUrl,
+    }));
+  }
+
+  if (coverImageFile instanceof File && coverImageFile.size > 0) {
+    coverImageUpdate = await uploadBusinessBrandingImage(
+      context.business.id,
+      coverImageFile,
+      "cover"
+    ).then((image) => ({
+      cover_image_path: image.storagePath,
+      cover_image_url: image.publicUrl,
+    }));
+  }
+
   const { error } = await admin
     .from("businesses")
     .update({
@@ -570,11 +638,33 @@ export async function updateBusinessSettingsAction(formData: FormData) {
       contact_phone: contactPhone || null,
       pickup_address: pickupAddress,
       pickup_instructions: pickupInstructions || null,
+      ...(profileImageUpdate ?? {}),
+      ...(coverImageUpdate ?? {}),
     })
     .eq("id", context.business.id);
 
   if (error) {
     throw new Error(`No se pudo actualizar el negocio: ${error.message}`);
+  }
+
+  if (
+    profileImageUpdate &&
+    context.business.profileImagePath &&
+    context.business.profileImagePath !== profileImageUpdate.profile_image_path
+  ) {
+    await admin.storage
+      .from(BUSINESS_BRANDING_BUCKET)
+      .remove([context.business.profileImagePath]);
+  }
+
+  if (
+    coverImageUpdate &&
+    context.business.coverImagePath &&
+    context.business.coverImagePath !== coverImageUpdate.cover_image_path
+  ) {
+    await admin.storage
+      .from(BUSINESS_BRANDING_BUCKET)
+      .remove([context.business.coverImagePath]);
   }
 
   revalidatePath("/dashboard");

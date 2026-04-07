@@ -5,6 +5,7 @@ type DayHourHeatmapProps = {
   rangeLabel: string;
   rows: {
     dayLabel: string;
+    fullDayLabel: string;
     hours: {
       hourLabel: string;
       count: number;
@@ -81,7 +82,7 @@ export function DayHourHeatmap({
                 {row.hours.map((hour) => (
                   <div
                     key={`${row.dayLabel}-${hour.hourLabel}`}
-                    title={`${row.dayLabel} ${hour.hourLabel} · ${hour.count} pedido${hour.count === 1 ? "" : "s"}`}
+                    title={`${row.fullDayLabel} · ${hour.hourLabel} · ${hour.count} pedido${hour.count === 1 ? "" : "s"}`}
                     className={`aspect-square rounded-[6px] border border-white/60 ${getHeatColor(
                       hour.count,
                       maxCount

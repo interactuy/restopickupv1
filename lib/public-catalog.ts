@@ -7,6 +7,8 @@ export type PublicBusiness = {
   pickupInstructions: string | null;
   timezone: string;
   currencyCode: string;
+  profileImageUrl: string | null;
+  coverImageUrl: string | null;
 };
 
 export type PublicCategory = {
