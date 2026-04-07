@@ -5,6 +5,7 @@ import { redirect, unstable_rethrow } from "next/navigation";
 
 import {
   getImageExtension,
+  parseProductOptionsInput,
   parseMoneyInput,
   parseOptionalMoneyInput,
   parsePositionInput,
@@ -179,6 +180,68 @@ async function replacePrimaryProductImage(params: {
 
   if (staleStoragePath && staleStoragePath !== uploadedImage.storagePath) {
     await admin.storage.from(PRODUCT_IMAGES_BUCKET).remove([staleStoragePath]);
+  }
+}
+
+async function syncProductOptionGroups(
+  productId: string,
+  optionGroupsRaw: string
+) {
+  const optionGroups = parseProductOptionsInput(optionGroupsRaw);
+  const admin = createAdminClient();
+
+  const { error: deleteError } = await admin
+    .from("product_option_groups")
+    .delete()
+    .eq("product_id", productId);
+
+  if (deleteError) {
+    throw new Error(
+      `No se pudieron limpiar las opciones actuales: ${deleteError.message}`
+    );
+  }
+
+  if (optionGroups.length === 0) {
+    return;
+  }
+
+  for (const group of optionGroups) {
+    const { data: insertedGroup, error: groupError } = await admin
+      .from("product_option_groups")
+      .insert({
+        product_id: productId,
+        name: group.name,
+        description: group.description || null,
+        selection_type: group.selectionType,
+        is_required: group.isRequired,
+        min_select: group.minSelect,
+        max_select: group.maxSelect,
+        position: group.position,
+      })
+      .select("id")
+      .single<{ id: string }>();
+
+    if (groupError || !insertedGroup) {
+      throw new Error(
+        `No se pudo guardar el grupo "${group.name}": ${groupError?.message ?? "sin respuesta"}`
+      );
+    }
+
+    const { error: itemsError } = await admin.from("product_option_items").insert(
+      group.items.map((item) => ({
+        group_id: insertedGroup.id,
+        name: item.name,
+        price_delta_amount: item.priceDeltaAmount,
+        is_active: item.isActive,
+        position: item.position,
+      }))
+    );
+
+    if (itemsError) {
+      throw new Error(
+        `No se pudieron guardar las opciones de "${group.name}": ${itemsError.message}`
+      );
+    }
   }
 }
 
@@ -506,6 +569,7 @@ export async function createProductAction(formData: FormData) {
     }
 
     const imageFile = formData.get("image");
+    const optionGroupsRaw = String(formData.get("optionGroups") ?? "[]");
 
     if (imageFile instanceof File && imageFile.size > 0) {
       await replacePrimaryProductImage({
@@ -515,6 +579,8 @@ export async function createProductAction(formData: FormData) {
         imageFile,
       });
     }
+
+    await syncProductOptionGroups(product.id, optionGroupsRaw);
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/productos");
@@ -591,6 +657,7 @@ export async function updateProductAction(formData: FormData) {
     }
 
     const imageFile = formData.get("image");
+    const optionGroupsRaw = String(formData.get("optionGroups") ?? "[]");
 
     if (imageFile instanceof File && imageFile.size > 0) {
       await replacePrimaryProductImage({
@@ -601,6 +668,8 @@ export async function updateProductAction(formData: FormData) {
         previousStoragePath: existingProduct.image?.storagePath ?? null,
       });
     }
+
+    await syncProductOptionGroups(existingProduct.id, optionGroupsRaw);
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/productos");

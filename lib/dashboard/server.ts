@@ -63,6 +63,13 @@ export type DashboardOrder = {
     productName: string;
     quantity: number;
     unitPriceAmount: number;
+    unitOptionsAmount: number;
+    notes: string | null;
+    selectedOptions: {
+      groupName: string;
+      itemName: string;
+      priceDeltaAmount: number;
+    }[];
     lineTotalAmount: number;
   }[];
 };
@@ -87,6 +94,23 @@ export type DashboardProduct = {
     publicUrl: string | null;
     altText: string | null;
   } | null;
+  optionGroups: {
+    id: string;
+    name: string;
+    description: string | null;
+    selectionType: "single" | "multiple";
+    isRequired: boolean;
+    minSelect: number;
+    maxSelect: number | null;
+    position: number;
+    items: {
+      id: string;
+      name: string;
+      priceDeltaAmount: number;
+      isActive: boolean;
+      position: number;
+    }[];
+  }[];
 };
 
 export type DashboardCategory = {
@@ -180,7 +204,7 @@ export async function getDashboardOrders(businessId: string) {
   const { data, error } = await admin
     .from("orders")
     .select(
-      "id, order_number, customer_name, customer_phone, customer_notes, status_code, total_amount, currency_code, payment_status, placed_at, estimated_ready_at, order_items(product_name, quantity, unit_price_amount, line_total_amount)"
+      "id, order_number, customer_name, customer_phone, customer_notes, status_code, total_amount, currency_code, payment_status, placed_at, estimated_ready_at, order_items(product_name, quantity, unit_price_amount, unit_options_amount, notes, selected_options, line_total_amount)"
     )
     .eq("business_id", businessId)
     .in("payment_status", ["paid", "authorized"])
@@ -202,6 +226,15 @@ export async function getDashboardOrders(businessId: string) {
           product_name: string;
           quantity: number;
           unit_price_amount: number;
+          unit_options_amount: number;
+          notes: string | null;
+          selected_options:
+            | {
+                groupName: string;
+                itemName: string;
+                priceDeltaAmount: number;
+              }[]
+            | null;
           line_total_amount: number;
         }[];
       }[]
@@ -235,6 +268,9 @@ export async function getDashboardOrders(businessId: string) {
       productName: item.product_name,
       quantity: item.quantity,
       unitPriceAmount: item.unit_price_amount,
+      unitOptionsAmount: item.unit_options_amount,
+      notes: item.notes,
+      selectedOptions: item.selected_options ?? [],
       lineTotalAmount: item.line_total_amount,
     })),
   }));
@@ -279,7 +315,7 @@ export async function getDashboardProducts(businessId: string) {
   const { data, error } = await admin
     .from("products")
     .select(
-      "id, name, slug, description, price_amount, compare_at_amount, currency_code, is_available, position, category_id, category:product_categories(name), product_images(id, storage_path, public_url, alt_text, is_primary, position)"
+      "id, name, slug, description, price_amount, compare_at_amount, currency_code, is_available, position, category_id, category:product_categories(name), product_option_groups(id, name, description, selection_type, is_required, min_select, max_select, position, product_option_items(id, name, price_delta_amount, is_active, position)), product_images(id, storage_path, public_url, alt_text, is_primary, position)"
     )
     .eq("business_id", businessId)
     .order("position", { ascending: true })
@@ -297,6 +333,27 @@ export async function getDashboardProducts(businessId: string) {
         position: number;
         category_id: string | null;
         category: { name: string } | { name: string }[] | null;
+        product_option_groups:
+          | {
+              id: string;
+              name: string;
+              description: string | null;
+              selection_type: "single" | "multiple";
+              is_required: boolean;
+              min_select: number;
+              max_select: number | null;
+              position: number;
+              product_option_items:
+                | {
+                    id: string;
+                    name: string;
+                    price_delta_amount: number;
+                    is_active: boolean;
+                    position: number;
+                  }[]
+                | null;
+            }[]
+          | null;
         product_images:
           | {
               id: string;
@@ -353,6 +410,29 @@ export async function getDashboardProducts(businessId: string) {
               null,
           }
         : null,
+    optionGroups:
+      product.product_option_groups
+        ?.sort((a, b) => a.position - b.position)
+        .map((group) => ({
+          id: group.id,
+          name: group.name,
+          description: group.description,
+          selectionType: group.selection_type,
+          isRequired: group.is_required,
+          minSelect: group.min_select,
+          maxSelect: group.max_select,
+          position: group.position,
+          items:
+            group.product_option_items
+              ?.sort((a, b) => a.position - b.position)
+              .map((item) => ({
+                id: item.id,
+                name: item.name,
+                priceDeltaAmount: item.price_delta_amount,
+                isActive: item.is_active,
+                position: item.position,
+              })) ?? [],
+        })) ?? [],
   }));
 }
 

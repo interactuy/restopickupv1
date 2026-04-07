@@ -20,7 +20,7 @@ type MercadoPagoOrderItem = {
   productName: string;
   productDescription: string | null;
   quantity: number;
-  unitPriceAmount: number;
+  finalUnitPriceAmount: number;
   lineTotalAmount: number;
 };
 
@@ -214,7 +214,7 @@ export async function createMercadoPagoPreference({
         description: item.productDescription ?? undefined,
         quantity: item.quantity,
         currency_id: business.currencyCode,
-        unit_price: item.unitPriceAmount,
+        unit_price: item.finalUnitPriceAmount,
       })),
       metadata: {
         order_id: order.id,

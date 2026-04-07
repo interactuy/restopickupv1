@@ -173,6 +173,23 @@ export default async function ConfirmationPage({
                     <p className="mt-1 text-sm text-[var(--color-muted)]">
                       {item.quantity} x {item.formattedUnitPrice}
                     </p>
+                    {item.selectedOptions.length > 0 ? (
+                      <div className="mt-2 space-y-1">
+                        {item.selectedOptions.map((option) => (
+                          <p
+                            key={`${item.id}-${option.groupName}-${option.itemName}`}
+                            className="text-xs text-[var(--color-muted)]"
+                          >
+                            {option.groupName}: {option.itemName}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+                    {item.notes ? (
+                      <p className="mt-2 text-xs text-[var(--color-muted)]">
+                        Nota: {item.notes}
+                      </p>
+                    ) : null}
                   </div>
                   <p className="text-sm font-semibold text-[var(--color-foreground)]">
                     {item.formattedLineTotal}

@@ -16,6 +16,8 @@ const checkoutSchema = z.object({
       z.object({
         productId: z.string().uuid(),
         quantity: z.number().int().positive(),
+        selectedOptionItemIds: z.array(z.string().uuid()).default([]),
+        itemNotes: z.string().trim().max(200).optional().or(z.literal("")),
       })
     )
     .min(1, "El carrito esta vacio."),
@@ -40,6 +42,24 @@ type ProductRow = {
   description: string | null;
   price_amount: number;
   currency_code: string;
+  product_option_groups:
+    | {
+        id: string;
+        name: string;
+        selection_type: "single" | "multiple";
+        is_required: boolean;
+        min_select: number;
+        max_select: number | null;
+        product_option_items:
+          | {
+              id: string;
+              name: string;
+              price_delta_amount: number;
+              is_active: boolean;
+            }[]
+          | null;
+      }[]
+    | null;
 };
 
 type OrderInsertRow = {
@@ -81,6 +101,13 @@ export type OrderConfirmation = {
       productName: string;
       quantity: number;
       unitPriceAmount: number;
+      unitOptionsAmount: number;
+      notes: string | null;
+      selectedOptions: {
+        groupName: string;
+        itemName: string;
+        priceDeltaAmount: number;
+      }[];
       lineTotalAmount: number;
       formattedUnitPrice: string;
       formattedLineTotal: string;
@@ -111,6 +138,14 @@ export type CreatedGuestOrder = {
     productDescription: string | null;
     quantity: number;
     unitPriceAmount: number;
+    unitOptionsAmount: number;
+    finalUnitPriceAmount: number;
+    notes: string | null;
+    selectedOptions: {
+      groupName: string;
+      itemName: string;
+      priceDeltaAmount: number;
+    }[];
     lineTotalAmount: number;
   }[];
 };
@@ -156,13 +191,27 @@ export async function createGuestOrder(
   }
 
   const normalizedItems = Object.values(
-    input.items.reduce<Record<string, { productId: string; quantity: number }>>(
+    input.items.reduce<
+      Record<
+        string,
+        {
+          productId: string;
+          quantity: number;
+          selectedOptionItemIds: string[];
+          itemNotes: string | null;
+        }
+      >
+    >(
       (accumulator, item) => {
-        const existing = accumulator[item.productId];
+        const normalizedNotes = item.itemNotes?.trim() || null;
+        const key = `${item.productId}:${[...item.selectedOptionItemIds].sort().join(",")}:${normalizedNotes ?? ""}`;
+        const existing = accumulator[key];
 
-        accumulator[item.productId] = {
+        accumulator[key] = {
           productId: item.productId,
           quantity: (existing?.quantity ?? 0) + item.quantity,
+          selectedOptionItemIds: [...item.selectedOptionItemIds].sort(),
+          itemNotes: normalizedNotes,
         };
 
         return accumulator;
@@ -175,7 +224,9 @@ export async function createGuestOrder(
 
   const { data: products, error: productsError } = await supabase
     .from("products")
-    .select("id, name, description, price_amount, currency_code")
+    .select(
+      "id, name, description, price_amount, currency_code, product_option_groups(id, name, selection_type, is_required, min_select, max_select, product_option_items(id, name, price_delta_amount, is_active))"
+    )
     .eq("business_id", business.id)
     .eq("is_available", true)
     .in("id", productIds)
@@ -200,13 +251,69 @@ export async function createGuestOrder(
       throw new Error("Hay productos invalidos en el carrito.");
     }
 
+    const selectedOptionItems = new Map<
+      string,
+      { groupName: string; itemName: string; priceDeltaAmount: number }
+    >();
+
+    for (const group of product.product_option_groups ?? []) {
+      const groupItems = group.product_option_items ?? [];
+      const chosenItems = groupItems.filter((groupItem) =>
+        item.selectedOptionItemIds.includes(groupItem.id)
+      );
+
+      if (group.is_required && chosenItems.length < Math.max(1, group.min_select)) {
+        throw new Error(`Falta elegir una opción obligatoria para ${product.name}.`);
+      }
+
+      if (group.max_select !== null && chosenItems.length > group.max_select) {
+        throw new Error(`Hay demasiadas opciones elegidas para ${product.name}.`);
+      }
+
+      for (const chosenItem of chosenItems) {
+        if (!chosenItem.is_active) {
+          throw new Error(`Una opción elegida para ${product.name} ya no está disponible.`);
+        }
+
+        selectedOptionItems.set(chosenItem.id, {
+          groupName: group.name,
+          itemName: chosenItem.name,
+          priceDeltaAmount: chosenItem.price_delta_amount,
+        });
+      }
+    }
+
+    if (selectedOptionItems.size !== item.selectedOptionItemIds.length) {
+      throw new Error(`Hay opciones inválidas en ${product.name}.`);
+    }
+
+    const selectedOptions = item.selectedOptionItemIds.map((optionId) => {
+      const selectedOption = selectedOptionItems.get(optionId);
+
+      if (!selectedOption) {
+        throw new Error(`Hay opciones inválidas en ${product.name}.`);
+      }
+
+      return selectedOption;
+    });
+
+    const unitOptionsAmount = selectedOptions.reduce(
+      (total, selectedOption) => total + selectedOption.priceDeltaAmount,
+      0
+    );
+    const finalUnitPriceAmount = product.price_amount + unitOptionsAmount;
+
     return {
       productId: product.id,
       productName: product.name,
       productDescription: product.description,
       quantity: item.quantity,
       unitPriceAmount: product.price_amount,
-      lineTotalAmount: product.price_amount * item.quantity,
+      unitOptionsAmount,
+      finalUnitPriceAmount,
+      notes: item.itemNotes,
+      selectedOptions,
+      lineTotalAmount: finalUnitPriceAmount * item.quantity,
     };
   });
 
@@ -248,7 +355,9 @@ export async function createGuestOrder(
       product_description: item.productDescription,
       quantity: item.quantity,
       unit_price_amount: item.unitPriceAmount,
-      notes: null,
+      unit_options_amount: item.unitOptionsAmount,
+      selected_options: item.selectedOptions,
+      notes: item.notes,
     }))
   );
 
@@ -305,7 +414,7 @@ export async function getOrderConfirmation(
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .select(
-      "id, order_number, status_code, customer_name, customer_phone, customer_notes, total_amount, currency_code, placed_at, payment_status, payment_provider, payment_reference, estimated_ready_at, order_items(id, product_name, quantity, unit_price_amount, line_total_amount)"
+      "id, order_number, status_code, customer_name, customer_phone, customer_notes, total_amount, currency_code, placed_at, payment_status, payment_provider, payment_reference, estimated_ready_at, order_items(id, product_name, quantity, unit_price_amount, unit_options_amount, notes, selected_options, line_total_amount)"
     )
     .eq("business_id", business.id)
     .eq("order_number", orderNumber)
@@ -328,6 +437,15 @@ export async function getOrderConfirmation(
         product_name: string;
         quantity: number;
         unit_price_amount: number;
+        unit_options_amount: number;
+        notes: string | null;
+        selected_options:
+          | {
+              groupName: string;
+              itemName: string;
+              priceDeltaAmount: number;
+            }[]
+          | null;
         line_total_amount: number;
       }[];
     }>();
@@ -365,8 +483,14 @@ export async function getOrderConfirmation(
         productName: item.product_name,
         quantity: item.quantity,
         unitPriceAmount: item.unit_price_amount,
+        unitOptionsAmount: item.unit_options_amount,
+        notes: item.notes,
+        selectedOptions: item.selected_options ?? [],
         lineTotalAmount: item.line_total_amount,
-        formattedUnitPrice: formatPrice(item.unit_price_amount, order.currency_code),
+        formattedUnitPrice: formatPrice(
+          item.unit_price_amount + item.unit_options_amount,
+          order.currency_code
+        ),
         formattedLineTotal: formatPrice(item.line_total_amount, order.currency_code),
       })),
       formattedTotal: formatPrice(order.total_amount, order.currency_code),

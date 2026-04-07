@@ -32,7 +32,8 @@ export function CheckoutForm({
   const cart = getCart(business.id);
   const subtotal =
     cart?.items.reduce(
-      (total, item) => total + item.priceAmount * item.quantity,
+      (total, item) =>
+        total + (item.priceAmount + item.unitOptionsAmount) * item.quantity,
       0
     ) ?? 0;
 
@@ -67,6 +68,8 @@ export function CheckoutForm({
           items: cart.items.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
+            selectedOptionItemIds: item.selectedOptions.map((option) => option.itemId),
+            itemNotes: item.customerNote,
           })),
         }),
       });
@@ -214,7 +217,7 @@ export function CheckoutForm({
             <div className="mt-6 space-y-4">
               {cart.items.map((item) => (
                 <div
-                  key={item.productId}
+                  key={item.lineId}
                   className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] pb-4"
                 >
                   <div>
@@ -223,11 +226,34 @@ export function CheckoutForm({
                     </p>
                     <p className="mt-1 text-sm text-[var(--color-muted)]">
                       {item.quantity} x{" "}
-                      {formatPrice(item.priceAmount, item.currencyCode)}
+                      {formatPrice(
+                        item.priceAmount + item.unitOptionsAmount,
+                        item.currencyCode
+                      )}
                     </p>
+                    {item.selectedOptions.length > 0 ? (
+                      <div className="mt-2 space-y-1">
+                        {item.selectedOptions.map((option) => (
+                          <p
+                            key={`${item.lineId}-${option.itemId}`}
+                            className="text-xs text-[var(--color-muted)]"
+                          >
+                            {option.groupName}: {option.itemName}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+                    {item.customerNote ? (
+                      <p className="mt-2 text-xs text-[var(--color-muted)]">
+                        Nota: {item.customerNote}
+                      </p>
+                    ) : null}
                   </div>
                   <p className="text-sm font-semibold text-[var(--color-foreground)]">
-                    {formatPrice(item.priceAmount * item.quantity, item.currencyCode)}
+                    {formatPrice(
+                      (item.priceAmount + item.unitOptionsAmount) * item.quantity,
+                      item.currencyCode
+                    )}
                   </p>
                 </div>
               ))}

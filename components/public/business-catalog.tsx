@@ -171,7 +171,13 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onAddToCart={(item) =>
+                    onAddToCart={(
+                      item,
+                      lineId,
+                      selectedOptions,
+                      unitOptionsAmount,
+                      customerNote
+                    ) =>
                       addItem(
                         {
                           businessId: business.id,
@@ -179,7 +185,11 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
                           businessName: business.name,
                           currencyCode: business.currencyCode,
                         },
-                        item
+                        item,
+                        lineId,
+                        selectedOptions,
+                        unitOptionsAmount,
+                        customerNote
                       )
                     }
                   />
@@ -203,7 +213,13 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onAddToCart={(item) =>
+                    onAddToCart={(
+                      item,
+                      lineId,
+                      selectedOptions,
+                      unitOptionsAmount,
+                      customerNote
+                    ) =>
                       addItem(
                         {
                           businessId: business.id,
@@ -211,7 +227,11 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
                           businessName: business.name,
                           currencyCode: business.currencyCode,
                         },
-                        item
+                        item,
+                        lineId,
+                        selectedOptions,
+                        unitOptionsAmount,
+                        customerNote
                       )
                     }
                   />

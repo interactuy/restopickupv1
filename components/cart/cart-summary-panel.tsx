@@ -50,7 +50,7 @@ export function CartSummaryPanel({
           <div className="mt-6 space-y-4">
             {cart.items.map((item) => (
               <div
-                key={item.productId}
+                key={item.lineId}
                 className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
               >
                 <div className="flex items-start justify-between gap-4">
@@ -59,12 +59,38 @@ export function CartSummaryPanel({
                       {item.name}
                     </h3>
                     <p className="mt-1 text-sm text-[var(--color-muted)]">
-                      {formatPrice(item.priceAmount, item.currencyCode)}
+                      {formatPrice(
+                        item.priceAmount + item.unitOptionsAmount,
+                        item.currencyCode
+                      )}
                     </p>
+                    {item.selectedOptions.length > 0 ? (
+                      <div className="mt-2 space-y-1">
+                        {item.selectedOptions.map((option) => (
+                          <p
+                            key={`${item.lineId}-${option.itemId}`}
+                            className="text-xs text-[var(--color-muted)]"
+                          >
+                            {option.groupName}: {option.itemName}
+                            {option.priceDeltaAmount > 0
+                              ? ` (+ ${formatPrice(
+                                  option.priceDeltaAmount,
+                                  item.currencyCode
+                                )})`
+                              : ""}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+                    {item.customerNote ? (
+                      <p className="mt-2 text-xs text-[var(--color-muted)]">
+                        Nota: {item.customerNote}
+                      </p>
+                    ) : null}
                   </div>
                   <button
                     type="button"
-                    onClick={() => removeItem(businessId, item.productId)}
+                    onClick={() => removeItem(businessId, item.lineId)}
                     className="text-sm font-medium text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
                   >
                     Quitar
@@ -76,7 +102,7 @@ export function CartSummaryPanel({
                     <button
                       type="button"
                       onClick={() =>
-                        updateQuantity(businessId, item.productId, item.quantity - 1)
+                        updateQuantity(businessId, item.lineId, item.quantity - 1)
                       }
                       className="px-3 py-2 text-sm font-semibold text-[var(--color-foreground)]"
                     >
@@ -88,7 +114,7 @@ export function CartSummaryPanel({
                     <button
                       type="button"
                       onClick={() =>
-                        updateQuantity(businessId, item.productId, item.quantity + 1)
+                        updateQuantity(businessId, item.lineId, item.quantity + 1)
                       }
                       className="px-3 py-2 text-sm font-semibold text-[var(--color-foreground)]"
                     >
@@ -97,7 +123,10 @@ export function CartSummaryPanel({
                   </div>
 
                   <p className="text-sm font-semibold text-[var(--color-foreground)]">
-                    {formatPrice(item.priceAmount * item.quantity, item.currencyCode)}
+                    {formatPrice(
+                      (item.priceAmount + item.unitOptionsAmount) * item.quantity,
+                      item.currencyCode
+                    )}
                   </p>
                 </div>
               </div>
@@ -110,8 +139,7 @@ export function CartSummaryPanel({
               <span>{formatPrice(subtotal, currencyCode)}</span>
             </div>
             <p className="mt-3 text-xs leading-6 text-[var(--color-muted)]">
-              El pago se define más adelante. En este paso vamos a registrar el
-              pedido para retiro en el local.
+              Revisá las opciones y notas por producto antes de pasar al checkout.
             </p>
             <div className="mt-5">
               <Link

@@ -9,8 +9,20 @@ export type CartProductSnapshot = {
   imageAlt: string | null;
 };
 
+export type CartSelectedOptionItem = {
+  groupId: string;
+  groupName: string;
+  itemId: string;
+  itemName: string;
+  priceDeltaAmount: number;
+};
+
 export type CartLineItem = CartProductSnapshot & {
+  lineId: string;
   quantity: number;
+  unitOptionsAmount: number;
+  selectedOptions: CartSelectedOptionItem[];
+  customerNote: string | null;
 };
 
 export type BusinessCart = {
@@ -23,13 +35,23 @@ export type BusinessCart = {
 
 export type CartState = Record<string, BusinessCart>;
 
+export function buildCartLineId(
+  productId: string,
+  selectedOptionIds: string[],
+  customerNote = ""
+) {
+  const normalizedOptionIds = [...selectedOptionIds].sort().join(",");
+  return `${productId}::${normalizedOptionIds}::${customerNote.trim().toLowerCase()}`;
+}
+
 export function getCartSubtotal(cart: BusinessCart | null) {
   if (!cart) {
     return 0;
   }
 
   return cart.items.reduce(
-    (total, item) => total + item.priceAmount * item.quantity,
+    (total, item) =>
+      total + (item.priceAmount + item.unitOptionsAmount) * item.quantity,
     0
   );
 }

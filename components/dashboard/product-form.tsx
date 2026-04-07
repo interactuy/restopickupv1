@@ -1,5 +1,6 @@
 import type { DashboardCategory, DashboardProduct } from "@/lib/dashboard/server";
 
+import { ProductOptionGroupsEditor } from "@/components/dashboard/product-option-groups-editor";
 import { SubmitButton } from "@/components/dashboard/submit-button";
 
 type ProductFormProps = {
@@ -252,6 +253,28 @@ export function ProductForm({
             </div>
           </div>
         ) : null}
+
+        <ProductOptionGroupsEditor
+          initialGroups={
+            product?.optionGroups.map((group) => ({
+              id: group.id,
+              name: group.name,
+              description: group.description ?? "",
+              selectionType: group.selectionType,
+              isRequired: group.isRequired,
+              minSelect: group.minSelect,
+              maxSelect: group.maxSelect,
+              position: group.position,
+              items: group.items.map((item) => ({
+                id: item.id,
+                name: item.name,
+                priceDeltaAmount: item.priceDeltaAmount,
+                isActive: item.isActive,
+                position: item.position,
+              })),
+            })) ?? []
+          }
+        />
 
         <div className="flex flex-wrap items-center gap-3">
           <SubmitButton label={submitLabel} pendingLabel={pendingLabel} />

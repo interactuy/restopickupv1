@@ -31,6 +31,27 @@ export type PublicProduct = {
     publicUrl: string | null;
     altText: string | null;
   } | null;
+  optionGroups: PublicProductOptionGroup[];
+};
+
+export type PublicProductOptionGroup = {
+  id: string;
+  name: string;
+  description: string | null;
+  selectionType: "single" | "multiple";
+  isRequired: boolean;
+  minSelect: number;
+  maxSelect: number | null;
+  position: number;
+  items: PublicProductOptionItem[];
+};
+
+export type PublicProductOptionItem = {
+  id: string;
+  name: string;
+  priceDeltaAmount: number;
+  isActive: boolean;
+  position: number;
 };
 
 export type PublicBusinessCatalog = {

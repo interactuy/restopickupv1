@@ -6,6 +6,8 @@ import type {
   PublicBusinessCatalog,
   PublicCategory,
   PublicProduct,
+  PublicProductOptionGroup,
+  PublicProductOptionItem,
 } from "@/lib/public-catalog";
 
 type BusinessRow = {
@@ -45,6 +47,27 @@ type ProductRow = {
   position: number;
   category_id: string | null;
   product_images: ProductImageRow[] | null;
+  product_option_groups:
+    | {
+        id: string;
+        name: string;
+        description: string | null;
+        selection_type: "single" | "multiple";
+        is_required: boolean;
+        min_select: number;
+        max_select: number | null;
+        position: number;
+        product_option_items:
+          | {
+              id: string;
+              name: string;
+              price_delta_amount: number;
+              is_active: boolean;
+              position: number;
+            }[]
+          | null;
+      }[]
+    | null;
 };
 
 function mapBusiness(row: BusinessRow): PublicBusiness {
@@ -92,6 +115,31 @@ function mapProduct(row: ProductRow): PublicProduct {
           altText: primaryImage.alt_text,
         }
       : null,
+    optionGroups:
+      row.product_option_groups
+        ?.sort((a, b) => a.position - b.position)
+        .map<PublicProductOptionGroup>((group) => ({
+          id: group.id,
+          name: group.name,
+          description: group.description,
+          selectionType: group.selection_type,
+          isRequired: group.is_required,
+          minSelect: group.min_select,
+          maxSelect: group.max_select,
+          position: group.position,
+          items:
+            group.product_option_items
+              ?.sort((a, b) => a.position - b.position)
+              .map<PublicProductOptionItem>((item) => ({
+                id: item.id,
+                name: item.name,
+                priceDeltaAmount: item.price_delta_amount,
+                isActive: item.is_active,
+                position: item.position,
+              }))
+              .filter((item) => item.isActive) ?? [],
+        }))
+        .filter((group) => group.items.length > 0) ?? [],
   };
 }
 
@@ -152,7 +200,7 @@ export async function getPublicBusinessCatalog(
       supabase
         .from("products")
         .select(
-          "id, name, slug, description, price_amount, compare_at_amount, currency_code, position, category_id, product_images(public_url, alt_text, position, is_primary)"
+          "id, name, slug, description, price_amount, compare_at_amount, currency_code, position, category_id, product_images(public_url, alt_text, position, is_primary), product_option_groups(id, name, description, selection_type, is_required, min_select, max_select, position, product_option_items(id, name, price_delta_amount, is_active, position))"
         )
         .eq("business_id", business.id)
         .eq("is_available", true)

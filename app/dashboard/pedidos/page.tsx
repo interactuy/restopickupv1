@@ -128,11 +128,31 @@ function OrdersList({
                     <p className="text-sm font-medium text-[var(--color-foreground)]">
                       {item.productName}
                     </p>
-                    <p className="mt-1 text-sm text-[var(--color-muted)]">
-                      {item.quantity} x{" "}
-                      {formatPrice(item.unitPriceAmount, order.currencyCode)}
-                    </p>
-                  </div>
+                        <p className="mt-1 text-sm text-[var(--color-muted)]">
+                          {item.quantity} x{" "}
+                          {formatPrice(
+                            item.unitPriceAmount + item.unitOptionsAmount,
+                            order.currencyCode
+                          )}
+                        </p>
+                        {item.selectedOptions.length > 0 ? (
+                          <div className="mt-2 space-y-1">
+                            {item.selectedOptions.map((option) => (
+                              <p
+                                key={`${order.id}-${item.productName}-${option.groupName}-${option.itemName}`}
+                                className="text-xs text-[var(--color-muted)]"
+                              >
+                                {option.groupName}: {option.itemName}
+                              </p>
+                            ))}
+                          </div>
+                        ) : null}
+                        {item.notes ? (
+                          <p className="mt-2 text-xs text-[var(--color-muted)]">
+                            Nota: {item.notes}
+                          </p>
+                        ) : null}
+                      </div>
                   <p className="text-sm font-semibold text-[var(--color-foreground)]">
                     {formatPrice(item.lineTotalAmount, order.currencyCode)}
                   </p>

@@ -11,7 +11,7 @@ import {
 import type { BusinessCart, CartLineItem, CartProductSnapshot, CartState } from "@/lib/cart";
 import { getCartItemCount, getCartSubtotal } from "@/lib/cart";
 
-const STORAGE_KEY = "restopickup-cart-v1";
+const STORAGE_KEY = "restopickup-cart-v2";
 
 type BusinessCartDescriptor = {
   businessId: string;
@@ -26,10 +26,14 @@ type CartContextValue = {
   addItem: (
     business: BusinessCartDescriptor,
     product: CartProductSnapshot,
+    lineId: string,
+    selectedOptions?: CartLineItem["selectedOptions"],
+    unitOptionsAmount?: number,
+    customerNote?: string | null,
     quantity?: number
   ) => void;
-  updateQuantity: (businessId: string, productId: string, quantity: number) => void;
-  removeItem: (businessId: string, productId: string) => void;
+  updateQuantity: (businessId: string, lineId: string, quantity: number) => void;
+  removeItem: (businessId: string, lineId: string) => void;
   clearCart: (businessId: string) => void;
   getItemCount: (businessId: string) => number;
   getSubtotal: (businessId: string) => number;
@@ -78,25 +82,37 @@ export function CartProvider({ children }: CartProviderProps) {
   function addItem(
     business: BusinessCartDescriptor,
     product: CartProductSnapshot,
+    lineId: string,
+    selectedOptions: CartLineItem["selectedOptions"] = [],
+    unitOptionsAmount = 0,
+    customerNote: string | null = null,
     quantity = 1
   ) {
     setCarts((current) => {
       const existingCart = current[business.businessId];
       const existingItems = existingCart?.items ?? [];
-      const existingItem = existingItems.find(
-        (item) => item.productId === product.productId
-      );
+      const existingItem = existingItems.find((item) => item.lineId === lineId);
 
       let items: CartLineItem[];
 
       if (existingItem) {
         items = existingItems.map((item) =>
-          item.productId === product.productId
+          item.lineId === lineId
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       } else {
-        items = [...existingItems, { ...product, quantity }];
+        items = [
+          ...existingItems,
+          {
+            ...product,
+            lineId,
+            quantity,
+            selectedOptions,
+            unitOptionsAmount,
+            customerNote,
+          },
+        ];
       }
 
       return {
@@ -114,7 +130,7 @@ export function CartProvider({ children }: CartProviderProps) {
 
   function updateQuantity(
     businessId: string,
-    productId: string,
+    lineId: string,
     quantity: number
   ) {
     setCarts((current) => {
@@ -126,7 +142,7 @@ export function CartProvider({ children }: CartProviderProps) {
 
       const nextItems = cart.items
         .map((item) =>
-          item.productId === productId ? { ...item, quantity } : item
+          item.lineId === lineId ? { ...item, quantity } : item
         )
         .filter((item) => item.quantity > 0);
 
@@ -146,8 +162,8 @@ export function CartProvider({ children }: CartProviderProps) {
     });
   }
 
-  function removeItem(businessId: string, productId: string) {
-    updateQuantity(businessId, productId, 0);
+  function removeItem(businessId: string, lineId: string) {
+    updateQuantity(businessId, lineId, 0);
   }
 
   function clearCart(businessId: string) {
