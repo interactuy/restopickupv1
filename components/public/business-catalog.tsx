@@ -1,12 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { useCart } from "@/components/cart/cart-provider";
 import { FloatingCartButton } from "@/components/cart/floating-cart-button";
 import type {
   PublicBusinessCatalog,
   PublicCategory,
+} from "@/lib/public-catalog";
+import {
+  getBusinessOpenStatusLabel,
+  getTodayBusinessHoursLabel,
+  formatPrepTimeRange,
 } from "@/lib/public-catalog";
 
 import { EmptyState } from "@/components/public/empty-state";
@@ -26,7 +32,7 @@ function CategoryShortcut({
   return (
     <a
       href={`#${category.slug}`}
-      className="rounded-full border border-[var(--color-border)] bg-white/80 px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+      className="inline-flex shrink-0 items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
     >
       {category.name}
       <span className="ml-2 text-[var(--color-muted)]">{productCount}</span>
@@ -34,10 +40,71 @@ function CategoryShortcut({
   );
 }
 
+function buildGoogleMapsUrl(address: string) {
+  const encodedAddress = encodeURIComponent(address);
+  return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+}
+
+function buildMapboxStaticMapUrl(params: {
+  token: string;
+  latitude: number;
+  longitude: number;
+}) {
+  const { token, latitude, longitude } = params;
+  const marker = `pin-s+cc7a30(${longitude},${latitude})`;
+  const viewport = `${longitude},${latitude},15,0`;
+
+  return `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${marker}/${viewport}/800x360?access_token=${token}`;
+}
+
 export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
   const { business, categories, products } = catalog;
   const { addItem, getItemCount } = useCart();
+  const [isHoursOpen, setIsHoursOpen] = useState(false);
+  const hasMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const cartCount = getItemCount(business.id);
+  const prepTimeLabel = formatPrepTimeRange(
+    business.prepTimeMinMinutes,
+    business.prepTimeMaxMinutes
+  );
+  const openStatus = getBusinessOpenStatusLabel(business);
+  const todayHoursLabel = getTodayBusinessHoursLabel(business);
+  const googleMapsUrl = buildGoogleMapsUrl(business.pickupAddress);
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  const mapboxPreviewUrl =
+    mapboxToken && business.latitude != null && business.longitude != null
+      ? buildMapboxStaticMapUrl({
+          token: mapboxToken,
+          latitude: business.latitude,
+          longitude: business.longitude,
+        })
+      : null;
+  const businessDescription =
+    business.description?.trim() ||
+    "Pedí online, elegí tus productos y pasá a retirar cuando tu pedido esté listo.";
+  const isBusinessClosed = Boolean(openStatus);
+
+  useEffect(() => {
+    if (!isHoursOpen) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsHoursOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isHoursOpen]);
 
   const categoriesWithProducts = categories
     .map((category) => ({
@@ -50,141 +117,175 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
-      <section className="relative overflow-hidden border-b border-[var(--color-border)]">
-        {business.coverImageUrl ? (
-          <>
-            <div className="absolute inset-0">
+      <section className="border-b border-[var(--color-border)] pb-6 md:pb-8">
+        <div className="relative h-28 overflow-hidden border-b border-[var(--color-border)] sm:h-36 md:h-48">
+          {business.coverImageUrl ? (
+            <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={business.coverImageUrl}
                 alt={`Portada de ${business.name}`}
                 className="h-full w-full object-cover"
               />
-            </div>
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(26,18,12,0.36)_0%,rgba(26,18,12,0.64)_100%)]" />
-          </>
-        ) : (
-          <div className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,_rgba(198,122,48,0.18),_transparent_60%)]" />
-        )}
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-14 md:px-10 lg:px-12">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <Link
-              href="/"
-              className={`text-sm font-medium transition ${
-                business.coverImageUrl
-                  ? "text-white/80 hover:text-white"
-                  : "text-[var(--color-muted)] hover:text-[var(--color-foreground)]"
-              }`}
-            >
-              Restopickup
-            </Link>
-            <div className="flex flex-wrap gap-3">
-              {cartCount > 0 ? (
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(26,18,12,0.18)_0%,rgba(26,18,12,0.5)_100%)]" />
+            </>
+          ) : (
+            <div className="h-full w-full bg-[radial-gradient(circle_at_top,_rgba(198,122,48,0.24),_rgba(248,241,231,0.62)_58%,_transparent_100%)]" />
+          )}
+        </div>
+
+        <div className="mx-auto w-full max-w-7xl px-6 md:px-10 lg:px-12">
+          <div className="relative -mt-8 rounded-[2rem] border border-[var(--color-border)] bg-white/95 p-5 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm md:-mt-10 md:p-8">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <Link
+                href="/"
+                className="text-sm font-medium text-[var(--color-muted)] transition hover:text-[var(--color-foreground)]"
+              >
+                Restopickup
+              </Link>
+
+              {hasMounted && cartCount > 0 ? (
                 <Link
                   href={`/locales/${business.slug}/carrito`}
-                  className="rounded-full border border-[var(--color-border)] bg-white/70 px-4 py-2 text-sm text-[var(--color-muted)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                  className="rounded-full border border-[var(--color-accent)] bg-[rgba(198,122,48,0.1)] px-4 py-2 text-sm font-medium text-[var(--color-accent)] transition hover:brightness-95"
                 >
-                  {cartCount} en carrito
+                  Ver carrito · {cartCount}
                 </Link>
-              ) : (
-                <span className="rounded-full border border-[var(--color-border)] bg-white/70 px-4 py-2 text-sm text-[var(--color-muted)]">
-                  {cartCount} en carrito
-                </span>
-              )}
-              <span className="rounded-full border border-[var(--color-border)] bg-white/70 px-4 py-2 text-sm text-[var(--color-muted)]">
-                Retiro en local
-              </span>
-              <span className="rounded-full border border-[var(--color-border)] bg-white/70 px-4 py-2 text-sm text-[var(--color-muted)]">
-                {business.currencyCode}
-              </span>
+              ) : null}
             </div>
-          </div>
 
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.8fr)] lg:items-end">
-            <div>
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-[1.5rem] border border-white/20 bg-white/85 shadow-[0_20px_60px_rgba(39,24,13,0.18)]">
-                  {business.profileImageUrl ? (
+            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)] lg:items-start">
+              <div className="min-w-0">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_16px_45px_rgba(39,24,13,0.08)] sm:h-20 sm:w-20">
+                    {business.profileImageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={business.profileImageUrl}
+                        alt={business.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-lg font-semibold text-[var(--color-foreground)]">
+                        {business.name.slice(0, 1).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0 pt-1">
+                    <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-foreground)] sm:text-4xl md:text-5xl">
+                      {business.name}
+                    </h1>
+                  </div>
+                </div>
+
+                <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--color-muted)] sm:text-base sm:leading-8">
+                  {businessDescription}
+                </p>
+
+                <div className="mt-5 flex flex-wrap gap-3">
+                  {openStatus ? (
+                    <span className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700">
+                      {openStatus.label}
+                    </span>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setIsHoursOpen(true)}
+                    className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                  >
+                    {todayHoursLabel}
+                  </button>
+                  {prepTimeLabel ? (
+                    <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm text-[var(--color-foreground)]">
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 20 20"
+                        className="h-4 w-4 text-[var(--color-accent)]"
+                        fill="none"
+                      >
+                        <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.7" />
+                        <path d="M10 6.5v4l2.7 1.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Listo en {prepTimeLabel}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="border-t border-[var(--color-border)] pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+                  Retiro en local
+                </p>
+                <p className="text-base font-medium leading-7 text-[var(--color-foreground)]">
+                  {business.pickupAddress}
+                </p>
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group relative mt-4 block overflow-hidden rounded-[1.5rem] bg-[linear-gradient(135deg,#f6ecde_0%,#efe4d5_48%,#e5dbc9_100%)]"
+                >
+                  {mapboxPreviewUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={business.profileImageUrl}
-                      alt={business.name}
-                      className="h-full w-full object-cover"
+                      src={mapboxPreviewUrl}
+                      alt={`Mapa de ${business.name}`}
+                      className="h-40 w-full object-cover"
                     />
                   ) : (
-                    <span className="text-lg font-semibold text-[var(--color-foreground)]">
-                      {business.name.slice(0, 1).toUpperCase()}
-                    </span>
+                    <>
+                      <div className="absolute inset-0 opacity-60">
+                        <div className="absolute left-[-10%] top-[25%] h-12 w-[70%] rotate-6 rounded-full border-2 border-white/70" />
+                        <div className="absolute right-[-8%] top-[54%] h-10 w-[62%] -rotate-12 rounded-full border-2 border-white/70" />
+                        <div className="absolute left-[12%] top-[12%] h-[76%] w-[1px] bg-white/70" />
+                        <div className="absolute left-[48%] top-[8%] h-[84%] w-[1px] bg-white/60" />
+                        <div className="absolute left-[76%] top-[18%] h-[68%] w-[1px] bg-white/60" />
+                        <div className="absolute left-[8%] top-[36%] h-[1px] w-[82%] bg-white/70" />
+                        <div className="absolute left-[18%] top-[68%] h-[1px] w-[74%] bg-white/60" />
+                      </div>
+                      <div className="relative flex h-40 items-center justify-center">
+                        <div className="relative">
+                          <span className="absolute left-1/2 top-full h-6 w-6 -translate-x-1/2 rounded-full bg-[rgba(198,122,48,0.18)] blur-md" />
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 32 32"
+                            className="relative h-12 w-12 text-[var(--color-accent)] drop-shadow-[0_10px_18px_rgba(198,122,48,0.22)]"
+                            fill="currentColor"
+                          >
+                            <path d="M16 3c-4.9 0-8.9 4-8.9 8.9 0 6.6 8.9 16.1 8.9 16.1s8.9-9.5 8.9-16.1C24.9 7 20.9 3 16 3Zm0 12.2a3.3 3.3 0 1 1 0-6.7 3.3 3.3 0 0 1 0 6.7Z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </>
                   )}
-                </div>
-                <p
-                  className={`text-sm font-semibold uppercase tracking-[0.28em] ${
-                    business.coverImageUrl
-                      ? "text-white/85"
-                      : "text-[var(--color-accent)]"
-                  }`}
-                >
-                  Local abierto para retirar
-                </p>
+                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.02)_0%,rgba(255,255,255,0.08)_100%)] transition group-hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.02)_0%,rgba(198,122,48,0.08)_100%)]" />
+                </a>
               </div>
-              <h1
-                className={`mt-4 max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl ${
-                  business.coverImageUrl ? "text-white" : "text-[var(--color-foreground)]"
-                }`}
-              >
-                {business.name}
-              </h1>
-              <p
-                className={`mt-5 max-w-2xl text-base leading-8 ${
-                  business.coverImageUrl ? "text-white/80" : "text-[var(--color-muted)]"
-                }`}
-              >
-                Pedí online y pasá a buscar tu pedido por mostrador. El catálogo
-                se carga en tiempo real desde Supabase y refleja los productos
-                activos del local.
-              </p>
-            </div>
-
-            <div className="rounded-[2rem] border border-[var(--color-border)] bg-white/80 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-                Retiro
-              </p>
-              <p className="mt-4 text-lg font-medium text-[var(--color-foreground)]">
-                {business.pickupAddress}
-              </p>
-              {business.pickupInstructions ? (
-                <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
-                  {business.pickupInstructions}
-                </p>
-              ) : null}
-              {business.contactPhone ? (
-                <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
-                  Contacto: {business.contactPhone}
-                </p>
-              ) : null}
             </div>
           </div>
 
-          {categoriesWithProducts.length > 0 ? (
-            <div className="flex flex-wrap gap-3">
-              {categoriesWithProducts.map((category) => (
-                <CategoryShortcut
-                  key={category.id}
-                  category={category}
-                  productCount={category.products.length}
-                />
-              ))}
-              {uncategorizedProducts.length > 0 ? (
-                <a
-                  href="#destacados"
-                  className="rounded-full border border-[var(--color-border)] bg-white/80 px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-                >
-                  Destacados
-                  <span className="ml-2 text-[var(--color-muted)]">
-                    {uncategorizedProducts.length}
-                  </span>
-                </a>
-              ) : null}
+          {!isBusinessClosed && categoriesWithProducts.length > 0 ? (
+            <div className="mt-5 -mx-6 overflow-x-auto px-6 pb-1 md:mx-0 md:px-0">
+              <div className="flex min-w-max gap-3 md:min-w-0 md:flex-wrap">
+                {categoriesWithProducts.map((category) => (
+                  <CategoryShortcut
+                    key={category.id}
+                    category={category}
+                    productCount={category.products.length}
+                  />
+                ))}
+                {uncategorizedProducts.length > 0 ? (
+                  <a
+                    href="#destacados"
+                    className="inline-flex shrink-0 items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                  >
+                    Destacados
+                    <span className="ml-2 text-[var(--color-muted)]">
+                      {uncategorizedProducts.length}
+                    </span>
+                  </a>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </div>
@@ -192,7 +293,17 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
 
       <main className="mx-auto w-full max-w-7xl px-6 py-12 md:px-10 lg:px-12">
         <div className="flex flex-col gap-12">
-          {categoriesWithProducts.length === 0 && uncategorizedProducts.length === 0 ? (
+          {isBusinessClosed ? (
+            <EmptyState
+              eyebrow="Local cerrado"
+              title={openStatus?.label ?? "Este local no esta recibiendo pedidos ahora"}
+              description="Volvé a revisar el horario desde la pill del hero y regresá cuando el local esté abierto para ver el menú completo."
+            />
+          ) : null}
+
+          {!isBusinessClosed &&
+          categoriesWithProducts.length === 0 &&
+          uncategorizedProducts.length === 0 ? (
             <EmptyState
               eyebrow="Catalogo vacio"
               title="Este local todavia no publico productos"
@@ -200,7 +311,8 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
             />
           ) : null}
 
-          {categoriesWithProducts.map((category) => (
+          {!isBusinessClosed &&
+            categoriesWithProducts.map((category) => (
             <section key={category.id} id={category.slug} className="scroll-mt-24">
               <div className="mb-6 flex flex-col gap-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
@@ -255,7 +367,7 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
             </section>
           ))}
 
-          {uncategorizedProducts.length > 0 ? (
+          {!isBusinessClosed && uncategorizedProducts.length > 0 ? (
             <section id="destacados" className="scroll-mt-24">
               <div className="mb-6 flex flex-col gap-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
@@ -304,6 +416,68 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
         businessSlug={business.slug}
         currencyCode={business.currencyCode}
       />
+
+      {isHoursOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(24,18,12,0.48)] px-4 py-8"
+          onClick={() => setIsHoursOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-[2rem] border border-[var(--color-border)] bg-white p-6 shadow-[0_28px_90px_rgba(39,24,13,0.2)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+                  Horarios del local
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+                  {business.name}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsHoursOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-muted)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                aria-label="Cerrar horarios"
+              >
+                <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4" fill="none">
+                  <path
+                    d="M5 5l10 10M15 5 5 15"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {business.businessHours.map((entry) => (
+                <div
+                  key={entry.day}
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3"
+                >
+                  <span className="font-medium text-[var(--color-foreground)]">
+                    {entry.label}
+                  </span>
+                  <span className="text-sm text-[var(--color-muted)]">
+                    {entry.isClosed || !entry.openTime || !entry.closeTime
+                      ? "Cerrado"
+                      : `${entry.openTime} - ${entry.closeTime}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {business.isTemporarilyClosed ? (
+              <p className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                El local marcó un cierre especial, así que por ahora no está tomando pedidos.
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

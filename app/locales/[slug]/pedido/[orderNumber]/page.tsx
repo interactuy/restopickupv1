@@ -8,6 +8,7 @@ import {
   syncMercadoPagoPayment,
   syncMercadoPagoPaymentByExternalReference,
 } from "@/lib/mercadopago/server";
+import { getBusinessContactAction } from "@/lib/public-catalog";
 import { getOrderConfirmation } from "@/lib/supabase/orders";
 
 type ConfirmationPageProps = {
@@ -92,6 +93,7 @@ export default async function ConfirmationPage({
     !["paid", "authorized"].includes(confirmation.order.paymentStatus);
   const googleMapsUrl = buildGoogleMapsUrl(confirmation.order.pickupAddress);
   const appleMapsUrl = buildAppleMapsUrl(confirmation.order.pickupAddress);
+  const contactAction = getBusinessContactAction(confirmation.business);
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] px-6 py-10 md:px-10 lg:px-12">
@@ -310,10 +312,25 @@ export default async function ConfirmationPage({
                 </p>
               </div>
             ) : null}
-            {confirmation.order.contactPhone ? (
-              <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
-                Contacto del local: {confirmation.order.contactPhone}
-              </p>
+            {contactAction ? (
+              <div className="mt-4">
+                <a
+                  href={contactAction.href}
+                  target={
+                    confirmation.business.contactActionType === "whatsapp"
+                      ? "_blank"
+                      : undefined
+                  }
+                  rel={
+                    confirmation.business.contactActionType === "whatsapp"
+                      ? "noreferrer"
+                      : undefined
+                  }
+                  className="inline-flex w-full items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                >
+                  {contactAction.label} al local
+                </a>
+              </div>
             ) : null}
             <p className="mt-6 text-sm text-[var(--color-muted)]">
               A nombre de {confirmation.order.customerName}

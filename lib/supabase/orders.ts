@@ -2,7 +2,11 @@ import "server-only";
 
 import { z } from "zod";
 
-import { formatPrice, type PublicBusiness } from "@/lib/public-catalog";
+import {
+  formatPrice,
+  type BusinessHoursEntry,
+  type PublicBusiness,
+} from "@/lib/public-catalog";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -35,11 +39,28 @@ type BusinessRow = {
   id: string;
   name: string;
   slug: string;
+  description: string | null;
   contact_phone: string | null;
+  contact_action_type: "call" | "whatsapp";
+  business_hours_text: string | null;
+  is_open_now: boolean;
+  business_hours:
+    | {
+        day: number;
+        is_closed: boolean;
+        open_time: string | null;
+        close_time: string | null;
+      }[]
+    | null;
+  is_temporarily_closed: boolean;
   pickup_address: string;
   pickup_instructions: string | null;
+  latitude: number | null;
+  longitude: number | null;
   timezone: string;
   currency_code: string;
+  prep_time_min_minutes: number | null;
+  prep_time_max_minutes: number | null;
   profile_image_url: string | null;
   cover_image_url: string | null;
 };
@@ -158,23 +179,126 @@ export type CreatedGuestOrder = {
   }[];
 };
 
+const BUSINESS_DAY_LABELS = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
+
+function normalizeBusinessHours(
+  rows: BusinessRow["business_hours"]
+): BusinessHoursEntry[] {
+  const mapped = new Map(
+    (rows ?? []).map((entry) => [
+      entry.day,
+      {
+        day: entry.day,
+        label: BUSINESS_DAY_LABELS[entry.day] ?? `Dia ${entry.day}`,
+        isClosed: entry.is_closed,
+        openTime: entry.open_time,
+        closeTime: entry.close_time,
+      },
+    ])
+  );
+
+  return Array.from({ length: 7 }, (_, day) => {
+    const existing = mapped.get(day);
+
+    return (
+      existing ?? {
+        day,
+        label: BUSINESS_DAY_LABELS[day] ?? `Dia ${day}`,
+        isClosed: true,
+        openTime: null,
+        closeTime: null,
+      }
+    );
+  });
+}
+
+function getBusinessOpenNow(params: {
+  timezone: string;
+  hours: BusinessHoursEntry[];
+  isTemporarilyClosed: boolean;
+}) {
+  if (params.isTemporarilyClosed) {
+    return false;
+  }
+
+  const now = new Date();
+  const weekdayFormatter = new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    timeZone: params.timezone,
+  });
+  const timeFormatter = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: params.timezone,
+  });
+  const weekdayMap: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  const weekday = weekdayMap[weekdayFormatter.format(now)];
+  const currentTime = timeFormatter.format(now);
+  const todayHours = params.hours.find((entry) => entry.day === weekday);
+
+  if (
+    !todayHours ||
+    todayHours.isClosed ||
+    !todayHours.openTime ||
+    !todayHours.closeTime
+  ) {
+    return false;
+  }
+
+  return (
+    currentTime >= todayHours.openTime && currentTime <= todayHours.closeTime
+  );
+}
+
 function mapBusiness(row: BusinessRow): PublicBusiness {
+  const businessHours = normalizeBusinessHours(row.business_hours);
+  const isOpenNow = getBusinessOpenNow({
+    timezone: row.timezone,
+    hours: businessHours,
+    isTemporarilyClosed: row.is_temporarily_closed,
+  });
+
   return {
     id: row.id,
     name: row.name,
     slug: row.slug,
+    description: row.description,
     contactPhone: row.contact_phone,
+    contactActionType: row.contact_action_type,
+    businessHoursText: row.business_hours_text,
+    isOpenNow,
+    businessHours,
+    isTemporarilyClosed: row.is_temporarily_closed,
     pickupAddress: row.pickup_address,
     pickupInstructions: row.pickup_instructions,
+    latitude: row.latitude,
+    longitude: row.longitude,
     timezone: row.timezone,
     currencyCode: row.currency_code,
+    prepTimeMinMinutes: row.prep_time_min_minutes,
+    prepTimeMaxMinutes: row.prep_time_max_minutes,
     profileImageUrl: row.profile_image_url,
     coverImageUrl: row.cover_image_url,
   };
 }
 
-function buildDefaultEstimatedReadyAt() {
-  return new Date(Date.now() + 25 * 60 * 1000).toISOString();
+function buildDefaultEstimatedReadyAt(
+  prepTimeMinMinutes: number | null,
+  prepTimeMaxMinutes: number | null
+) {
+  const fallbackMinutes = 25;
+  const minutes = prepTimeMaxMinutes ?? prepTimeMinMinutes ?? fallbackMinutes;
+
+  return new Date(Date.now() + minutes * 60 * 1000).toISOString();
 }
 
 export async function createGuestOrder(
@@ -186,7 +310,7 @@ export async function createGuestOrder(
   const { data: business, error: businessError } = await supabase
     .from("businesses")
     .select(
-      "id, name, slug, contact_phone, pickup_address, pickup_instructions, timezone, currency_code, profile_image_url, cover_image_url"
+      "id, name, slug, description, contact_phone, contact_action_type, business_hours_text, is_open_now, business_hours, is_temporarily_closed, pickup_address, pickup_instructions, latitude, longitude, timezone, currency_code, prep_time_min_minutes, prep_time_max_minutes, profile_image_url, cover_image_url"
     )
     .eq("slug", input.businessSlug)
     .eq("is_active", true)
@@ -346,7 +470,10 @@ export async function createGuestOrder(
       discount_amount: 0,
       total_amount: subtotal,
       payment_status: "pending",
-      estimated_ready_at: buildDefaultEstimatedReadyAt(),
+      estimated_ready_at: buildDefaultEstimatedReadyAt(
+        business.prep_time_min_minutes,
+        business.prep_time_max_minutes
+      ),
     })
     .select(
       "id, order_number, status_code, customer_name, customer_phone, customer_notes, total_amount, currency_code, placed_at, payment_status, estimated_ready_at"
@@ -405,7 +532,7 @@ export async function getOrderConfirmation(
   const { data: business, error: businessError } = await supabase
     .from("businesses")
     .select(
-      "id, name, slug, contact_phone, pickup_address, pickup_instructions, timezone, currency_code, profile_image_url, cover_image_url"
+      "id, name, slug, description, contact_phone, contact_action_type, business_hours_text, is_open_now, business_hours, is_temporarily_closed, pickup_address, pickup_instructions, latitude, longitude, timezone, currency_code, prep_time_min_minutes, prep_time_max_minutes, profile_image_url, cover_image_url"
     )
     .eq("slug", businessSlug)
     .eq("is_active", true)

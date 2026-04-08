@@ -4,25 +4,53 @@ with upsert_business as (
   insert into public.businesses (
     name,
     slug,
+    description,
     legal_name,
     contact_email,
     contact_phone,
+    contact_action_type,
+    business_hours_text,
+    is_open_now,
+    business_hours,
+    is_temporarily_closed,
     pickup_address,
     pickup_instructions,
+    latitude,
+    longitude,
     timezone,
     currency_code,
+    prep_time_min_minutes,
+    prep_time_max_minutes,
     is_active
   )
   select
     'Mostrador Centro',
     'mostrador-centro',
+    'Burgers, pizzas y wraps para retirar en el centro, con cocina agil y menu pensado para resolver almuerzos y cenas sin vueltas.',
     'Mostrador Centro SAS',
     'hola@mostradorcentro.uy',
     '+598 91 234 567',
+    'whatsapp',
+    'Lun a Dom de 12:00 a 23:30',
+    true,
+    '[
+      {"day":0,"is_closed":false,"open_time":"12:00","close_time":"23:30"},
+      {"day":1,"is_closed":false,"open_time":"12:00","close_time":"23:30"},
+      {"day":2,"is_closed":false,"open_time":"12:00","close_time":"23:30"},
+      {"day":3,"is_closed":false,"open_time":"12:00","close_time":"23:30"},
+      {"day":4,"is_closed":false,"open_time":"12:00","close_time":"23:30"},
+      {"day":5,"is_closed":false,"open_time":"12:00","close_time":"23:30"},
+      {"day":6,"is_closed":false,"open_time":"12:00","close_time":"23:30"}
+    ]'::jsonb,
+    false,
     'Av. 18 de Julio 1450, Centro, Montevideo',
     'Retira tu pedido por mostrador. Presenta tu numero de pedido y nombre. Tiempo estimado habitual: 20 a 30 minutos.',
+    -34.904862,
+    -56.185119,
     'America/Montevideo',
     'UYU',
+    20,
+    30,
     true
   where not exists (
     select 1
@@ -43,13 +71,31 @@ business as (
 update public.businesses b
 set
   name = 'Mostrador Centro',
+  description = 'Burgers, pizzas y wraps para retirar en el centro, con cocina agil y menu pensado para resolver almuerzos y cenas sin vueltas.',
   legal_name = 'Mostrador Centro SAS',
   contact_email = 'hola@mostradorcentro.uy',
   contact_phone = '+598 91 234 567',
+  contact_action_type = 'whatsapp',
+  business_hours_text = 'Lun a Dom de 12:00 a 23:30',
+  is_open_now = true,
+  business_hours = '[
+    {"day":0,"is_closed":false,"open_time":"12:00","close_time":"23:30"},
+    {"day":1,"is_closed":false,"open_time":"12:00","close_time":"23:30"},
+    {"day":2,"is_closed":false,"open_time":"12:00","close_time":"23:30"},
+    {"day":3,"is_closed":false,"open_time":"12:00","close_time":"23:30"},
+    {"day":4,"is_closed":false,"open_time":"12:00","close_time":"23:30"},
+    {"day":5,"is_closed":false,"open_time":"12:00","close_time":"23:30"},
+    {"day":6,"is_closed":false,"open_time":"12:00","close_time":"23:30"}
+  ]'::jsonb,
+  is_temporarily_closed = false,
   pickup_address = 'Av. 18 de Julio 1450, Centro, Montevideo',
   pickup_instructions = 'Retira tu pedido por mostrador. Presenta tu numero de pedido y nombre. Tiempo estimado habitual: 20 a 30 minutos.',
+  latitude = -34.904862,
+  longitude = -56.185119,
   timezone = 'America/Montevideo',
   currency_code = 'UYU',
+  prep_time_min_minutes = 20,
+  prep_time_max_minutes = 30,
   is_active = true
 from business
 where b.id = business.id;

@@ -22,7 +22,9 @@ export async function generateMetadata({
 
   return {
     title: `${catalog.business.name} | Restopickup`,
-    description: `Menu online para retirar en ${catalog.business.name}.`,
+    description:
+      catalog.business.description?.trim() ||
+      `Menu online para retirar en ${catalog.business.name}.`,
   };
 }
 

@@ -55,6 +55,13 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
     (total, item) => total + item.priceDeltaAmount,
     0
   );
+  const hasOffer =
+    product.compareAtAmount !== null && product.compareAtAmount > product.priceAmount;
+  const offerPercentage = hasOffer
+    ? Math.round(
+        ((product.compareAtAmount! - product.priceAmount) / product.compareAtAmount!) * 100
+      )
+    : null;
 
   function handlePlainAdd() {
     onAddToCart?.(
@@ -118,6 +125,19 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   return (
     <article className="group overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-white shadow-[0_20px_60px_rgba(39,24,13,0.08)] transition-transform duration-300 hover:-translate-y-1">
       <div className="relative aspect-[4/3] overflow-hidden bg-[linear-gradient(135deg,#f5e7d4_0%,#efe4d3_50%,#e6d6be_100%)]">
+        {hasOffer ? (
+          <div className="absolute left-4 top-4 z-10 flex items-center gap-2">
+            <span className="rounded-full bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_10px_24px_rgba(198,122,48,0.3)]">
+              Oferta
+            </span>
+            {offerPercentage ? (
+              <span className="rounded-full bg-white/92 px-3 py-1.5 text-xs font-semibold text-[var(--color-accent)] shadow-[0_10px_24px_rgba(39,24,13,0.12)]">
+                -{offerPercentage}%
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
         {product.image?.publicUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -146,8 +166,15 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
               </p>
             ) : null}
           </div>
-          <div className="shrink-0 rounded-full bg-[var(--color-surface-strong)] px-3 py-2 text-sm font-semibold text-[var(--color-foreground)]">
-            {formatPrice(product.priceAmount, product.currencyCode)}
+          <div className="shrink-0 text-right">
+            {hasOffer ? (
+              <p className="mb-1 text-xs font-medium text-[var(--color-muted)] line-through">
+                {formatPrice(product.compareAtAmount!, product.currencyCode)}
+              </p>
+            ) : null}
+            <div className="rounded-full bg-[var(--color-surface-strong)] px-3 py-2 text-sm font-semibold text-[var(--color-foreground)]">
+              {formatPrice(product.priceAmount, product.currencyCode)}
+            </div>
           </div>
         </div>
 

@@ -22,6 +22,8 @@ import { createClient } from "@/lib/supabase/server";
 
 const PRODUCT_IMAGES_BUCKET = "product-images";
 const BUSINESS_BRANDING_BUCKET = "business-branding";
+const MAPBOX_GEOCODING_URL = "https://api.mapbox.com/search/geocode/v6/forward";
+const BUSINESS_DAY_COUNT = 7;
 
 function buildDashboardProductsRedirect(params: Record<string, string>) {
   const searchParams = new URLSearchParams(params);
@@ -198,6 +200,80 @@ async function uploadBusinessBrandingImage(
     storagePath,
     publicUrl: data.publicUrl,
   };
+}
+
+async function geocodePickupAddress(address: string) {
+  const accessToken =
+    process.env.MAPBOX_ACCESS_TOKEN ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+  if (!accessToken || !address) {
+    return null;
+  }
+
+  const searchParams = new URLSearchParams({
+    q: address,
+    access_token: accessToken,
+    limit: "1",
+    autocomplete: "false",
+    types: "address,street,place",
+    country: "uy",
+    language: "es",
+    permanent: "true",
+  });
+
+  const response = await fetch(`${MAPBOX_GEOCODING_URL}?${searchParams.toString()}`, {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Mapbox respondió ${response.status}.`);
+  }
+
+  const payload = (await response.json()) as {
+    features?: Array<{
+      geometry?: { coordinates?: [number, number] };
+    }>;
+  };
+
+  const coordinates = payload.features?.[0]?.geometry?.coordinates;
+
+  if (!coordinates || coordinates.length < 2) {
+    return null;
+  }
+
+  const [longitude, latitude] = coordinates;
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null;
+  }
+
+  return { latitude, longitude };
+}
+
+function parseBusinessHoursFromFormData(formData: FormData) {
+  const schedule = Array.from({ length: BUSINESS_DAY_COUNT }, (_, day) => {
+    const isClosed = formData.get(`hours_${day}_closed`) === "on";
+    const openTime = String(formData.get(`hours_${day}_open`) ?? "").trim();
+    const closeTime = String(formData.get(`hours_${day}_close`) ?? "").trim();
+
+    if (!isClosed && (!openTime || !closeTime)) {
+      throw new Error("Cada día abierto debe tener horario de apertura y cierre.");
+    }
+
+    if (!isClosed && openTime >= closeTime) {
+      throw new Error("La hora de cierre debe ser mayor a la de apertura.");
+    }
+
+    return {
+      day,
+      is_closed: isClosed,
+      open_time: isClosed ? null : openTime,
+      close_time: isClosed ? null : closeTime,
+    };
+  });
+
+  return schedule;
 }
 
 async function replacePrimaryProductImage(params: {
@@ -589,18 +665,78 @@ export async function toggleProductAvailabilityAction(formData: FormData) {
 export async function updateBusinessSettingsAction(formData: FormData) {
   const context = await requireDashboardContext();
   const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
   const contactEmail = String(formData.get("contactEmail") ?? "").trim();
   const contactPhone = String(formData.get("contactPhone") ?? "").trim();
+  const contactActionType = String(formData.get("contactActionType") ?? "call").trim();
+  const isTemporarilyClosed = formData.get("isTemporarilyClosed") === "on";
   const pickupAddress = String(formData.get("pickupAddress") ?? "").trim();
   const pickupInstructions = String(formData.get("pickupInstructions") ?? "").trim();
+  const prepTimeMinMinutesRaw = String(formData.get("prepTimeMinMinutes") ?? "").trim();
+  const prepTimeMaxMinutesRaw = String(formData.get("prepTimeMaxMinutes") ?? "").trim();
   const profileImageFile = formData.get("profileImage");
   const coverImageFile = formData.get("coverImage");
 
+  const parsedPrepTimeMinMinutes = prepTimeMinMinutesRaw
+    ? Number.parseInt(prepTimeMinMinutesRaw, 10)
+    : Number.NaN;
+  const parsedPrepTimeMaxMinutes = prepTimeMaxMinutesRaw
+    ? Number.parseInt(prepTimeMaxMinutesRaw, 10)
+    : Number.NaN;
+  const prepTimeMinMinutes = Number.isInteger(parsedPrepTimeMinMinutes)
+    ? parsedPrepTimeMinMinutes
+    : null;
+  const prepTimeMaxMinutes = Number.isInteger(parsedPrepTimeMaxMinutes)
+    ? parsedPrepTimeMaxMinutes
+    : null;
   if (!name || !pickupAddress) {
     throw new Error("Nombre y dirección de retiro son obligatorios.");
   }
 
+  if (contactActionType !== "call" && contactActionType !== "whatsapp") {
+    throw new Error("La acción de contacto debe ser llamada o WhatsApp.");
+  }
+
+  if (
+    (prepTimeMinMinutesRaw &&
+      (!Number.isInteger(parsedPrepTimeMinMinutes) ||
+        parsedPrepTimeMinMinutes < 0)) ||
+    (prepTimeMaxMinutesRaw &&
+      (!Number.isInteger(parsedPrepTimeMaxMinutes) ||
+        parsedPrepTimeMaxMinutes < 0))
+  ) {
+    throw new Error("El tiempo estimado debe ser un número entero mayor o igual a 0.");
+  }
+
+  if (
+    prepTimeMinMinutes != null &&
+    prepTimeMaxMinutes != null &&
+    prepTimeMaxMinutes < prepTimeMinMinutes
+  ) {
+    throw new Error("El tiempo máximo no puede ser menor al mínimo.");
+  }
+
   const admin = createAdminClient();
+  const businessHours = parseBusinessHoursFromFormData(formData);
+  let geocodedCoordinates = {
+    latitude: context.business.latitude,
+    longitude: context.business.longitude,
+  };
+
+  try {
+    const result = await geocodePickupAddress(pickupAddress);
+
+    geocodedCoordinates = result ?? { latitude: null, longitude: null };
+  } catch (error) {
+    console.error("[dashboard] geocoding failed", {
+      businessId: context.business.id,
+      pickupAddress,
+      error: error instanceof Error ? error.message : "unknown",
+    });
+
+    geocodedCoordinates = { latitude: null, longitude: null };
+  }
+
   let profileImageUpdate:
     | { profile_image_path: string; profile_image_url: string }
     | undefined;
@@ -634,10 +770,20 @@ export async function updateBusinessSettingsAction(formData: FormData) {
     .from("businesses")
     .update({
       name,
+      description: description || null,
       contact_email: contactEmail || null,
       contact_phone: contactPhone || null,
+      contact_action_type: contactActionType,
+      business_hours_text: null,
+      is_open_now: false,
+      business_hours: businessHours,
+      is_temporarily_closed: isTemporarilyClosed,
       pickup_address: pickupAddress,
       pickup_instructions: pickupInstructions || null,
+      latitude: geocodedCoordinates.latitude,
+      longitude: geocodedCoordinates.longitude,
+      prep_time_min_minutes: prepTimeMinMinutes,
+      prep_time_max_minutes: prepTimeMaxMinutes,
       ...(profileImageUpdate ?? {}),
       ...(coverImageUpdate ?? {}),
     })

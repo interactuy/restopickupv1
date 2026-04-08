@@ -14,7 +14,7 @@ export default async function DashboardSettingsPage() {
         Datos básicos del local
       </h1>
       <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
-        Actualizá la información visible del negocio y la operativa de retiro.
+        Actualizá la información visible del negocio, su branding y la operativa de retiro.
       </p>
 
       <div className="mt-8">
