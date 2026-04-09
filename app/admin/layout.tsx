@@ -8,7 +8,11 @@ type AdminLayoutProps = {
   children: React.ReactNode;
 };
 
-const links = [{ href: "/admin/solicitudes", label: "Solicitudes" }];
+const links = [
+  { href: "/admin", label: "Resumen" },
+  { href: "/admin/solicitudes", label: "Solicitudes" },
+  { href: "/admin/negocios", label: "Negocios" },
+];
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
   const context = await requireInternalAdminContext();
