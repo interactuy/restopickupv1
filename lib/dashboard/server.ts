@@ -2,6 +2,7 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
+import { isAdminModeEnabled } from "@/lib/dashboard/admin-mode";
 import type { BusinessHoursEntry, PublicBusiness } from "@/lib/public-catalog";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -51,7 +52,10 @@ export type DashboardContext = {
   };
   membership: {
     role: "owner" | "admin" | "staff";
+    isAdminRole: boolean;
   };
+  isAdminModeEnabled: boolean;
+  hasAdminPinConfigured: boolean;
   business: PublicBusiness & {
     contactEmail: string | null;
     isActive: boolean;
@@ -300,6 +304,10 @@ function mapBusiness(
   };
 }
 
+function isAdminRole(role: DashboardContext["membership"]["role"]) {
+  return role === "owner" || role === "admin";
+}
+
 export async function getDashboardContext(): Promise<DashboardContext | null> {
   const supabase = await createClient();
   const {
@@ -311,16 +319,27 @@ export async function getDashboardContext(): Promise<DashboardContext | null> {
   }
 
   const admin = createAdminClient();
-  const { data: memberships, error } = await admin
+  const [{ data: memberships, error }, { data: security, error: securityError }] =
+    await Promise.all([
+      admin
     .from("business_users")
     .select(
       "role, business:businesses(id, name, slug, description, contact_email, contact_phone, contact_action_type, business_hours_text, is_open_now, business_hours, is_temporarily_closed, pickup_address, pickup_instructions, latitude, longitude, timezone, currency_code, prep_time_min_minutes, prep_time_max_minutes, is_active, onboarding_completed_at, profile_image_path, profile_image_url, cover_image_path, cover_image_url)"
     )
     .eq("user_id", user.id)
-    .returns<BusinessMembershipRow[]>();
+    .returns<BusinessMembershipRow[]>(),
+      admin
+        .from("business_admin_security")
+        .select("business_id, pin_hash")
+        .returns<{ business_id: string; pin_hash: string | null }[]>(),
+    ]);
 
   if (error) {
     throw new Error(`No se pudo cargar la membresia: ${error.message}`);
+  }
+
+  if (securityError) {
+    throw new Error(`No se pudo cargar la seguridad admin: ${securityError.message}`);
   }
 
   const membership = memberships?.find((item) => item.business);
@@ -329,6 +348,19 @@ export async function getDashboardContext(): Promise<DashboardContext | null> {
     return null;
   }
 
+  const business = membership.business;
+
+  const adminRole = isAdminRole(membership.role);
+  const hasAdminPinConfigured = Boolean(
+    security?.find((item) => item.business_id === business.id)?.pin_hash
+  );
+  const adminMode = adminRole
+    ? await isAdminModeEnabled({
+        businessId: business.id,
+        userId: user.id,
+      })
+    : false;
+
   return {
     user: {
       id: user.id,
@@ -336,8 +368,11 @@ export async function getDashboardContext(): Promise<DashboardContext | null> {
     },
     membership: {
       role: membership.role,
+      isAdminRole: adminRole,
     },
-    business: mapBusiness(membership.business),
+    isAdminModeEnabled: adminMode,
+    hasAdminPinConfigured,
+    business: mapBusiness(business),
   };
 }
 
@@ -356,6 +391,20 @@ export async function requireCompletedDashboardContext() {
 
   if (!context.business.onboardingCompletedAt) {
     redirect("/dashboard/onboarding");
+  }
+
+  return context;
+}
+
+export async function requireAdminDashboardContext(nextPath = "/dashboard") {
+  const context = await requireCompletedDashboardContext();
+
+  if (!context.membership.isAdminRole) {
+    redirect("/dashboard/pedidos");
+  }
+
+  if (!context.isAdminModeEnabled) {
+    redirect(`/dashboard/admin-mode?next=${encodeURIComponent(nextPath)}`);
   }
 
   return context;

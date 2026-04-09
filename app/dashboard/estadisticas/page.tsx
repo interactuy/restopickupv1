@@ -5,7 +5,7 @@ import { formatPrice } from "@/lib/public-catalog";
 import {
   getDashboardSalesStats,
   type DashboardSalesRange,
-  requireCompletedDashboardContext,
+  requireAdminDashboardContext,
 } from "@/lib/dashboard/server";
 
 type DashboardStatisticsPageProps = {
@@ -31,7 +31,7 @@ function getSalesRange(range?: string): DashboardSalesRange {
 export default async function DashboardStatisticsPage({
   searchParams,
 }: DashboardStatisticsPageProps) {
-  const context = await requireCompletedDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/estadisticas");
   const range = getSalesRange((await searchParams).range);
   const salesStats = await getDashboardSalesStats(
     context.business.id,

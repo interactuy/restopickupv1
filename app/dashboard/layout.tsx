@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { DashboardLiveNotifier } from "@/components/dashboard/dashboard-live-notifier";
 import { SubmitButton } from "@/components/dashboard/submit-button";
-import { logoutAction } from "@/lib/dashboard/actions";
+import { lockAdminModeAction, logoutAction } from "@/lib/dashboard/actions";
 import {
   getDashboardOverview,
   requireDashboardContext,
@@ -16,10 +16,12 @@ export default async function DashboardLayout({
   children,
 }: DashboardLayoutProps) {
   const context = await requireDashboardContext();
+  const showAdminLinks =
+    context.membership.isAdminRole && context.isAdminModeEnabled;
   const overview = context.business.onboardingCompletedAt
     ? await getDashboardOverview(context.business.id)
     : null;
-  const links = context.business.onboardingCompletedAt
+  const links = context.business.onboardingCompletedAt && showAdminLinks
       ? [
         { href: "/dashboard", label: "Resumen" },
         {
@@ -30,11 +32,22 @@ export default async function DashboardLayout({
         { href: "/dashboard/estadisticas", label: "Estadisticas" },
         { href: "/dashboard/categorias", label: "Categorias" },
         { href: "/dashboard/productos", label: "Productos" },
+        { href: "/dashboard/pagos", label: "Pagos" },
         { href: "/dashboard/configuracion", label: "Configuracion" },
+      ]
+    : context.business.onboardingCompletedAt
+    ? [
+        {
+          href: "/dashboard/pedidos",
+          label: "Pedidos",
+          badge: overview && overview.pendingOrders > 0 ? overview.pendingOrders : null,
+        },
+        { href: "/dashboard/categorias", label: "Categorias" },
+        { href: "/dashboard/productos", label: "Productos" },
       ]
     : [
         { href: "/dashboard/onboarding", label: "Primeros pasos" },
-        { href: "/dashboard/configuracion", label: "Configuracion" },
+        ...(showAdminLinks ? [{ href: "/dashboard/configuracion", label: "Configuracion" }] : []),
         { href: "/dashboard/categorias", label: "Categorias" },
         { href: "/dashboard/productos", label: "Productos" },
       ];
@@ -57,12 +70,38 @@ export default async function DashboardLayout({
             <p className="mt-2 text-sm text-[var(--color-muted)]">
               {context.user.email ?? "Usuario del local"}
             </p>
+            <p className="mt-2 text-xs uppercase tracking-[0.2em] text-[var(--color-muted)]">
+              {context.membership.isAdminRole
+                ? context.isAdminModeEnabled
+                  ? "Modo admin"
+                  : "Modo colaborador"
+                : "Colaborador"}
+            </p>
             {!context.business.onboardingCompletedAt ? (
               <p className="mt-3 inline-flex rounded-full bg-[var(--color-accent)]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
                 Onboarding pendiente
               </p>
             ) : null}
           </div>
+
+          {context.membership.isAdminRole ? (
+            context.isAdminModeEnabled ? (
+              <form action={lockAdminModeAction} className="mt-4">
+                <SubmitButton
+                  label="Salir de modo admin"
+                  pendingLabel="Saliendo..."
+                  className="inline-flex w-full items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition enabled:hover:border-[var(--color-accent)] enabled:hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-60"
+                />
+              </form>
+            ) : (
+              <Link
+                href={`/dashboard/admin-mode${context.business.onboardingCompletedAt ? "?next=/dashboard" : "?next=/dashboard/onboarding"}`}
+                className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+              >
+                Entrar a modo admin
+              </Link>
+            )
+          ) : null}
 
           <nav className="mt-6 space-y-2">
             {links.map((link) => (

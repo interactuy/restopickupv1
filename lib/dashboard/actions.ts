@@ -1,8 +1,16 @@
 "use server";
 
+import { createHash, randomBytes } from "node:crypto";
+
 import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 
+import {
+  disableAdminMode,
+  enableAdminMode,
+  hashAdminPin,
+  verifyAdminPin,
+} from "@/lib/dashboard/admin-mode";
 import {
   getImageExtension,
   parseProductOptionsInput,
@@ -14,9 +22,14 @@ import {
 } from "@/lib/dashboard/products";
 import {
   getDashboardCategoryById,
+  requireAdminDashboardContext,
   getDashboardProductById,
   requireDashboardContext,
 } from "@/lib/dashboard/server";
+import {
+  createMercadoPagoAuthorizationUrl,
+  disconnectMercadoPagoBusinessAccount,
+} from "@/lib/mercadopago/accounts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,6 +37,7 @@ const PRODUCT_IMAGES_BUCKET = "product-images";
 const BUSINESS_BRANDING_BUCKET = "business-branding";
 const MAPBOX_GEOCODING_URL = "https://api.mapbox.com/search/geocode/v6/forward";
 const BUSINESS_DAY_COUNT = 7;
+const ADMIN_PIN_RESET_TTL_MS = 1000 * 60 * 30;
 
 function buildDashboardProductsRedirect(params: Record<string, string>) {
   const searchParams = new URLSearchParams(params);
@@ -59,6 +73,72 @@ function buildDashboardCategoryEditRedirect(
   const searchParams = new URLSearchParams(params);
   const query = searchParams.toString();
   return `/dashboard/categorias/${categoryId}/editar${query ? `?${query}` : ""}`;
+}
+
+function getAppUrl() {
+  const appUrl = process.env.APP_URL;
+
+  if (!appUrl) {
+    throw new Error("Falta APP_URL para generar links del dashboard.");
+  }
+
+  return appUrl.replace(/\/+$/, "");
+}
+
+function buildAdminModeRedirect(params: Record<string, string>) {
+  const searchParams = new URLSearchParams(params);
+  const query = searchParams.toString();
+  return `/dashboard/admin-mode${query ? `?${query}` : ""}`;
+}
+
+function sanitizeDashboardNextPath(nextPath: string) {
+  return nextPath.startsWith("/dashboard") ? nextPath : "/dashboard";
+}
+
+async function sendAdminPinResetEmail(params: {
+  email: string;
+  businessName: string;
+  resetUrl: string;
+}) {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const resendFromEmail = process.env.RESEND_FROM_EMAIL;
+
+  if (!resendApiKey || !resendFromEmail) {
+    throw new Error(
+      "Faltan RESEND_API_KEY o RESEND_FROM_EMAIL para enviar el reset del PIN."
+    );
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: resendFromEmail,
+      to: [params.email],
+      subject: `Reset de PIN admin para ${params.businessName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #24160d; line-height: 1.6;">
+          <h1 style="font-size: 24px; margin-bottom: 16px;">Reset de PIN admin</h1>
+          <p>Recibimos un pedido para cambiar el PIN admin de <strong>${params.businessName}</strong>.</p>
+          <p>Si fuiste vos, usá este link para definir un PIN nuevo:</p>
+          <p style="margin: 24px 0;">
+            <a href="${params.resetUrl}" style="display: inline-block; background: #c67a30; color: white; text-decoration: none; padding: 12px 20px; border-radius: 999px; font-weight: 700;">
+              Cambiar PIN admin
+            </a>
+          </p>
+          <p>Este enlace vence en 30 minutos.</p>
+        </div>
+      `,
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`No se pudo enviar el email de reset del PIN: ${body}`);
+  }
 }
 
 async function ensureBusinessCategory(
@@ -493,6 +573,261 @@ export async function logoutAction() {
   redirect("/login");
 }
 
+export async function unlockAdminModeAction(formData: FormData) {
+  const context = await requireDashboardContext();
+  const pin = String(formData.get("pin") ?? "").trim();
+  const pinConfirmation = String(formData.get("pinConfirmation") ?? "").trim();
+  const nextPath = sanitizeDashboardNextPath(
+    String(formData.get("next") ?? "/dashboard").trim() || "/dashboard"
+  );
+
+  if (!context.membership.isAdminRole) {
+    redirect("/dashboard/pedidos");
+  }
+
+  if (!/^\d{4}$/.test(pin)) {
+    redirect(
+      buildAdminModeRedirect({
+        error: "pin-format",
+        next: nextPath,
+      })
+    );
+  }
+
+  const admin = createAdminClient();
+
+  const { data: security, error: securityError } = await admin
+    .from("business_admin_security")
+    .select("business_id, pin_hash")
+    .eq("business_id", context.business.id)
+    .maybeSingle<{ business_id: string; pin_hash: string | null }>();
+
+  if (securityError) {
+    throw new Error(`No se pudo cargar la seguridad admin: ${securityError.message}`);
+  }
+
+  if (!security?.pin_hash) {
+    if (pin !== pinConfirmation) {
+      redirect(
+        buildAdminModeRedirect({
+          error: "pin-mismatch",
+          next: nextPath,
+        })
+      );
+    }
+
+    const { error } = await admin.from("business_admin_security").upsert(
+      {
+        business_id: context.business.id,
+        pin_hash: hashAdminPin(pin),
+        pin_updated_at: new Date().toISOString(),
+      },
+      { onConflict: "business_id" }
+    );
+
+    if (error) {
+      throw new Error(`No se pudo guardar el PIN admin: ${error.message}`);
+    }
+  } else if (!verifyAdminPin({ pin, hash: security.pin_hash })) {
+    redirect(
+      buildAdminModeRedirect({
+        error: "pin-invalid",
+        next: nextPath,
+      })
+    );
+  }
+
+  await enableAdminMode({
+    businessId: context.business.id,
+    userId: context.user.id,
+  });
+
+  redirect(nextPath);
+}
+
+export async function lockAdminModeAction() {
+  const context = await requireDashboardContext();
+
+  await disableAdminMode({
+    businessId: context.business.id,
+    userId: context.user.id,
+  });
+
+  redirect("/dashboard/pedidos");
+}
+
+export async function updateAdminPinAction(formData: FormData) {
+  const context = await requireAdminDashboardContext();
+  const currentPin = String(formData.get("currentPin") ?? "").trim();
+  const nextPin = String(formData.get("nextPin") ?? "").trim();
+  const nextPinConfirmation = String(formData.get("nextPinConfirmation") ?? "").trim();
+
+  if (!/^\d{4}$/.test(nextPin)) {
+    redirect("/dashboard/configuracion?error=pin-format");
+  }
+
+  if (nextPin !== nextPinConfirmation) {
+    redirect("/dashboard/configuracion?error=pin-mismatch");
+  }
+
+  const admin = createAdminClient();
+  const { data: security, error: securityError } = await admin
+    .from("business_admin_security")
+    .select("business_id, pin_hash")
+    .eq("business_id", context.business.id)
+    .maybeSingle<{ business_id: string; pin_hash: string | null }>();
+
+  if (securityError) {
+    throw new Error(`No se pudo cargar el PIN actual: ${securityError.message}`);
+  }
+
+  if (security?.pin_hash && !verifyAdminPin({ pin: currentPin, hash: security.pin_hash })) {
+    redirect("/dashboard/configuracion?error=pin-current-invalid");
+  }
+
+  const { error } = await admin.from("business_admin_security").upsert(
+    {
+      business_id: context.business.id,
+      pin_hash: hashAdminPin(nextPin),
+      pin_updated_at: new Date().toISOString(),
+    },
+    { onConflict: "business_id" }
+  );
+
+  if (error) {
+    throw new Error(`No se pudo actualizar el PIN admin: ${error.message}`);
+  }
+
+  revalidatePath("/dashboard/configuracion");
+  redirect("/dashboard/configuracion?success=pin-updated");
+}
+
+export async function requestAdminPinResetAction() {
+  const context = await requireDashboardContext();
+
+  if (!context.membership.isAdminRole) {
+    redirect("/dashboard/pedidos");
+  }
+
+  const email = context.user.email ?? context.business.contactEmail;
+
+  if (!email) {
+    redirect("/dashboard/configuracion?error=pin-reset-email");
+  }
+
+  const rawToken = randomBytes(24).toString("hex");
+  const tokenHash = createHash("sha256").update(rawToken).digest("hex");
+  const expiresAt = new Date(Date.now() + ADMIN_PIN_RESET_TTL_MS).toISOString();
+  const admin = createAdminClient();
+
+  const { error } = await admin.from("business_admin_pin_resets").insert({
+    business_id: context.business.id,
+    requested_by_user_id: context.user.id,
+    token_hash: tokenHash,
+    expires_at: expiresAt,
+  });
+
+  if (error) {
+    throw new Error(`No se pudo generar el reset del PIN: ${error.message}`);
+  }
+
+  const resetUrl = new URL("/dashboard/admin-mode/reset", getAppUrl());
+  resetUrl.searchParams.set("token", rawToken);
+  await sendAdminPinResetEmail({
+    email,
+    businessName: context.business.name,
+    resetUrl: resetUrl.toString(),
+  });
+
+  redirect("/dashboard/configuracion?success=pin-reset-sent");
+}
+
+export async function completeAdminPinResetAction(formData: FormData) {
+  const context = await requireDashboardContext();
+  const token = String(formData.get("token") ?? "").trim();
+  const pin = String(formData.get("pin") ?? "").trim();
+  const pinConfirmation = String(formData.get("pinConfirmation") ?? "").trim();
+
+  if (!context.membership.isAdminRole) {
+    redirect("/dashboard/pedidos");
+  }
+
+  if (!/^\d{4}$/.test(pin)) {
+    redirect(`/dashboard/admin-mode/reset?token=${encodeURIComponent(token)}&error=pin-format`);
+  }
+
+  if (pin !== pinConfirmation) {
+    redirect(`/dashboard/admin-mode/reset?token=${encodeURIComponent(token)}&error=pin-mismatch`);
+  }
+
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const admin = createAdminClient();
+  const { data: resetRequest, error: resetError } = await admin
+    .from("business_admin_pin_resets")
+    .select("id, business_id, used_at, expires_at")
+    .eq("token_hash", tokenHash)
+    .maybeSingle<{ id: string; business_id: string; used_at: string | null; expires_at: string }>();
+
+  if (resetError) {
+    throw new Error(`No se pudo validar el reset del PIN: ${resetError.message}`);
+  }
+
+  if (
+    !resetRequest ||
+    resetRequest.business_id !== context.business.id ||
+    resetRequest.used_at ||
+    new Date(resetRequest.expires_at).getTime() < Date.now()
+  ) {
+    redirect("/dashboard/admin-mode/reset?token=invalid&error=token-invalid");
+  }
+
+  const { error: securityError } = await admin.from("business_admin_security").upsert(
+    {
+      business_id: context.business.id,
+      pin_hash: hashAdminPin(pin),
+      pin_updated_at: new Date().toISOString(),
+    },
+    { onConflict: "business_id" }
+  );
+
+  if (securityError) {
+    throw new Error(`No se pudo guardar el PIN nuevo: ${securityError.message}`);
+  }
+
+  const { error: markUsedError } = await admin
+    .from("business_admin_pin_resets")
+    .update({ used_at: new Date().toISOString() })
+    .eq("id", resetRequest.id);
+
+  if (markUsedError) {
+    throw new Error(`No se pudo cerrar el reset del PIN: ${markUsedError.message}`);
+  }
+
+  await enableAdminMode({
+    businessId: context.business.id,
+    userId: context.user.id,
+  });
+
+  redirect("/dashboard/configuracion?success=pin-reset");
+}
+
+export async function startMercadoPagoConnectAction() {
+  const context = await requireAdminDashboardContext();
+  const authorizationUrl = await createMercadoPagoAuthorizationUrl({
+    businessId: context.business.id,
+    userId: context.user.id,
+  });
+
+  redirect(authorizationUrl);
+}
+
+export async function disconnectMercadoPagoConnectionAction() {
+  const context = await requireAdminDashboardContext();
+  await disconnectMercadoPagoBusinessAccount(context.business.id);
+  revalidatePath("/dashboard/pagos");
+  redirect("/dashboard/pagos?success=mercadopago-disconnected");
+}
+
 export async function updateOrderStatusAction(formData: FormData) {
   const context = await requireDashboardContext();
   const orderId = String(formData.get("orderId") ?? "");
@@ -663,7 +998,7 @@ export async function toggleProductAvailabilityAction(formData: FormData) {
 }
 
 export async function updateBusinessSettingsAction(formData: FormData) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext();
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const contactEmail = String(formData.get("contactEmail") ?? "").trim();
@@ -819,7 +1154,7 @@ export async function updateBusinessSettingsAction(formData: FormData) {
 }
 
 export async function completeDashboardOnboardingAction() {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext();
   const admin = createAdminClient();
 
   const { error } = await admin

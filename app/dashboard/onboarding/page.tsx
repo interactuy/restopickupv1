@@ -12,6 +12,14 @@ import { SubmitButton } from "@/components/dashboard/submit-button";
 export default async function DashboardOnboardingPage() {
   const context = await requireDashboardContext();
 
+  if (!context.membership.isAdminRole) {
+    redirect("/dashboard/pedidos");
+  }
+
+  if (!context.isAdminModeEnabled) {
+    redirect("/dashboard/admin-mode?next=/dashboard/onboarding");
+  }
+
   if (context.business.onboardingCompletedAt) {
     redirect("/dashboard");
   }

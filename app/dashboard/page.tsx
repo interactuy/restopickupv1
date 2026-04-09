@@ -1,15 +1,25 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AutoRefresh } from "@/components/live/auto-refresh";
 import { formatPrice } from "@/lib/public-catalog";
 import {
   getDashboardOverview,
   getDashboardSalesStats,
-  requireCompletedDashboardContext,
+  requireDashboardContext,
 } from "@/lib/dashboard/server";
 
 export default async function DashboardHomePage() {
-  const context = await requireCompletedDashboardContext();
+  const context = await requireDashboardContext();
+
+  if (!context.business.onboardingCompletedAt) {
+    redirect("/dashboard/onboarding");
+  }
+
+  if (!context.membership.isAdminRole || !context.isAdminModeEnabled) {
+    redirect("/dashboard/pedidos");
+  }
+
   const [overview, salesStats] = await Promise.all([
     getDashboardOverview(context.business.id),
     getDashboardSalesStats(context.business.id, context.business.timezone, "30d"),

@@ -6,6 +6,11 @@ import { MercadoPagoConfig, Payment, Preference } from "mercadopago";
 import type { NextRequest } from "next/server";
 
 import {
+  getBusinessPaymentConnection,
+  getMercadoPagoAccessTokenForBusiness,
+  listConnectedMercadoPagoBusinessConnections,
+} from "@/lib/mercadopago/accounts";
+import {
   getMercadoPagoAccessToken,
   getMercadoPagoAppUrl,
   getMercadoPagoStatementDescriptor,
@@ -50,9 +55,9 @@ type MercadoPagoPaymentSearchResponse = {
   }>;
 };
 
-function getMercadoPagoClient() {
+function getMercadoPagoClient(accessToken: string) {
   return new MercadoPagoConfig({
-    accessToken: getMercadoPagoAccessToken(),
+    accessToken,
   });
 }
 
@@ -78,7 +83,8 @@ function mapMercadoPagoStatusToOrderPaymentStatus(status?: string | null) {
 }
 
 async function findMercadoPagoPaymentIdByExternalReference(
-  externalReference: string
+  externalReference: string,
+  accessToken: string
 ) {
   const searchUrl = new URL("https://api.mercadopago.com/v1/payments/search");
   searchUrl.searchParams.set("sort", "date_created");
@@ -87,7 +93,7 @@ async function findMercadoPagoPaymentIdByExternalReference(
 
   const response = await fetch(searchUrl, {
     headers: {
-      Authorization: `Bearer ${getMercadoPagoAccessToken()}`,
+      Authorization: `Bearer ${accessToken}`,
       accept: "application/json",
     },
     cache: "no-store",
@@ -189,7 +195,9 @@ export async function createMercadoPagoPreference({
   order,
   items,
 }: CreatePreferenceInput) {
-  const client = getMercadoPagoClient();
+  const accessToken = await getMercadoPagoAccessTokenForBusiness(business.id);
+  const paymentConnection = await getBusinessPaymentConnection(business.id);
+  const client = getMercadoPagoClient(accessToken);
   const preference = new Preference(client);
   const appUrl = getMercadoPagoAppUrl();
 
@@ -221,6 +229,7 @@ export async function createMercadoPagoPreference({
         order_number: order.orderNumber,
         business_id: business.id,
         business_slug: business.slug,
+        connected_account_id: paymentConnection?.mercadopagoUserId ?? null,
       },
     },
   });
@@ -340,9 +349,10 @@ export function verifyMercadoPagoWebhookSignature(request: NextRequest) {
 
 export async function syncMercadoPagoPayment(
   paymentId: string | number,
-  notificationPayload?: unknown
+  notificationPayload?: unknown,
+  accessToken?: string
 ): Promise<PaymentSyncResult> {
-  const client = getMercadoPagoClient();
+  const client = getMercadoPagoClient(accessToken ?? getMercadoPagoAccessToken());
   const paymentClient = new Payment(client);
   const payment = await paymentClient.get({ id: paymentId });
 
@@ -426,15 +436,57 @@ export async function syncMercadoPagoPaymentByExternalReference(
   externalReference: string,
   notificationPayload?: unknown
 ) {
+  const supabase = createAdminClient();
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("business_id")
+    .eq("id", externalReference)
+    .maybeSingle<{ business_id: string }>();
+
+  if (orderError || !order) {
+    return null;
+  }
+
+  const accessToken = await getMercadoPagoAccessTokenForBusiness(order.business_id);
   const paymentId = await findMercadoPagoPaymentIdByExternalReference(
-    externalReference
+    externalReference,
+    accessToken
   );
 
   if (!paymentId) {
     return null;
   }
 
-  return syncMercadoPagoPayment(paymentId, notificationPayload);
+  return syncMercadoPagoPayment(paymentId, notificationPayload, accessToken);
+}
+
+export async function syncMercadoPagoPaymentFromWebhook(
+  paymentId: string | number,
+  notificationPayload?: unknown
+) {
+  try {
+    return await syncMercadoPagoPayment(paymentId, notificationPayload);
+  } catch (defaultError) {
+    const connections = await listConnectedMercadoPagoBusinessConnections();
+
+    for (const connection of connections) {
+      if (!connection.accessToken) {
+        continue;
+      }
+
+      try {
+        return await syncMercadoPagoPayment(
+          paymentId,
+          notificationPayload,
+          connection.accessToken
+        );
+      } catch {
+        // Seguimos probando con la siguiente cuenta conectada.
+      }
+    }
+
+    throw defaultError;
+  }
 }
 
 export function getFormattedPaymentStatus(paymentStatus: string) {

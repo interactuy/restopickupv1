@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import {
-  syncMercadoPagoPayment,
+  syncMercadoPagoPaymentFromWebhook,
   verifyMercadoPagoWebhookSignature,
 } from "@/lib/mercadopago/server";
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     paymentId,
     topic,
   });
-  await syncMercadoPagoPayment(paymentId, payload);
+  await syncMercadoPagoPaymentFromWebhook(paymentId, payload);
 
   return NextResponse.json({ received: true });
 }
