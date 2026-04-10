@@ -12,10 +12,10 @@ export function BusinessApplicationForm({
   success,
 }: BusinessApplicationFormProps) {
   const inputClass =
-    "w-full rounded-2xl border border-[rgba(92,59,34,0.14)] bg-white px-4 py-3 text-sm outline-none transition placeholder:text-[rgba(107,90,76,0.5)] focus:border-[var(--color-accent)] focus:ring-4 focus:ring-[rgba(196,109,41,0.1)]";
+    "w-full rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none transition placeholder:text-[rgba(107,98,90,0.55)] focus:border-[var(--color-accent)] focus:ring-4 focus:ring-[rgba(198,90,46,0.1)]";
   const labelClass = "mb-2 block text-sm font-semibold text-[#2f2118]";
   const sectionTitleClass =
-    "text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]";
+    "text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-secondary)]";
 
   return (
     <div className="space-y-6">
@@ -27,7 +27,7 @@ export function BusinessApplicationForm({
 
       {success === "submitted" ? (
         <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          Recibimos tu solicitud. La revisamos manualmente y te contactamos si avanzamos.
+          Recibimos tu solicitud. La revisamos y te contactamos con los próximos pasos.
         </div>
       ) : null}
 
@@ -238,13 +238,13 @@ export function BusinessApplicationForm({
         </div>
         </section>
 
-        <div className="flex flex-wrap items-center gap-4 border-t border-[rgba(92,59,34,0.12)] pt-6">
+        <div className="flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-6">
           <SubmitButton
             label="Enviar solicitud"
             pendingLabel="Enviando..."
           />
           <p className="text-sm text-[var(--color-muted)]">
-            No se crea acceso automático. Primero revisamos la solicitud manualmente.
+            No se crea acceso automático. Primero revisamos la solicitud.
           </p>
         </div>
       </form>

@@ -168,9 +168,8 @@ export default async function AdminApplicationDetailPage({
               Estado administrativo
             </h2>
             <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
-              Cuando marquen esta solicitud como aprobada, el backend va a crear o
-              reutilizar el negocio, generar el usuario owner en Supabase Auth,
-              vincularlo en <code>business_users</code> y enviar el email de acceso.
+              Cuando apruebes esta solicitud, Restopickup crea o reutiliza el negocio,
+              prepara el acceso del responsable y envía el email para entrar.
             </p>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>

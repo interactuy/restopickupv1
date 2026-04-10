@@ -204,7 +204,7 @@ export default async function AdminStatsPage() {
           description={
             stats.conversion.hasTracking
               ? "Funnel medido con eventos de navegación."
-              : "La base está lista, falta instrumentar eventos de menú, carrito y checkout."
+              : "Todavía no hay suficientes eventos para medir este embudo."
           }
         >
           <AdminMetric

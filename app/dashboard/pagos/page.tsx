@@ -26,7 +26,7 @@ export default async function DashboardPaymentsPage({
       : query.success === "mercadopago-disconnected"
         ? "Mercado Pago quedó desconectado."
         : query.error === "mercadopago-oauth"
-          ? "Mercado Pago devolvió un error al autorizar la conexión."
+          ? "No pudimos completar la autorización con Mercado Pago."
           : query.error === "mercadopago-state"
             ? "La conexión con Mercado Pago venció o no pudimos validar el regreso."
             : query.error === "mercadopago-save"
@@ -43,7 +43,7 @@ export default async function DashboardPaymentsPage({
           Mercado Pago del local
         </h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--color-muted)]">
-          Conectá la cuenta propia del negocio para que los cobros entren directo ahí. Si todavía no conectás una cuenta, la app sigue usando la credencial global configurada para el proyecto.
+          Conectá la cuenta propia del negocio para que los cobros entren directo ahí. Si todavía no hay una cuenta conectada, los pagos se procesan con la cuenta temporal de Restopickup.
         </p>
 
         {feedback ? (
@@ -76,7 +76,7 @@ export default async function DashboardPaymentsPage({
             <p>
               Modo:{" "}
               <span className="font-medium text-[var(--color-foreground)]">
-                {connection?.liveMode ? "Producción" : "Test / sandbox"}
+                {connection?.liveMode ? "Producción" : "Pruebas"}
               </span>
             </p>
           </div>

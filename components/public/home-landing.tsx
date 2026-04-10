@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/public/empty-state";
 import type { HomePageData } from "@/lib/public-catalog";
@@ -15,6 +15,13 @@ type HomeLandingProps = {
   data: HomePageData;
 };
 
+type UserLocation = {
+  latitude: number;
+  longitude: number;
+};
+
+type LocationStatus = "idle" | "loading" | "ready" | "denied" | "unsupported";
+
 function matchesSearch(value: string, query: string) {
   return value.toLowerCase().includes(query);
 }
@@ -24,12 +31,231 @@ function buildGoogleMapsUrl(address: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
 }
 
+function getDistanceKm(
+  from: UserLocation,
+  to: { latitude: number | null; longitude: number | null }
+) {
+  if (to.latitude == null || to.longitude == null) {
+    return null;
+  }
+
+  const earthRadiusKm = 6371;
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const latitudeDelta = toRadians(to.latitude - from.latitude);
+  const longitudeDelta = toRadians(to.longitude - from.longitude);
+  const originLatitude = toRadians(from.latitude);
+  const targetLatitude = toRadians(to.latitude);
+  const a =
+    Math.sin(latitudeDelta / 2) * Math.sin(latitudeDelta / 2) +
+    Math.cos(originLatitude) *
+      Math.cos(targetLatitude) *
+      Math.sin(longitudeDelta / 2) *
+      Math.sin(longitudeDelta / 2);
+
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function getDaypart() {
+  const hour = new Date().getHours();
+
+  if (hour >= 6 && hour < 11) {
+    return "morning";
+  }
+
+  if (hour >= 15 && hour < 18) {
+    return "afternoon";
+  }
+
+  if ((hour >= 11 && hour < 15) || hour >= 18 || hour < 2) {
+    return "meal";
+  }
+
+  return "any";
+}
+
+function getDaypartScore(values: string[], daypart: ReturnType<typeof getDaypart>) {
+  const haystack = values.join(" ").toLowerCase();
+  const breakfastKeywords = [
+    "café",
+    "cafe",
+    "cafetería",
+    "cafeteria",
+    "desayuno",
+    "brunch",
+    "panadería",
+    "panaderia",
+    "pastelería",
+    "pasteleria",
+    "medialuna",
+    "merienda",
+  ];
+  const mealKeywords = [
+    "burger",
+    "hamburguesa",
+    "pizza",
+    "pizzería",
+    "pizzeria",
+    "wrap",
+    "sandwich",
+    "sushi",
+    "milanesa",
+    "almuerzo",
+    "cena",
+    "comida",
+    "taco",
+    "pollo",
+  ];
+  const keywords =
+    daypart === "morning" || daypart === "afternoon"
+      ? breakfastKeywords
+      : daypart === "meal"
+        ? mealKeywords
+        : [];
+
+  if (keywords.length === 0) {
+    return 0;
+  }
+
+  return keywords.some((keyword) => haystack.includes(keyword)) ? 1 : 0;
+}
+
 export function HomeLanding({ data }: HomeLandingProps) {
   const [query, setQuery] = useState("");
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
+  const daypart = getDaypart();
+
+  function requestUserLocation() {
+    if (!navigator.geolocation) {
+      setLocationStatus("unsupported");
+      return;
+    }
+
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setLocationStatus("ready");
+      },
+      () => {
+        setLocationStatus("denied");
+      },
+      {
+        enableHighAccuracy: false,
+        maximumAge: 1000 * 60 * 20,
+        timeout: 8000,
+      }
+    );
+  }
+
+  useEffect(() => {
+    if (!navigator.permissions || !navigator.geolocation) {
+      return;
+    }
+
+    navigator.permissions
+      .query({ name: "geolocation" })
+      .then((permission) => {
+        if (permission.state === "granted") {
+          requestUserLocation();
+        }
+      })
+      .catch(() => {
+        // Some browsers do not expose geolocation permissions consistently.
+      });
+  }, []);
+
+  const orderedBusinesses = useMemo(() => {
+    return [...data.topBusinesses]
+      .map((business, index) => {
+        const distanceKm = userLocation ? getDistanceKm(userLocation, business) : null;
+        const daypartScore = getDaypartScore(
+          [
+            business.name,
+            business.description ?? "",
+            business.pickupAddress,
+            ...business.cuisineLabels,
+          ],
+          daypart
+        );
+        const distanceScore =
+          distanceKm === null ? 0 : Math.max(0, 1 - Math.min(distanceKm, 12) / 12);
+        const salesScore = business.paidOrdersCount > 0 ? 0.15 : 0;
+
+        return {
+          business,
+          distanceKm,
+          score:
+            (userLocation ? distanceScore * 8 : 0) +
+            daypartScore * 2 +
+            salesScore -
+            index * 0.001,
+        };
+      })
+      .sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+
+        if (a.distanceKm !== null && b.distanceKm !== null) {
+          return a.distanceKm - b.distanceKm;
+        }
+
+        return 0;
+      });
+  }, [data.topBusinesses, daypart, userLocation]);
+
+  const visibleBusinesses = orderedBusinesses.slice(0, 6);
+  const featuredBusiness = visibleBusinesses[0]?.business ?? data.featuredBusiness;
+  const orderedProducts = useMemo(() => {
+    return [...data.featuredProducts]
+      .map((product, index) => {
+        const distanceKm = userLocation ? getDistanceKm(userLocation, product.business) : null;
+        const daypartScore = getDaypartScore(
+          [
+            product.name,
+            product.description ?? "",
+            product.business.name,
+            product.business.description ?? "",
+            product.business.pickupAddress,
+            ...product.business.cuisineLabels,
+          ],
+          daypart
+        );
+        const distanceScore =
+          distanceKm === null ? 0 : Math.max(0, 1 - Math.min(distanceKm, 12) / 12);
+        const salesScore = product.paidUnitsSold > 0 ? 0.15 : 0;
+
+        return {
+          product,
+          distanceKm,
+          score:
+            (userLocation ? distanceScore * 8 : 0) +
+            daypartScore * 2 +
+            salesScore -
+            index * 0.001,
+        };
+      })
+      .sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+
+        if (a.distanceKm !== null && b.distanceKm !== null) {
+          return a.distanceKm - b.distanceKm;
+        }
+
+        return 0;
+      })
+      .slice(0, 6);
+  }, [data.featuredProducts, daypart, userLocation]);
 
   const filteredBusinesses = deferredQuery
-    ? data.topBusinesses.filter((business) =>
+    ? orderedBusinesses.map((item) => item.business).filter((business) =>
         [business.name, business.description ?? "", business.pickupAddress].some((value) =>
           matchesSearch(value, deferredQuery)
         )
@@ -37,7 +263,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
     : [];
 
   const filteredProducts = deferredQuery
-    ? data.featuredProducts.filter((product) =>
+    ? orderedProducts.map((item) => item.product).filter((product) =>
         [product.name, product.description ?? "", product.business.name].some((value) =>
           matchesSearch(value, deferredQuery)
         )
@@ -97,6 +323,21 @@ export function HomeLanding({ data }: HomeLandingProps) {
                     placeholder="Buscar locales, burgers, pizzas, wraps..."
                     className="w-full bg-transparent text-base outline-none placeholder:text-[var(--color-muted)]"
                   />
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={requestUserLocation}
+                    disabled={locationStatus === "loading"}
+                    className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition enabled:hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {locationStatus === "loading"
+                      ? "Buscando ubicación..."
+                      : locationStatus === "ready"
+                        ? "Ubicación activada"
+                        : "Usar mi ubicación"}
+                  </button>
                 </div>
 
                 {deferredQuery ? (
@@ -173,17 +414,19 @@ export function HomeLanding({ data }: HomeLandingProps) {
         <div className="flex items-end justify-between gap-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-              Locales con más movimiento
+              {userLocation ? "Locales cerca tuyo" : "Locales con más movimiento"}
             </p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-              Encontrá tu próximo pedido para retirar
+              {userLocation
+                ? "Los 6 más convenientes para retirar"
+                : "Encontrá tu próximo pedido para retirar"}
             </h2>
           </div>
         </div>
 
-        {data.topBusinesses.length > 0 ? (
+        {visibleBusinesses.length > 0 ? (
           <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {data.topBusinesses.map((business) => {
+            {visibleBusinesses.map(({ business, distanceKm }) => {
               const openStatus = getBusinessOpenStatusLabel(business);
               const prepTimeLabel = formatPrepTimeRange(
                 business.prepTimeMinMinutes,
@@ -254,6 +497,13 @@ export function HomeLanding({ data }: HomeLandingProps) {
                           Listo en {prepTimeLabel}
                         </span>
                       ) : null}
+                      {distanceKm !== null ? (
+                        <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)]">
+                          {distanceKm < 1
+                            ? `${Math.round(distanceKm * 1000)} m`
+                            : `${distanceKm.toFixed(1)} km`}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </Link>
@@ -273,52 +523,54 @@ export function HomeLanding({ data }: HomeLandingProps) {
 
       <section className="mx-auto w-full max-w-7xl px-6 pb-16 md:px-10 lg:px-12">
         <div className="overflow-hidden rounded-[2.25rem] border border-[var(--color-border)] bg-white shadow-[0_24px_80px_rgba(39,24,13,0.08)]">
-          {data.featuredBusiness ? (
+          {featuredBusiness ? (
             <div className="grid gap-0 lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)]">
               <div className="p-8 md:p-10">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-                  Local destacado
+                  {userLocation ? "Local destacado cerca tuyo" : "Local destacado"}
                 </p>
                 <div className="mt-4 flex items-start gap-4">
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
-                    {data.featuredBusiness.profileImageUrl ? (
+                    {featuredBusiness.profileImageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={data.featuredBusiness.profileImageUrl}
-                        alt={data.featuredBusiness.name}
+                        src={featuredBusiness.profileImageUrl}
+                        alt={featuredBusiness.name}
                         className="h-full w-full object-cover"
                       />
                     ) : (
                       <span className="text-2xl font-semibold text-[var(--color-foreground)]">
-                        {data.featuredBusiness.name.slice(0, 1).toUpperCase()}
+                        {featuredBusiness.name.slice(0, 1).toUpperCase()}
                       </span>
                     )}
                   </div>
                   <div>
                     <h2 className="text-4xl font-semibold tracking-tight">
-                      {data.featuredBusiness.name}
+                      {featuredBusiness.name}
                     </h2>
                     <p className="mt-2 text-sm text-[var(--color-muted)]">
-                      {data.featuredBusiness.cuisineLabels.length > 0
-                        ? data.featuredBusiness.cuisineLabels.join(" · ")
+                      {featuredBusiness.cuisineLabels.length > 0
+                        ? featuredBusiness.cuisineLabels.join(" · ")
                         : "Menú para retirar"}
                     </p>
                     <a
-                      href={buildGoogleMapsUrl(data.featuredBusiness.pickupAddress)}
+                      href={buildGoogleMapsUrl(featuredBusiness.pickupAddress)}
                       target="_blank"
                       rel="noreferrer"
                       className="mt-3 inline-flex text-sm font-medium text-[var(--color-muted)] underline decoration-[rgba(39,24,13,0.2)] underline-offset-4 transition hover:text-[var(--color-accent)] hover:decoration-[var(--color-accent)]"
                     >
-                      {data.featuredBusiness.pickupAddress}
+                      {featuredBusiness.pickupAddress}
                     </a>
                   </div>
                 </div>
                 <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--color-muted)]">
-                  {data.featuredBusiness.description ?? data.featuredBusiness.pickupInstructions ?? data.featuredBusiness.pickupAddress}
+                  {featuredBusiness.description ??
+                    featuredBusiness.pickupInstructions ??
+                    featuredBusiness.pickupAddress}
                 </p>
                 <div className="mt-8">
                   <Link
-                    href={`/locales/${data.featuredBusiness.slug}`}
+                    href={`/locales/${featuredBusiness.slug}`}
                     className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-white transition hover:brightness-95"
                   >
                     Ver menú del local
@@ -327,12 +579,12 @@ export function HomeLanding({ data }: HomeLandingProps) {
               </div>
 
               <div className="relative min-h-[22rem] bg-[linear-gradient(135deg,#c76b32_0%,#8e2e20_100%)]">
-                {data.featuredBusiness.coverImageUrl ? (
+                {featuredBusiness.coverImageUrl ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={data.featuredBusiness.coverImageUrl}
-                      alt={`Portada de ${data.featuredBusiness.name}`}
+                      src={featuredBusiness.coverImageUrl}
+                      alt={`Portada de ${featuredBusiness.name}`}
                       className="absolute inset-0 h-full w-full object-cover"
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(32,22,14,0.15)_0%,rgba(32,22,14,0.58)_100%)]" />
@@ -366,17 +618,19 @@ export function HomeLanding({ data }: HomeLandingProps) {
         <div className="flex items-end justify-between gap-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-              Platos para pedir 
+              Platos para pedir
             </p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-              Productos que están saliendo fuerte
+              {userLocation
+                ? "Productos cerca para este momento"
+                : "Productos que están saliendo fuerte"}
             </h2>
           </div>
         </div>
 
-        {data.featuredProducts.length > 0 ? (
+        {orderedProducts.length > 0 ? (
           <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {data.featuredProducts.map((product) => {
+            {orderedProducts.map(({ product, distanceKm }) => {
               const hasOffer =
                 product.compareAtAmount !== null &&
                 product.compareAtAmount > product.priceAmount;
@@ -447,9 +701,13 @@ export function HomeLanding({ data }: HomeLandingProps) {
                         </p>
                       </div>
                       <span className="text-sm text-[var(--color-muted)]">
-                        {product.paidUnitsSold > 0
-                          ? `${product.paidUnitsSold} vendidos`
-                          : "Ver menú"}
+                        {distanceKm !== null
+                          ? distanceKm < 1
+                            ? `${Math.round(distanceKm * 1000)} m`
+                            : `${distanceKm.toFixed(1)} km`
+                          : product.paidUnitsSold > 0
+                            ? `${product.paidUnitsSold} vendidos`
+                            : "Ver menú"}
                       </span>
                     </div>
                   </div>

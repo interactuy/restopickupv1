@@ -80,7 +80,8 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "El pedido se creo, pero no pudimos iniciar el pago. Revisá Mercado Pago e intentá nuevamente con el pedido ya generado.",
+            "No pudimos abrir el pago. Probá de nuevo en unos segundos.",
+          errorCode: "payment_start_failed",
           orderId: order.order.id,
           orderNumber: order.order.orderNumber,
           requestId,
@@ -107,10 +108,10 @@ export async function POST(request: Request) {
   } catch (error) {
     const message =
       error instanceof ZodError
-        ? "El checkout llego incompleto o con datos invalidos."
-        : error instanceof Error
-          ? error.message
-          : "No se pudo crear el pedido.";
+        ? "Revisá los datos del pedido e intentá nuevamente."
+        : "No pudimos crear el pedido. Probá de nuevo en unos segundos.";
+    const errorCode =
+      error instanceof ZodError ? "invalid_checkout_payload" : "order_create_failed";
 
     console.error("[checkout] failed", {
       requestId,
@@ -125,6 +126,6 @@ export async function POST(request: Request) {
             : error,
     });
 
-    return NextResponse.json({ error: message, requestId }, { status: 400 });
+    return NextResponse.json({ error: message, errorCode, requestId }, { status: 400 });
   }
 }

@@ -32,7 +32,12 @@ export async function submitBusinessApplicationAction(formData: FormData) {
     });
 
     if (error) {
-      throw new Error(`No pudimos guardar la solicitud: ${error.message}`);
+      console.error("[business-application] insert failed", {
+        email: payload.email,
+        businessName: payload.businessName,
+        error: error.message,
+      });
+      throw new Error("No pudimos enviar la solicitud. Probá de nuevo en unos segundos.");
     }
 
     redirect(
@@ -46,7 +51,7 @@ export async function submitBusinessApplicationAction(formData: FormData) {
     const message =
       error instanceof Error
         ? error.message
-        : "No pudimos enviar la solicitud.";
+        : "No pudimos enviar la solicitud. Probá de nuevo en unos segundos.";
 
     redirect(
       buildApplicationRedirect({

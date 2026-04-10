@@ -47,6 +47,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
           "--color-border": "#e2e8f0",
           "--color-surface": "#f8fafc",
           "--color-surface-strong": "#ecfdf5",
+          fontFamily: "var(--font-geist-sans), sans-serif",
         } as CSSProperties
       }
     >

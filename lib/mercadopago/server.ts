@@ -129,7 +129,7 @@ export function getMercadoPagoReturnLabel(
       eyebrow: "Pago aprobado",
       title: "Pago confirmado",
       description:
-        "Tu pago fue aprobado y el pedido ya quedo registrado para preparacion.",
+        "Tu pago fue aprobado y el local ya recibió el pedido para prepararlo.",
     };
   }
 
@@ -138,33 +138,33 @@ export function getMercadoPagoReturnLabel(
       eyebrow: "Pago autorizado",
       title: "Pago autorizado",
       description:
-        "Mercado Pago autorizo el pago. El pedido ya existe y el local puede continuar con la preparacion.",
+        "Mercado Pago autorizó el pago y el local ya puede preparar tu pedido.",
     };
   }
 
   if (paymentStatus === "failed") {
     return {
       eyebrow: "Pago no aprobado",
-      title: "El pedido existe, pero el pago no se completo",
+      title: "El pago no se completó",
       description:
-        "El pedido se guardo igualmente. Revisá el estado del pago o volvé a intentar mas tarde.",
+        "No recibimos la confirmación del cobro. Podés volver a intentarlo más tarde.",
     };
   }
 
   if (checkoutStatus === "failure") {
     return {
       eyebrow: "Pago interrumpido",
-      title: "El pago no se completo",
+      title: "El pago no se completó",
       description:
-        "El pedido sigue registrado, pero Mercado Pago no confirmo el cobro.",
+        "Mercado Pago no confirmó el cobro. Si el pago se aprueba, esta pantalla se actualiza sola.",
     };
   }
 
   return {
     eyebrow: "Pago pendiente",
-    title: "Estamos esperando confirmacion de Mercado Pago",
+    title: "Estamos confirmando el pago",
     description:
-      "Tu pedido ya existe. Cuando Mercado Pago confirme el cobro, este estado se va a actualizar automaticamente.",
+      "Cuando Mercado Pago confirme el cobro, el estado del pedido se va a actualizar automáticamente.",
   };
 }
 

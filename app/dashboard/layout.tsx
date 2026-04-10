@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
 import { DashboardLiveNotifier } from "@/components/dashboard/dashboard-live-notifier";
 import { SubmitButton } from "@/components/dashboard/submit-button";
@@ -53,7 +54,22 @@ export default async function DashboardLayout({
       ];
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)]">
+    <div
+      className="min-h-screen bg-[var(--color-background)]"
+      style={
+        {
+          "--color-background": "#f7efe6",
+          "--color-foreground": "#24160d",
+          "--color-muted": "#6b5a4c",
+          "--color-accent": "#c46d29",
+          "--color-accent-hover": "#a95b21",
+          "--color-border": "rgba(92, 59, 34, 0.14)",
+          "--color-surface": "rgba(255, 250, 245, 0.76)",
+          "--color-surface-strong": "#ead9c7",
+          fontFamily: "var(--font-geist-sans), sans-serif",
+        } as CSSProperties
+      }
+    >
       <DashboardLiveNotifier businessId={context.business.id} />
       <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 py-8 md:px-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:px-12">
         <aside className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">

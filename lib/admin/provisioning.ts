@@ -164,8 +164,8 @@ async function ensureBusiness(application: AdminBusinessApplication) {
   const pickupAddress =
     application.pickupAddress ??
     (application.city
-      ? `Pendiente de configurar en dashboard (${application.city})`
-      : "Pendiente de configurar en dashboard");
+      ? `Dirección a completar (${application.city})`
+      : "Dirección a completar");
 
   const { data, error } = await admin
     .from("businesses")
@@ -175,7 +175,7 @@ async function ensureBusiness(application: AdminBusinessApplication) {
       contact_email: application.email,
       contact_phone: application.phone,
       pickup_address: pickupAddress,
-      pickup_instructions: "Completar instrucciones de retiro en el onboarding inicial.",
+      pickup_instructions: "Instrucciones de retiro a completar.",
       timezone: "America/Montevideo",
       currency_code: "UYU",
       is_active: true,

@@ -111,8 +111,8 @@ export default async function ConfirmationPage({
           </p>
           {syncErrorMessage ? (
             <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Todavía no pudimos confirmar el pago automáticamente. Reintentá en unos
-              segundos o revisá el webhook de Mercado Pago.
+              Todavía estamos confirmando el pago. Esta pantalla se actualiza sola
+              en unos segundos.
             </div>
           ) : null}
 

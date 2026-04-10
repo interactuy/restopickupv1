@@ -95,6 +95,11 @@ export type HomeProduct = {
     name: string;
     slug: string;
     profileImageUrl: string | null;
+    description: string | null;
+    pickupAddress: string;
+    latitude: number | null;
+    longitude: number | null;
+    cuisineLabels: string[];
   };
   paidUnitsSold: number;
 };

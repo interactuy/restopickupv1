@@ -24,7 +24,7 @@ export default async function AdminSupportPage() {
       <AdminPageHeader
         eyebrow="Soporte"
         title="Incidencias de locales"
-        description="Base para centralizar problemas operativos, técnicos o comerciales de cada local."
+        description="Lugar para centralizar problemas operativos o comerciales de cada local."
       />
 
       <AdminPanel

@@ -95,7 +95,7 @@ export function CheckoutForm({
       });
 
       const payload = (await response.json()) as
-        | { error: string; requestId?: string }
+        | { error: string; requestId?: string; errorCode?: string }
         | {
             checkoutUrl: string;
             orderNumber: number;
@@ -105,10 +105,8 @@ export function CheckoutForm({
       if (!response.ok || "error" in payload) {
         setErrorMessage(
           "error" in payload
-            ? payload.requestId
-              ? `${payload.error} Ref: ${payload.requestId}`
-              : payload.error
-            : "No se pudo crear el pedido."
+            ? payload.error
+            : "No pudimos preparar el pago. Probá de nuevo en unos segundos."
         );
         return;
       }
@@ -202,9 +200,7 @@ export function CheckoutForm({
             disabled={!isReady || !cart || cart.items.length === 0 || isPending}
             className="inline-flex w-full items-center justify-center rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-white transition enabled:hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isPending
-              ? "Preparando Mercado Pago..."
-              : "Continuar a Mercado Pago"}
+            {isPending ? "Preparando pago..." : "Pagar con Mercado Pago"}
           </button>
         </form>
       </section>

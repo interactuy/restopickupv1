@@ -16,7 +16,7 @@ const processSteps = [
   },
   {
     label: "Revisión",
-    title: "Evaluamos fit, operación y zona manualmente.",
+    title: "Revisamos operación, zona y próximos pasos.",
   },
   {
     label: "Alta",
@@ -41,10 +41,10 @@ export default async function AccessRequestPage({
   const query = await searchParams;
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f8f3ec] text-[var(--color-foreground)]">
+    <main className="min-h-screen overflow-hidden bg-[var(--color-background)] text-[var(--color-foreground)]">
       <section className="relative border-b border-[rgba(92,59,34,0.12)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(198,122,48,0.2),transparent_32%),linear-gradient(135deg,#f8f3ec_0%,#fbf8f2_48%,#efe2d1_100%)]" />
-        <div className="absolute right-[-12rem] top-[-15rem] h-[34rem] w-[34rem] rounded-full bg-[rgba(196,109,41,0.12)] blur-3xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(198,90,46,0.16),transparent_32%),linear-gradient(135deg,#F7F4EF_0%,#FFFDFC_50%,#EDE4D9_100%)]" />
+        <div className="absolute right-[-12rem] top-[-15rem] h-[34rem] w-[34rem] rounded-full bg-[rgba(63,92,78,0.12)] blur-3xl" />
         <div className="absolute bottom-[-10rem] left-[-8rem] h-[28rem] w-[28rem] rounded-full bg-white/70 blur-3xl" />
 
         <div className="relative mx-auto flex min-h-[74vh] w-full max-w-[1560px] flex-col px-6 py-6 md:px-10 lg:px-14">
@@ -54,7 +54,7 @@ export default async function AccessRequestPage({
             </Link>
             <Link
               href="/"
-              className="inline-flex items-center justify-center rounded-full border border-[rgba(92,59,34,0.14)] bg-white/70 px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] shadow-sm backdrop-blur transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+              className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-white/70 px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] shadow-sm backdrop-blur transition hover:border-[var(--color-secondary)] hover:text-[var(--color-secondary)]"
             >
               Volver a la home
             </Link>
@@ -62,7 +62,7 @@ export default async function AccessRequestPage({
 
           <div className="grid flex-1 gap-10 py-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(560px,1.08fr)] lg:items-center lg:py-16">
             <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[var(--color-accent)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[var(--color-secondary)]">
                 Trabajá con Restopickup
               </p>
               <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-[#21160f] md:text-7xl lg:text-8xl">
@@ -78,7 +78,7 @@ export default async function AccessRequestPage({
                 {fitSignals.map((signal) => (
                   <div
                     key={signal}
-                    className="rounded-2xl border border-[rgba(92,59,34,0.12)] bg-white/58 px-4 py-3 text-sm font-medium text-[#3b2a1f] shadow-sm backdrop-blur"
+                    className="rounded-2xl border border-[var(--color-border)] bg-white/58 px-4 py-3 text-sm font-semibold text-[#3b2a1f] shadow-sm backdrop-blur"
                   >
                     {signal}
                   </div>
@@ -87,18 +87,18 @@ export default async function AccessRequestPage({
             </div>
 
             <div className="rounded-[2.25rem] border border-white/70 bg-white/82 p-3 shadow-[0_34px_110px_rgba(62,39,20,0.14)] backdrop-blur-xl">
-              <div className="rounded-[1.85rem] border border-[rgba(92,59,34,0.12)] bg-[#fffaf5] p-5 md:p-7">
-                <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-[rgba(92,59,34,0.12)] pb-5">
+              <div className="rounded-[1.85rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 md:p-7">
+                <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-border)] pb-5">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-secondary)]">
                       Solicitud de acceso
                     </p>
                     <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[#21160f]">
                       Contanos sobre tu local
                     </h2>
                   </div>
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-                    Revisión manual
+                  <span className="rounded-full border border-[rgba(47,122,74,0.22)] bg-[rgba(47,122,74,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--color-success)]">
+                    Evaluación personalizada
                   </span>
                 </div>
 
@@ -112,18 +112,18 @@ export default async function AccessRequestPage({
         </div>
       </section>
 
-      <section className="bg-[#fffaf5]">
+      <section className="bg-[var(--color-surface)]">
         <div className="mx-auto grid w-full max-w-[1560px] gap-6 px-6 py-10 md:px-10 lg:grid-cols-4 lg:px-14">
           {processSteps.map((step, index) => (
             <article
               key={step.label}
-              className="border-l border-[rgba(92,59,34,0.16)] pl-5"
+              className="border-l border-[var(--color-border)] pl-5"
             >
               <div className="flex items-center gap-3">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#21160f] text-xs font-semibold text-white">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-secondary)] text-xs font-semibold text-white">
                   {index + 1}
                 </span>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-secondary)]">
                   {step.label}
                 </p>
               </div>

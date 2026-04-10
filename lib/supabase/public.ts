@@ -283,6 +283,7 @@ function mapHomeProduct(params: {
   row: ProductRow;
   business: PublicBusiness;
   paidUnitsSold: number;
+  cuisineLabels: string[];
 }): HomeProduct {
   const primaryImage =
     params.row.product_images?.find((image) => image.is_primary) ??
@@ -308,6 +309,11 @@ function mapHomeProduct(params: {
       name: params.business.name,
       slug: params.business.slug,
       profileImageUrl: params.business.profileImageUrl,
+      description: params.business.description,
+      pickupAddress: params.business.pickupAddress,
+      latitude: params.business.latitude,
+      longitude: params.business.longitude,
+      cuisineLabels: params.cuisineLabels,
     },
     paidUnitsSold: params.paidUnitsSold,
   };
@@ -432,7 +438,7 @@ export async function getHomePageData(): Promise<HomePageData> {
       return activeBusinesses.findIndex((item) => item.id === a.id) -
         activeBusinesses.findIndex((item) => item.id === b.id);
     })
-    .slice(0, 6);
+    .slice(0, 24);
 
   const paidOrderIds = (paidOrders ?? []).map((order) => order.id);
   let paidUnitsByProduct = new Map<string, number>();
@@ -476,12 +482,13 @@ export async function getHomePageData(): Promise<HomePageData> {
 
       return a.fallbackOrder - b.fallbackOrder;
     })
-    .slice(0, 6)
+    .slice(0, 36)
     .map((entry) =>
       mapHomeProduct({
         row: entry.row,
         business: entry.business,
         paidUnitsSold: entry.paidUnitsSold,
+        cuisineLabels: categoryNamesByBusiness.get(entry.business.id) ?? [],
       })
     );
 
