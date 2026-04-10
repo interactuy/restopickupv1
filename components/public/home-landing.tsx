@@ -22,8 +22,47 @@ type UserLocation = {
 
 type LocationStatus = "idle" | "loading" | "ready" | "denied" | "unsupported";
 
+const quickSearches = ["Burgers", "Pizzas", "Café", "Almuerzo"];
+
+const searchSynonyms: Record<string, string[]> = {
+  burger: ["burger", "burgers", "hamburguesa", "hamburguesas"],
+  burgers: ["burger", "burgers", "hamburguesa", "hamburguesas"],
+  hamburguesa: ["burger", "burgers", "hamburguesa", "hamburguesas"],
+  hamburguesas: ["burger", "burgers", "hamburguesa", "hamburguesas"],
+  cafe: ["cafe", "cafeteria", "cafetería", "desayuno", "merienda"],
+  café: ["cafe", "cafeteria", "cafetería", "desayuno", "merienda"],
+  pizza: ["pizza", "pizzas", "pizzeria", "pizzería"],
+  pizzas: ["pizza", "pizzas", "pizzeria", "pizzería"],
+};
+
+function normalizeSearchValue(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function getSearchTerms(query: string) {
+  const normalizedQuery = normalizeSearchValue(query);
+  const singularQuery =
+    normalizedQuery.endsWith("s") && normalizedQuery.length > 3
+      ? normalizedQuery.slice(0, -1)
+      : normalizedQuery;
+
+  return Array.from(
+    new Set([
+      normalizedQuery,
+      singularQuery,
+      ...(searchSynonyms[normalizedQuery] ?? []),
+      ...(searchSynonyms[singularQuery] ?? []),
+    ].map(normalizeSearchValue))
+  ).filter(Boolean);
+}
+
 function matchesSearch(value: string, query: string) {
-  return value.toLowerCase().includes(query);
+  const normalizedValue = normalizeSearchValue(value);
+  return getSearchTerms(query).some((term) => normalizedValue.includes(term));
 }
 
 function buildGoogleMapsUrl(address: string) {
@@ -123,7 +162,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
   const [query, setQuery] = useState("");
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
-  const deferredQuery = useDeferredValue(query.trim().toLowerCase());
+  const deferredQuery = useDeferredValue(query.trim());
   const daypart = getDaypart();
 
   function requestUserLocation() {
@@ -211,6 +250,16 @@ export function HomeLanding({ data }: HomeLandingProps) {
 
   const visibleBusinesses = orderedBusinesses.slice(0, 6);
   const featuredBusiness = visibleBusinesses[0]?.business ?? data.featuredBusiness;
+  const featuredPrepTimeLabel = featuredBusiness
+    ? formatPrepTimeRange(
+        featuredBusiness.prepTimeMinMinutes,
+        featuredBusiness.prepTimeMaxMinutes
+      )
+    : null;
+  const featuredDistanceKm =
+    userLocation && featuredBusiness
+      ? getDistanceKm(userLocation, featuredBusiness)
+      : null;
   const orderedProducts = useMemo(() => {
     return [...data.featuredProducts]
       .map((product, index) => {
@@ -272,13 +321,18 @@ export function HomeLanding({ data }: HomeLandingProps) {
 
   const businessSuggestions = filteredBusinesses.slice(0, 4);
   const productSuggestions = filteredProducts.slice(0, 4);
+  const locationButtonLabel =
+    locationStatus === "loading"
+      ? "Buscando..."
+      : locationStatus === "ready"
+        ? "Cerca mío"
+        : locationStatus === "unsupported"
+          ? "Sin ubicación"
+          : "Cerca mío";
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
-      <section className="relative bg-[linear-gradient(180deg,#f6ecde_0%,#f9f2e8_52%,#f8f1e7_100%)]">
-        <div className="absolute inset-x-0 top-0 h-[34rem] bg-[radial-gradient(circle_at_top,_rgba(198,122,48,0.3),_transparent_58%)]" />
-        <div className="absolute -left-24 top-20 h-72 w-72 rounded-full bg-[rgba(184,77,32,0.08)] blur-3xl" />
-        <div className="absolute -right-16 top-8 h-80 w-80 rounded-full bg-[rgba(198,122,48,0.12)] blur-3xl" />
+      <section className="relative z-20 bg-[var(--color-background)]">
 
         <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-8 md:px-10 lg:px-12">
           <header className="flex flex-wrap items-center justify-between gap-4">
@@ -293,7 +347,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
             </Link>
           </header>
 
-          <div className="pb-10">
+          <div className="pb-10 md:pb-14">
             <div className="max-w-5xl">
               <p className="text-sm font-semibold uppercase tracking-[0.32em] text-[var(--color-accent)]">
                 Pedí online y retirá sin vueltas
@@ -302,46 +356,98 @@ export function HomeLanding({ data }: HomeLandingProps) {
                 Tu comida lista para vos, sin esperas de más.
               </h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-[var(--color-muted)]">
-                Buscá locales o platos, elegí lo que querés comer y pasá a retirar cuando esté pronto.
+                Encontrá comida cerca, pagá online y pasá a retirar cuando esté
+                pronta.
               </p>
 
               <div className="relative mt-8 max-w-4xl">
-                <div className="flex items-center gap-3 rounded-[1.75rem] border border-[var(--color-border)] bg-white/95 px-4 py-4 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 20 20"
-                    className="h-5 w-5 shrink-0 text-[var(--color-muted)]"
-                    fill="none"
-                  >
-                    <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.7" />
-                    <path d="M13.5 13.5 17 17" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-                  </svg>
-                  <input
-                    type="search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Buscar locales, burgers, pizzas, wraps..."
-                    className="w-full bg-transparent text-base outline-none placeholder:text-[var(--color-muted)]"
-                  />
+                <div className="rounded-[1.75rem] border border-[var(--color-border)] bg-white/95 p-2 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2">
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 20 20"
+                        className="h-5 w-5 shrink-0 text-[var(--color-muted)]"
+                        fill="none"
+                      >
+                        <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.7" />
+                        <path d="M13.5 13.5 17 17" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                      </svg>
+                      <input
+                        type="search"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Buscar locales, burgers, pizzas, wraps..."
+                        className="w-full min-w-0 bg-transparent text-base outline-none placeholder:text-[var(--color-muted)]"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={requestUserLocation}
+                      disabled={locationStatus === "loading"}
+                      className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                        locationStatus === "ready"
+                          ? "bg-[rgba(47,122,74,0.1)] text-[var(--color-success)]"
+                          : "border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                      }`}
+                    >
+                      <span
+                        className={`h-2 w-2 rounded-full ${
+                          locationStatus === "ready"
+                            ? "bg-[var(--color-success)]"
+                            : "bg-[var(--color-accent)]"
+                        }`}
+                      />
+                      {locationButtonLabel}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={requestUserLocation}
-                    disabled={locationStatus === "loading"}
-                    className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition enabled:hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {quickSearches.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setQuery(item)}
+                      className="rounded-full border border-[rgba(231,222,210,0.95)] bg-white/60 px-3.5 py-2 text-sm font-medium text-[var(--color-muted)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                    >
+                      {item}
+                    </button>
+                  ))}
+                  {query ? (
+                    <button
+                      type="button"
+                      onClick={() => setQuery("")}
+                      className="rounded-full px-3.5 py-2 text-sm font-semibold text-[var(--color-accent)] transition hover:text-[var(--color-accent-hover)]"
+                    >
+                      Limpiar búsqueda
+                    </button>
+                  ) : null}
+                </div>
+
+                {locationStatus === "denied" || locationStatus === "unsupported" ? (
+                  <p className="mt-3 text-sm text-[var(--color-muted)]">
+                    Podés seguir explorando locales sin activar ubicación.
+                  </p>
+                ) : null}
+
+                <div className="mt-7 flex flex-wrap gap-3">
+                  <a
+                    href="#locales"
+                    className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)]"
                   >
-                    {locationStatus === "loading"
-                      ? "Buscando ubicación..."
-                      : locationStatus === "ready"
-                        ? "Ubicación activada"
-                        : "Usar mi ubicación"}
-                  </button>
+                    Explorar locales
+                  </a>
+                  <a
+                    href="#platos"
+                    className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-white/65 px-5 py-3 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-secondary)] hover:text-[var(--color-secondary)]"
+                  >
+                    Ver platos
+                  </a>
                 </div>
 
                 {deferredQuery ? (
-                  <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-20 max-h-[28rem] overflow-y-auto rounded-[1.75rem] border border-[var(--color-border)] bg-white p-3 shadow-[0_24px_80px_rgba(39,24,13,0.12)]">
+                  <div className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-50 max-h-[32rem] overflow-y-auto rounded-[1.75rem] border border-[var(--color-border)] bg-white p-3 shadow-[0_24px_80px_rgba(39,24,13,0.16)]">
                     {businessSuggestions.length === 0 && productSuggestions.length === 0 ? (
                       <p className="px-3 py-4 text-sm text-[var(--color-muted)]">
                         No encontramos resultados para &quot;{query}&quot;.
@@ -410,7 +516,10 @@ export function HomeLanding({ data }: HomeLandingProps) {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-6 py-16 md:px-10 lg:px-12">
+      <section
+        id="locales"
+        className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-16 pt-10 md:px-10 md:pt-12 lg:px-12"
+      >
         <div className="flex items-end justify-between gap-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
@@ -568,6 +677,18 @@ export function HomeLanding({ data }: HomeLandingProps) {
                     featuredBusiness.pickupInstructions ??
                     featuredBusiness.pickupAddress}
                 </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {featuredPrepTimeLabel ? (
+                    <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-medium text-[var(--color-foreground)]">
+                      Ideal para retirar en {featuredPrepTimeLabel}
+                    </span>
+                  ) : null}
+                  {featuredDistanceKm !== null ? (
+                    <span className="rounded-full border border-[rgba(47,122,74,0.22)] bg-[rgba(47,122,74,0.08)] px-3 py-1.5 text-sm font-semibold text-[var(--color-success)]">
+                      Cerca de tu ubicación
+                    </span>
+                  ) : null}
+                </div>
                 <div className="mt-8">
                   <Link
                     href={`/locales/${featuredBusiness.slug}`}
@@ -614,7 +735,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-6 pb-16 md:px-10 lg:px-12">
+      <section id="platos" className="mx-auto w-full max-w-7xl px-6 pb-16 md:px-10 lg:px-12">
         <div className="flex items-end justify-between gap-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
@@ -700,15 +821,18 @@ export function HomeLanding({ data }: HomeLandingProps) {
                           {formatPrice(product.priceAmount, product.currencyCode)}
                         </p>
                       </div>
-                      <span className="text-sm text-[var(--color-muted)]">
-                        {distanceKm !== null
-                          ? distanceKm < 1
-                            ? `${Math.round(distanceKm * 1000)} m`
-                            : `${distanceKm.toFixed(1)} km`
-                          : product.paidUnitsSold > 0
-                            ? `${product.paidUnitsSold} vendidos`
-                            : "Ver menú"}
-                      </span>
+                      <div className="text-right">
+                        <span className="block text-sm text-[var(--color-muted)]">
+                          {distanceKm !== null
+                            ? distanceKm < 1
+                              ? `${Math.round(distanceKm * 1000)} m`
+                              : `${distanceKm.toFixed(1)} km`
+                            : product.business.cuisineLabels[0] ?? "Menú"}
+                        </span>
+                        <span className="mt-2 inline-flex rounded-full bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-white">
+                          Ver en menú
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </Link>
@@ -737,6 +861,14 @@ export function HomeLanding({ data }: HomeLandingProps) {
           <p className="max-w-2xl text-base leading-8 text-white/80">
             Elegí, pagá y pasá a retirar cuando esté pronto. Menos vueltas, más comida lista.
           </p>
+          <div>
+            <a
+              href="#locales"
+              className="inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-[#7d2319] transition hover:bg-white/90"
+            >
+              Explorar locales
+            </a>
+          </div>
         </div>
       </section>
 

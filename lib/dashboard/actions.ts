@@ -1154,7 +1154,16 @@ export async function updateBusinessSettingsAction(formData: FormData) {
 }
 
 export async function completeDashboardOnboardingAction() {
-  const context = await requireAdminDashboardContext();
+  const context = await requireDashboardContext();
+
+  if (!context.membership.isAdminRole) {
+    redirect("/dashboard/pedidos");
+  }
+
+  if (!context.isAdminModeEnabled) {
+    redirect("/dashboard/admin-mode?next=/dashboard/onboarding");
+  }
+
   const admin = createAdminClient();
 
   const { error } = await admin
