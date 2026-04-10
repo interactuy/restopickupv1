@@ -5,6 +5,8 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { useCart } from "@/components/cart/cart-provider";
 import { FloatingCartButton } from "@/components/cart/floating-cart-button";
+import { trackFunnelEvent } from "@/lib/analytics/funnel-client";
+import type { CartLineItem, CartProductSnapshot } from "@/lib/cart";
 import type {
   PublicBusinessCatalog,
   PublicCategory,
@@ -89,6 +91,16 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
   const isBusinessClosed = Boolean(openStatus);
 
   useEffect(() => {
+    trackFunnelEvent({
+      eventType: "menu_view",
+      businessId: business.id,
+      metadata: {
+        businessSlug: business.slug,
+      },
+    });
+  }, [business.id, business.slug]);
+
+  useEffect(() => {
     if (!isHoursOpen) {
       return;
     }
@@ -114,6 +126,36 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
     .filter((category) => category.products.length > 0);
 
   const uncategorizedProducts = products.filter((product) => !product.categoryId);
+
+  function handleAddToCart(
+    item: CartProductSnapshot,
+    lineId: string,
+    selectedOptions: CartLineItem["selectedOptions"],
+    unitOptionsAmount: number,
+    customerNote: string | null
+  ) {
+    addItem(
+      {
+        businessId: business.id,
+        businessSlug: business.slug,
+        businessName: business.name,
+        currencyCode: business.currencyCode,
+      },
+      item,
+      lineId,
+      selectedOptions,
+      unitOptionsAmount,
+      customerNote
+    );
+    trackFunnelEvent({
+      eventType: "cart_add",
+      businessId: business.id,
+      metadata: {
+        businessSlug: business.slug,
+        productId: item.productId,
+      },
+    });
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
@@ -340,27 +382,7 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onAddToCart={(
-                      item,
-                      lineId,
-                      selectedOptions,
-                      unitOptionsAmount,
-                      customerNote
-                    ) =>
-                      addItem(
-                        {
-                          businessId: business.id,
-                          businessSlug: business.slug,
-                          businessName: business.name,
-                          currencyCode: business.currencyCode,
-                        },
-                        item,
-                        lineId,
-                        selectedOptions,
-                        unitOptionsAmount,
-                        customerNote
-                      )
-                    }
+                    onAddToCart={handleAddToCart}
                   />
                 ))}
               </div>
@@ -382,27 +404,7 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onAddToCart={(
-                      item,
-                      lineId,
-                      selectedOptions,
-                      unitOptionsAmount,
-                      customerNote
-                    ) =>
-                      addItem(
-                        {
-                          businessId: business.id,
-                          businessSlug: business.slug,
-                          businessName: business.name,
-                          currencyCode: business.currencyCode,
-                        },
-                        item,
-                        lineId,
-                        selectedOptions,
-                        unitOptionsAmount,
-                        customerNote
-                      )
-                    }
+                    onAddToCart={handleAddToCart}
                   />
                 ))}
               </div>

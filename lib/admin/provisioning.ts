@@ -161,9 +161,11 @@ async function ensureBusiness(application: AdminBusinessApplication) {
   }
 
   const slug = await ensureUniqueBusinessSlug(baseSlug);
-  const pickupAddress = application.city
-    ? `Pendiente de configurar en dashboard (${application.city})`
-    : "Pendiente de configurar en dashboard";
+  const pickupAddress =
+    application.pickupAddress ??
+    (application.city
+      ? `Pendiente de configurar en dashboard (${application.city})`
+      : "Pendiente de configurar en dashboard");
 
   const { data, error } = await admin
     .from("businesses")

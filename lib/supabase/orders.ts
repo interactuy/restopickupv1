@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const checkoutSchema = z.object({
   businessSlug: z.string().min(1),
+  funnelSessionId: z.string().trim().min(8).max(120).optional().nullable(),
   customerName: z.string().trim().min(1, "El nombre es obligatorio."),
   customerPhone: z.string().trim().optional().or(z.literal("")),
   customerNotes: z.string().trim().optional().or(z.literal("")),
@@ -470,6 +471,9 @@ export async function createGuestOrder(
       discount_amount: 0,
       total_amount: subtotal,
       payment_status: "pending",
+      metadata: {
+        funnel_session_id: input.funnelSessionId ?? null,
+      },
       estimated_ready_at: buildDefaultEstimatedReadyAt(
         business.prep_time_min_minutes,
         business.prep_time_max_minutes

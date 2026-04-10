@@ -5,6 +5,12 @@ import {
   requireInternalAdminContext,
   type BusinessApplicationStatus,
 } from "@/lib/admin/server";
+import {
+  AdminPageHeader,
+  AdminPanel,
+  AdminStatusPill,
+  adminTableClasses,
+} from "@/components/admin/admin-ui";
 
 type AdminApplicationsPageProps = {
   searchParams: Promise<{
@@ -39,29 +45,19 @@ export default async function AdminApplicationsPage({
   );
 
   return (
-    <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-        Solicitudes
-      </p>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-foreground)]">
-            Revisión de nuevos locales
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
-            Acá revisan las solicitudes reales enviadas desde la landing y dejan
-            preparada la aprobación manual antes de crear el negocio y el usuario owner.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <AdminPageHeader
+        eyebrow="Solicitudes"
+        title="Pipeline de nuevos locales"
+        description="Revisión, aprobación y rechazo de negocios que entran desde la landing."
+      />
 
-      <div className="mt-8 flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2">
         {filters.map((filter) => {
           const href =
             filter.value === "all"
               ? "/admin/solicitudes"
               : `/admin/solicitudes?status=${filter.value}`;
-
           const isActive = normalizedStatus === filter.value;
 
           return (
@@ -70,8 +66,8 @@ export default async function AdminApplicationsPage({
               href={href}
               className={
                 isActive
-                  ? "inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white"
-                  : "inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                  ? "rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white"
+                  : "rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
               }
             >
               {filter.label}
@@ -80,61 +76,77 @@ export default async function AdminApplicationsPage({
         })}
       </div>
 
-      {applications.length === 0 ? (
-        <div className="mt-8 rounded-[1.75rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-sm text-[var(--color-muted)]">
-          No hay solicitudes para este filtro.
-        </div>
-      ) : (
-        <div className="mt-8 overflow-hidden rounded-[1.75rem] border border-[var(--color-border)]">
+      <AdminPanel
+        title="Solicitudes"
+        description={`${applications.length} resultado${applications.length === 1 ? "" : "s"} para este filtro.`}
+      >
+        {applications.length === 0 ? (
+          <p className="px-5 py-4 text-sm text-slate-500">
+            No hay solicitudes para este filtro.
+          </p>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white">
-              <thead className="bg-[var(--color-surface)] text-left text-xs uppercase tracking-[0.18em] text-[var(--color-muted)]">
+            <table className={adminTableClasses.table}>
+              <thead className={adminTableClasses.thead}>
                 <tr>
-                  <th className="px-4 py-4 font-semibold">Local</th>
-                  <th className="px-4 py-4 font-semibold">Contacto</th>
-                  <th className="px-4 py-4 font-semibold">Ciudad</th>
-                  <th className="px-4 py-4 font-semibold">Tipo</th>
-                  <th className="px-4 py-4 font-semibold">Estado</th>
-                  <th className="px-4 py-4 font-semibold">Fecha</th>
-                  <th className="px-4 py-4 font-semibold">Acción</th>
+                  <th className={adminTableClasses.th}>Local</th>
+                  <th className={adminTableClasses.th}>Contacto</th>
+                  <th className={adminTableClasses.th}>Zona / retiro</th>
+                  <th className={adminTableClasses.th}>Tipo</th>
+                  <th className={adminTableClasses.th}>Estado</th>
+                  <th className={adminTableClasses.th}>Fecha</th>
+                  <th className={adminTableClasses.th}>Acción</th>
                 </tr>
               </thead>
               <tbody>
                 {applications.map((application) => (
-                  <tr
-                    key={application.id}
-                    className="border-t border-[var(--color-border)] text-sm text-[var(--color-foreground)]"
-                  >
-                    <td className="px-4 py-4">
-                      <div className="font-semibold">{application.businessName}</div>
-                      <div className="mt-1 text-[var(--color-muted)]">
+                  <tr key={application.id} className={adminTableClasses.row}>
+                    <td className={adminTableClasses.td}>
+                      <div className="font-medium text-slate-950">
+                        {application.businessName}
+                      </div>
+                      <div className="mt-0.5 text-xs text-slate-500">
                         {application.email}
                       </div>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className={adminTableClasses.td}>
                       <div>{application.contactName}</div>
-                      <div className="mt-1 text-[var(--color-muted)]">
+                      <div className="mt-0.5 text-xs text-slate-500">
                         {application.phone ?? "Sin celular"}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-[var(--color-muted)]">
-                      {application.city ?? "Sin ciudad"}
+                    <td className={`${adminTableClasses.td} text-slate-500`}>
+                      <div>{application.city ?? "Sin ciudad"}</div>
+                      <div className="mt-0.5 max-w-xs truncate text-xs">
+                        {application.pickupAddress ?? "Sin dirección"}
+                      </div>
                     </td>
-                    <td className="px-4 py-4 text-[var(--color-muted)]">
-                      {application.businessType ?? "Sin tipo"}
+                    <td className={`${adminTableClasses.td} text-slate-500`}>
+                      <div>{application.businessType ?? "Sin tipo"}</div>
+                      <div className="mt-0.5 text-xs">
+                        {application.estimatedOrderVolume ?? "Sin volumen"}
+                      </div>
                     </td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex rounded-full bg-[var(--color-accent)]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                    <td className={adminTableClasses.td}>
+                      <AdminStatusPill
+                        tone={
+                          application.status === "approved"
+                            ? "success"
+                            : application.status === "rejected"
+                              ? "danger"
+                              : "warning"
+                        }
+                      >
                         {statusLabels[application.status]}
-                      </span>
+                      </AdminStatusPill>
                     </td>
-                    <td className="px-4 py-4 text-[var(--color-muted)]">
+                    <td className={`${adminTableClasses.td} text-slate-500`}>
                       {new Date(application.createdAt).toLocaleString("es-UY")}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className={adminTableClasses.td}>
                       <Link
                         href={`/admin/solicitudes/${application.id}`}
-                        className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                        className="font-medium text-emerald-700 hover:text-emerald-800"
                       >
                         Ver detalle
                       </Link>
@@ -144,8 +156,8 @@ export default async function AdminApplicationsPage({
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-    </section>
+        )}
+      </AdminPanel>
+    </div>
   );
 }

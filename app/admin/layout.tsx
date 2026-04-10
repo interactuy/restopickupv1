@@ -1,4 +1,16 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
+import {
+  Activity,
+  BarChart3,
+  Building2,
+  ClipboardList,
+  FileClock,
+  Gauge,
+  Headphones,
+  Landmark,
+  Settings2,
+} from "lucide-react";
 
 import { SubmitButton } from "@/components/dashboard/submit-button";
 import { logoutAction } from "@/lib/dashboard/actions";
@@ -9,56 +21,71 @@ type AdminLayoutProps = {
 };
 
 const links = [
-  { href: "/admin", label: "Resumen" },
-  { href: "/admin/solicitudes", label: "Solicitudes" },
-  { href: "/admin/negocios", label: "Negocios" },
+  { href: "/admin", label: "Operación", icon: Gauge },
+  { href: "/admin/solicitudes", label: "Solicitudes", icon: ClipboardList },
+  { href: "/admin/negocios", label: "Negocios", icon: Building2 },
+  { href: "/admin/pedidos", label: "Pedidos", icon: Activity },
+  { href: "/admin/soporte", label: "Soporte", icon: Headphones },
+  { href: "/admin/comisiones", label: "Finanzas", icon: Landmark },
+  { href: "/admin/estadisticas", label: "Estadísticas", icon: BarChart3 },
+  { href: "/admin/plataforma", label: "Plataforma", icon: Settings2 },
+  { href: "/admin/auditoria", label: "Auditoría", icon: FileClock },
 ];
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
   const context = await requireInternalAdminContext();
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)]">
-      <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 py-8 md:px-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:px-12">
-        <aside className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-          <Link href="/" className="text-lg font-semibold tracking-tight text-[var(--color-foreground)]">
-            Restopickup
-          </Link>
-
-          <div className="mt-6 rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-              Panel interno
-            </p>
-            <h2 className="mt-2 text-lg font-semibold text-[var(--color-foreground)]">
-              Revisión de locales
-            </h2>
-            <p className="mt-2 text-sm text-[var(--color-muted)]">
-              {context.user.email}
-            </p>
+    <div
+      className="min-h-screen bg-slate-50 text-slate-950"
+      style={
+        {
+          "--color-background": "#f8fafc",
+          "--color-foreground": "#020617",
+          "--color-muted": "#64748b",
+          "--color-accent": "#059669",
+          "--color-border": "#e2e8f0",
+          "--color-surface": "#f8fafc",
+          "--color-surface-strong": "#ecfdf5",
+        } as CSSProperties
+      }
+    >
+      <div className="grid min-h-screen w-full lg:grid-cols-[244px_minmax(0,1fr)]">
+        <aside className="border-r border-slate-200 bg-white">
+          <div className="border-b border-slate-200 px-5 py-4">
+            <Link href="/admin" className="text-base font-semibold tracking-tight text-slate-950">
+              Restopickup
+            </Link>
+            <p className="mt-1 truncate text-xs text-slate-500">{context.user.email}</p>
           </div>
 
-          <nav className="mt-6 space-y-2">
-            {links.map((link) => (
+          <nav className="space-y-1 px-3 py-4">
+            {links.map((link) => {
+              const Icon = link.icon;
+
+              return (
               <Link
                 key={link.href}
                 href={link.href}
-                className="block rounded-full px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition hover:bg-[var(--color-surface)]"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-emerald-50 hover:text-emerald-700"
               >
+                <Icon className="h-4 w-4" />
                 {link.label}
               </Link>
-            ))}
+              );
+            })}
           </nav>
 
-          <form action={logoutAction} className="mt-8">
+          <form action={logoutAction} className="mt-auto px-3 py-4">
             <SubmitButton
               label="Cerrar sesión"
               pendingLabel="Saliendo..."
-              className="inline-flex w-full items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition enabled:hover:border-[var(--color-accent)] enabled:hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition enabled:hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
             />
           </form>
         </aside>
 
-        <div className="flex min-h-[70vh] flex-col gap-6">{children}</div>
+        <main className="min-w-0 px-4 py-4 md:px-6 lg:px-8">{children}</main>
       </div>
     </div>
   );

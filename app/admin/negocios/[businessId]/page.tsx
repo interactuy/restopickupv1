@@ -2,10 +2,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getAdminBusinessById, requireInternalAdminContext } from "@/lib/admin/server";
+import { updateBusinessPlatformSettingsAction } from "@/lib/admin/actions";
+
+import { AdminHeatmap, AdminSalesBars } from "@/components/admin/admin-charts";
+import { SubmitButton } from "@/components/dashboard/submit-button";
 
 type AdminBusinessDetailPageProps = {
   params: Promise<{
     businessId: string;
+  }>;
+  searchParams: Promise<{
+    success?: string;
+    error?: string;
   }>;
 };
 
@@ -14,15 +22,19 @@ function formatCurrency(amount: number, currencyCode: string) {
     style: "currency",
     currency: currencyCode,
     maximumFractionDigits: 0,
-  }).format(amount / 100);
+  }).format(amount);
 }
 
 export default async function AdminBusinessDetailPage({
   params,
+  searchParams,
 }: AdminBusinessDetailPageProps) {
   await requireInternalAdminContext();
   const { businessId } = await params;
-  const business = await getAdminBusinessById(businessId);
+  const [business, query] = await Promise.all([
+    getAdminBusinessById(businessId),
+    searchParams,
+  ]);
 
   if (!business) {
     notFound();
@@ -120,6 +132,19 @@ export default async function AdminBusinessDetailPage({
         </div>
       </section>
 
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(380px,0.8fr)]">
+        <AdminHeatmap
+          title={`Actividad de ${business.name}`}
+          description="Pedidos pagos o autorizados de los últimos 30 días."
+          heatmap={business.dayHourHeatmapLast30Days}
+        />
+        <AdminSalesBars
+          title="GMV diario del local"
+          description="Últimos 30 días."
+          items={business.salesSeriesLast30Days}
+        />
+      </div>
+
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <section className="space-y-6">
           <article className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
@@ -142,6 +167,18 @@ export default async function AdminBusinessDetailPage({
                 <dd className="mt-1 text-sm text-[var(--color-foreground)]">
                   {business.isActive ? "Activo" : "Inactivo"}
                   {business.isTemporarilyClosed ? " · Cerrado temporalmente" : ""}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
+                  Estado plataforma
+                </dt>
+                <dd className="mt-1 text-sm text-[var(--color-foreground)]">
+                  {business.platformStatus === "active"
+                    ? "Activo"
+                    : business.platformStatus === "blocked"
+                      ? "Bloqueado"
+                      : "Pausado"}
                 </dd>
               </div>
               <div>
@@ -305,6 +342,151 @@ export default async function AdminBusinessDetailPage({
                 </dd>
               </div>
             </dl>
+          </article>
+
+          <article className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
+            <h2 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+              Comisión y facturación
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
+              Definí el porcentaje comercial de este negocio y dejá notas internas
+              para facturación o acuerdos puntuales.
+            </p>
+
+            {query.error ? (
+              <div className="mt-6 rounded-[1.5rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {query.error}
+              </div>
+            ) : null}
+
+            {query.success === "commission-updated" ? (
+              <div className="mt-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                Comisión actualizada correctamente.
+              </div>
+            ) : null}
+
+            <form action={updateBusinessPlatformSettingsAction} className="mt-6 space-y-5">
+              <input type="hidden" name="businessId" value={business.id} />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-[var(--color-foreground)]">
+                    Estado en plataforma
+                  </span>
+                  <select
+                    name="platformStatus"
+                    defaultValue={business.platformStatus}
+                    className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm outline-none"
+                  >
+                    <option value="active">Activo</option>
+                    <option value="paused">Pausado</option>
+                    <option value="blocked">Bloqueado</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-[var(--color-foreground)]">
+                    Comisión del negocio
+                  </span>
+                  <input
+                    type="number"
+                    name="commissionPercent"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    defaultValue={(business.commissionBps / 100).toFixed(2)}
+                    className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm outline-none"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-[var(--color-foreground)]">
+                    Razón social
+                  </span>
+                  <input
+                    name="fiscalName"
+                    defaultValue={business.fiscalName ?? ""}
+                    className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm outline-none"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-[var(--color-foreground)]">
+                    RUT / documento fiscal
+                  </span>
+                  <input
+                    name="fiscalTaxId"
+                    defaultValue={business.fiscalTaxId ?? ""}
+                    className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm outline-none"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-[var(--color-foreground)]">
+                    Responsable comercial
+                  </span>
+                  <input
+                    name="commercialOwner"
+                    defaultValue={business.commercialOwner ?? ""}
+                    className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm outline-none"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-[var(--color-foreground)]">
+                    Fuente de adquisición
+                  </span>
+                  <input
+                    name="acquisitionSource"
+                    defaultValue={business.acquisitionSource ?? ""}
+                    placeholder="Referido, Instagram, venta directa..."
+                    className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm outline-none"
+                  />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-[var(--color-foreground)]">
+                  Domicilio fiscal
+                </span>
+                <input
+                  name="fiscalAddress"
+                  defaultValue={business.fiscalAddress ?? ""}
+                  className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm outline-none"
+                />
+              </label>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
+                    Estimado mes actual
+                  </p>
+                  <p className="mt-3 text-2xl font-semibold text-[var(--color-foreground)]">
+                    {formatCurrency(
+                      business.commissionsCurrentMonthAmount,
+                      business.currencyCode
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-[var(--color-foreground)]">
+                  Notas internas
+                </span>
+                <textarea
+                  name="billingNotes"
+                  rows={5}
+                  defaultValue={business.billingNotes ?? ""}
+                  placeholder="Ej. comisión preferencial por lanzamiento, facturación manual, acuerdo comercial, etc."
+                  className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm outline-none"
+                />
+              </label>
+
+              <SubmitButton
+                label="Guardar configuración comercial"
+                pendingLabel="Guardando..."
+              />
+            </form>
           </article>
 
           <article className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">

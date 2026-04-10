@@ -11,6 +11,12 @@ export function BusinessApplicationForm({
   error,
   success,
 }: BusinessApplicationFormProps) {
+  const inputClass =
+    "w-full rounded-2xl border border-[rgba(92,59,34,0.14)] bg-white px-4 py-3 text-sm outline-none transition placeholder:text-[rgba(107,90,76,0.5)] focus:border-[var(--color-accent)] focus:ring-4 focus:ring-[rgba(196,109,41,0.1)]";
+  const labelClass = "mb-2 block text-sm font-semibold text-[#2f2118]";
+  const sectionTitleClass =
+    "text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]";
+
   return (
     <div className="space-y-6">
       {error ? (
@@ -25,12 +31,14 @@ export function BusinessApplicationForm({
         </div>
       ) : null}
 
-      <form action={submitBusinessApplicationAction} className="space-y-5">
+      <form action={submitBusinessApplicationAction} className="space-y-7">
+        <section className="space-y-5">
+          <p className={sectionTitleClass}>Identidad</p>
         <div className="grid gap-5 md:grid-cols-2">
           <div>
             <label
               htmlFor="businessName"
-              className="mb-2 block text-sm font-medium text-[var(--color-foreground)]"
+              className={labelClass}
             >
               Nombre del local
             </label>
@@ -38,31 +46,36 @@ export function BusinessApplicationForm({
               id="businessName"
               name="businessName"
               required
-              className="w-full rounded-2xl border border-[var(--color-border)] bg-white/90 px-4 py-3 text-sm outline-none"
+              placeholder="Ej. Mostrador Centro"
+              className={inputClass}
             />
           </div>
 
           <div>
             <label
               htmlFor="contactName"
-              className="mb-2 block text-sm font-medium text-[var(--color-foreground)]"
+              className={labelClass}
             >
-              Nombre de contacto
+              Responsable
             </label>
             <input
               id="contactName"
               name="contactName"
               required
-              className="w-full rounded-2xl border border-[var(--color-border)] bg-white/90 px-4 py-3 text-sm outline-none"
+              placeholder="Nombre y apellido"
+              className={inputClass}
             />
           </div>
         </div>
+        </section>
 
+        <section className="space-y-5">
+          <p className={sectionTitleClass}>Contacto</p>
         <div className="grid gap-5 md:grid-cols-2">
           <div>
             <label
               htmlFor="email"
-              className="mb-2 block text-sm font-medium text-[var(--color-foreground)]"
+              className={labelClass}
             >
               Email
             </label>
@@ -71,87 +84,161 @@ export function BusinessApplicationForm({
               name="email"
               type="email"
               required
-              className="w-full rounded-2xl border border-[var(--color-border)] bg-white/90 px-4 py-3 text-sm outline-none"
+              placeholder="nombre@local.com"
+              className={inputClass}
             />
           </div>
 
           <div>
             <label
               htmlFor="phone"
-              className="mb-2 block text-sm font-medium text-[var(--color-foreground)]"
+              className={labelClass}
             >
               Celular
             </label>
             <input
               id="phone"
               name="phone"
-              className="w-full rounded-2xl border border-[var(--color-border)] bg-white/90 px-4 py-3 text-sm outline-none"
+              required
+              placeholder="+598 ..."
+              className={inputClass}
             />
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2">
           <div>
             <label
               htmlFor="instagramOrWebsite"
-              className="mb-2 block text-sm font-medium text-[var(--color-foreground)]"
+              className={labelClass}
             >
               Instagram o web
             </label>
             <input
               id="instagramOrWebsite"
               name="instagramOrWebsite"
-              className="w-full rounded-2xl border border-[var(--color-border)] bg-white/90 px-4 py-3 text-sm outline-none"
+              placeholder="@tu_local o https://..."
+              className={inputClass}
             />
           </div>
 
           <div>
             <label
               htmlFor="city"
-              className="mb-2 block text-sm font-medium text-[var(--color-foreground)]"
+              className={labelClass}
             >
-              Ciudad
+              Ciudad / zona
             </label>
             <input
               id="city"
               name="city"
-              className="w-full rounded-2xl border border-[var(--color-border)] bg-white/90 px-4 py-3 text-sm outline-none"
+              required
+              placeholder="Ej. Centro, Pocitos, Cordón..."
+              className={inputClass}
             />
           </div>
+        </div>
+        </section>
 
+        <section className="space-y-5">
+          <p className={sectionTitleClass}>Operación</p>
+        <div>
+          <label
+            htmlFor="pickupAddress"
+            className={labelClass}
+          >
+            Dirección de retiro del local
+          </label>
+          <input
+            id="pickupAddress"
+            name="pickupAddress"
+            required
+            placeholder="Ej. Av. 18 de Julio 1450, Montevideo"
+            className={inputClass}
+          />
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-3">
           <div>
             <label
               htmlFor="businessType"
-              className="mb-2 block text-sm font-medium text-[var(--color-foreground)]"
+              className={labelClass}
             >
               Tipo de negocio
             </label>
             <input
               id="businessType"
               name="businessType"
+              required
               placeholder="Pizzería, burgers, café..."
-              className="w-full rounded-2xl border border-[var(--color-border)] bg-white/90 px-4 py-3 text-sm outline-none"
+              className={inputClass}
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="currentSalesChannels"
+              className={labelClass}
+            >
+              ¿Ya venden online?
+            </label>
+            <select
+              id="currentSalesChannels"
+              name="currentSalesChannels"
+              className={inputClass}
+              defaultValue=""
+            >
+              <option value="">Seleccionar</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="instagram">Instagram</option>
+              <option value="web">Web propia</option>
+              <option value="marketplace">App/marketplace</option>
+              <option value="multiple">Varios canales</option>
+              <option value="none">Todavía no</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="estimatedOrderVolume"
+              className={labelClass}
+            >
+              Volumen estimado
+            </label>
+            <select
+              id="estimatedOrderVolume"
+              name="estimatedOrderVolume"
+              className={inputClass}
+              defaultValue=""
+            >
+              <option value="">Seleccionar</option>
+              <option value="starting">Recién empezando</option>
+              <option value="1-10">1-10 pedidos/día</option>
+              <option value="11-30">11-30 pedidos/día</option>
+              <option value="31-60">31-60 pedidos/día</option>
+              <option value="60+">60+ pedidos/día</option>
+            </select>
           </div>
         </div>
 
         <div>
           <label
             htmlFor="message"
-            className="mb-2 block text-sm font-medium text-[var(--color-foreground)]"
+            className={labelClass}
           >
-            Contanos un poco más
+            Comentario breve
           </label>
           <textarea
             id="message"
             name="message"
             rows={5}
-            placeholder="Qué venden, cómo manejan retiros, si ya tienen menú digital, etc."
-            className="w-full rounded-2xl border border-[var(--color-border)] bg-white/90 px-4 py-3 text-sm outline-none"
+            placeholder="Qué venden, cómo manejan retiros o cualquier detalle útil."
+            className={inputClass}
           />
         </div>
+        </section>
 
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4 border-t border-[rgba(92,59,34,0.12)] pt-6">
           <SubmitButton
             label="Enviar solicitud"
             pendingLabel="Enviando..."

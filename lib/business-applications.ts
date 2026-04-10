@@ -7,7 +7,10 @@ export type BusinessApplicationInput = {
   phone: string | null;
   instagramOrWebsite: string | null;
   city: string | null;
+  pickupAddress: string;
   businessType: string | null;
+  currentSalesChannels: string | null;
+  estimatedOrderVolume: string | null;
   message: string | null;
 };
 
@@ -25,7 +28,10 @@ export function parseBusinessApplicationForm(formData: FormData): BusinessApplic
   const phone = normalizeOptional(formData.get("phone"));
   const instagramOrWebsite = normalizeOptional(formData.get("instagramOrWebsite"));
   const city = normalizeOptional(formData.get("city"));
+  const pickupAddress = String(formData.get("pickupAddress") ?? "").trim();
   const businessType = normalizeOptional(formData.get("businessType"));
+  const currentSalesChannels = normalizeOptional(formData.get("currentSalesChannels"));
+  const estimatedOrderVolume = normalizeOptional(formData.get("estimatedOrderVolume"));
   const message = normalizeOptional(formData.get("message"));
 
   if (!businessName) {
@@ -48,6 +54,10 @@ export function parseBusinessApplicationForm(formData: FormData): BusinessApplic
     throw new Error("El celular es demasiado largo.");
   }
 
+  if (!pickupAddress) {
+    throw new Error("La dirección de retiro es obligatoria.");
+  }
+
   if (instagramOrWebsite && instagramOrWebsite.length > 160) {
     throw new Error("El Instagram o sitio web es demasiado largo.");
   }
@@ -58,6 +68,18 @@ export function parseBusinessApplicationForm(formData: FormData): BusinessApplic
 
   if (businessType && businessType.length > 120) {
     throw new Error("El tipo de negocio es demasiado largo.");
+  }
+
+  if (pickupAddress.length > 240) {
+    throw new Error("La dirección de retiro es demasiado larga.");
+  }
+
+  if (currentSalesChannels && currentSalesChannels.length > 160) {
+    throw new Error("El canal de venta actual es demasiado largo.");
+  }
+
+  if (estimatedOrderVolume && estimatedOrderVolume.length > 120) {
+    throw new Error("El volumen estimado es demasiado largo.");
   }
 
   if (message && message.length > 1200) {
@@ -71,7 +93,10 @@ export function parseBusinessApplicationForm(formData: FormData): BusinessApplic
     phone,
     instagramOrWebsite,
     city,
+    pickupAddress,
     businessType,
+    currentSalesChannels,
+    estimatedOrderVolume,
     message,
   };
 }

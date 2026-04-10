@@ -1,13 +1,23 @@
 import Link from "next/link";
 
 import { getAdminBusinesses, requireInternalAdminContext } from "@/lib/admin/server";
+import {
+  AdminPageHeader,
+  AdminPanel,
+  AdminStatusPill,
+  adminTableClasses,
+} from "@/components/admin/admin-ui";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("es-UY", {
     style: "currency",
     currency: "UYU",
     maximumFractionDigits: 0,
-  }).format(amount / 100);
+  }).format(amount);
+}
+
+function formatPercent(bps: number) {
+  return `${(bps / 100).toFixed(2).replace(/\.00$/, "")}%`;
 }
 
 export default async function AdminBusinessesPage() {
@@ -15,91 +25,104 @@ export default async function AdminBusinessesPage() {
   const businesses = await getAdminBusinesses();
 
   return (
-    <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-        Negocios
-      </p>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-foreground)]">
-            Negocios activos y onboarding
-          </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--color-muted)]">
-            Esta vista junta onboarding, conexión de pagos y ventas recientes para
-            tener una lectura rápida de cada local.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <AdminPageHeader
+        eyebrow="Negocios"
+        title="Locales y estado comercial"
+        description="Ficha operativa por negocio: plataforma, onboarding, pagos, volumen y comisión."
+      />
 
-      <div className="mt-8 overflow-hidden rounded-[1.75rem] border border-[var(--color-border)]">
+      <AdminPanel
+        title="Negocios"
+        description={`${businesses.length} local${businesses.length === 1 ? "" : "es"} cargado${businesses.length === 1 ? "" : "s"}.`}
+      >
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
-            <thead className="bg-[var(--color-surface)] text-left text-xs uppercase tracking-[0.18em] text-[var(--color-muted)]">
+          <table className={adminTableClasses.table}>
+            <thead className={adminTableClasses.thead}>
               <tr>
-                <th className="px-4 py-4 font-semibold">Local</th>
-                <th className="px-4 py-4 font-semibold">Equipo</th>
-                <th className="px-4 py-4 font-semibold">Onboarding</th>
-                <th className="px-4 py-4 font-semibold">Pagos</th>
-                <th className="px-4 py-4 font-semibold">Ventas 30 días</th>
-                <th className="px-4 py-4 font-semibold">Acción</th>
+                <th className={adminTableClasses.th}>Local</th>
+                <th className={adminTableClasses.th}>Equipo</th>
+                <th className={adminTableClasses.th}>Plataforma</th>
+                <th className={adminTableClasses.th}>Onboarding</th>
+                <th className={adminTableClasses.th}>Pagos</th>
+                <th className={adminTableClasses.th}>GMV 30d</th>
+                <th className={adminTableClasses.th}>Comisión</th>
+                <th className={adminTableClasses.th}>Acción</th>
               </tr>
             </thead>
             <tbody>
               {businesses.map((business) => (
-                <tr
-                  key={business.id}
-                  className="border-t border-[var(--color-border)] text-sm text-[var(--color-foreground)]"
-                >
-                  <td className="px-4 py-4 align-top">
-                    <div className="font-semibold">{business.name}</div>
-                    <div className="mt-1 text-[var(--color-muted)]">@{business.slug}</div>
-                    <div className="mt-1 text-[var(--color-muted)]">
+                <tr key={business.id} className={adminTableClasses.row}>
+                  <td className={adminTableClasses.td}>
+                    <div className="font-medium text-slate-950">{business.name}</div>
+                    <div className="mt-0.5 text-xs text-slate-500">@{business.slug}</div>
+                    <div className="mt-0.5 text-xs text-slate-500">
                       {business.contactEmail ?? "Sin email"}
                     </div>
                   </td>
-                  <td className="px-4 py-4 align-top text-[var(--color-muted)]">
-                    <div>{business.memberCounts.owners} owner</div>
-                    <div>{business.memberCounts.admins} admin</div>
-                    <div>{business.memberCounts.staff} staff</div>
+                  <td className={`${adminTableClasses.td} text-slate-500`}>
+                    <div>
+                      {business.memberCounts.owners} owner · {business.memberCounts.admins} admin
+                    </div>
+                    <div className="mt-0.5">{business.memberCounts.staff} staff</div>
                   </td>
-                  <td className="px-4 py-4 align-top">
-                    <span
-                      className={
-                        business.onboardingCompletedAt
-                          ? "inline-flex rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700"
-                          : "inline-flex rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-rose-700"
+                  <td className={adminTableClasses.td}>
+                    <AdminStatusPill
+                      tone={
+                        business.platformStatus === "active"
+                          ? "success"
+                          : business.platformStatus === "blocked"
+                            ? "danger"
+                            : "warning"
                       }
                     >
-                      {business.onboardingCompletedAt ? "Completo" : "Pendiente"}
-                    </span>
+                      {business.platformStatus === "active"
+                        ? "Activo"
+                        : business.platformStatus === "blocked"
+                          ? "Bloqueado"
+                          : "Pausado"}
+                    </AdminStatusPill>
                   </td>
-                  <td className="px-4 py-4 align-top">
-                    <span
-                      className={
+                  <td className={adminTableClasses.td}>
+                    <AdminStatusPill tone={business.onboardingCompletedAt ? "success" : "warning"}>
+                      {business.onboardingCompletedAt ? "Completo" : "Pendiente"}
+                    </AdminStatusPill>
+                  </td>
+                  <td className={adminTableClasses.td}>
+                    <AdminStatusPill
+                      tone={
                         business.paymentConnectionStatus === "connected"
-                          ? "inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700"
+                          ? "success"
                           : business.paymentConnectionStatus === "error"
-                            ? "inline-flex rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-rose-700"
-                            : "inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700"
+                            ? "danger"
+                            : "warning"
                       }
                     >
                       {business.paymentConnectionStatus === "connected"
                         ? "Conectado"
                         : business.paymentConnectionStatus === "error"
                           ? "Con error"
-                          : "Sin conectar"}
-                    </span>
+                          : "Pendiente"}
+                    </AdminStatusPill>
                   </td>
-                  <td className="px-4 py-4 align-top text-[var(--color-muted)]">
+                  <td className={`${adminTableClasses.td} text-slate-500`}>
                     <div>{business.salesLast30Days.paidOrders} pagos</div>
-                    <div className="mt-1 font-medium text-[var(--color-foreground)]">
+                    <div className="mt-0.5 font-medium text-slate-950">
                       {formatCurrency(business.salesLast30Days.revenueAmount)}
                     </div>
                   </td>
-                  <td className="px-4 py-4 align-top">
+                  <td className={`${adminTableClasses.td} text-slate-500`}>
+                    <div className="font-medium text-slate-950">
+                      {formatPercent(business.commissionBps)}
+                    </div>
+                    <div className="mt-0.5">
+                      {formatCurrency(business.estimatedCommissionCurrentMonthAmount)}
+                    </div>
+                  </td>
+                  <td className={adminTableClasses.td}>
                     <Link
                       href={`/admin/negocios/${business.id}`}
-                      className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                      className="font-medium text-emerald-700 hover:text-emerald-800"
                     >
                       Ver detalle
                     </Link>
@@ -109,7 +132,7 @@ export default async function AdminBusinessesPage() {
             </tbody>
           </table>
         </div>
-      </div>
-    </section>
+      </AdminPanel>
+    </div>
   );
 }

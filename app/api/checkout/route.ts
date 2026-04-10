@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+import { recordFunnelEvent } from "@/lib/analytics/funnel-server";
 import { createMercadoPagoPreference } from "@/lib/mercadopago/server";
 import { createGuestOrder } from "@/lib/supabase/orders";
 
@@ -35,6 +36,21 @@ export async function POST(request: Request) {
       orderId: order.order.id,
       orderNumber: order.order.orderNumber,
       businessSlug: order.business.slug,
+    });
+
+    await recordFunnelEvent({
+      eventType: "order_created",
+      businessId: order.business.id,
+      orderId: order.order.id,
+      sessionId:
+        payload && typeof payload === "object" && "funnelSessionId" in payload
+          ? String(payload.funnelSessionId ?? "")
+          : null,
+      metadata: {
+        requestId,
+        businessSlug: order.business.slug,
+        orderNumber: order.order.orderNumber,
+      },
     });
 
     let preference;

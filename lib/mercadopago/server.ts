@@ -17,6 +17,7 @@ import {
   getMercadoPagoWebhookSecret,
   isMercadoPagoSandboxMode,
 } from "@/lib/mercadopago/server-config";
+import { recordFunnelEvent } from "@/lib/analytics/funnel-server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PublicBusiness } from "@/lib/public-catalog";
 
@@ -367,13 +368,14 @@ export async function syncMercadoPagoPayment(
   const paymentReference = payment.id ? String(payment.id) : null;
   const { data: order, error: orderLookupError } = await supabase
     .from("orders")
-    .select("id, business_id, currency_code, total_amount")
+    .select("id, business_id, currency_code, total_amount, metadata")
     .eq("id", externalReference)
     .single<{
       id: string;
       business_id: string;
       currency_code: string;
       total_amount: number;
+      metadata: Record<string, unknown> | null;
     }>();
 
   if (orderLookupError || !order) {
@@ -414,6 +416,7 @@ export async function syncMercadoPagoPayment(
       payment_reference: paymentReference,
       payment_status: orderPaymentStatus,
       metadata: {
+        ...(order.metadata ?? {}),
         mercadopago_status: payment.status ?? null,
         mercadopago_status_detail: payment.status_detail ?? null,
       },
@@ -424,6 +427,22 @@ export async function syncMercadoPagoPayment(
     throw new Error(
       `No se pudo actualizar el pedido con el estado del pago: ${ordersError.message}`
     );
+  }
+
+  if (orderPaymentStatus === "paid" || orderPaymentStatus === "authorized") {
+    await recordFunnelEvent({
+      eventType: "payment_success",
+      businessId: order.business_id,
+      orderId: order.id,
+      sessionId:
+        typeof order.metadata?.funnel_session_id === "string"
+          ? order.metadata.funnel_session_id
+          : null,
+      metadata: {
+        mercadopagoPaymentId: payment.id ?? null,
+        mercadopagoStatus: payment.status ?? null,
+      },
+    });
   }
 
   return {

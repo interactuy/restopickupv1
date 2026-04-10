@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useCart } from "@/components/cart/cart-provider";
 import { MercadoPagoTestModeNote } from "@/components/cart/mercadopago-test-mode-note";
+import { getFunnelSessionId, trackFunnelEvent } from "@/lib/analytics/funnel-client";
 import { formatPrice, type PublicBusiness } from "@/lib/public-catalog";
 
 const checkoutFormSchema = z.object({
@@ -29,6 +30,7 @@ export function CheckoutForm({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { getCart, clearCart, isReady } = useCart();
+  const hasTrackedCheckout = useRef(false);
   const cart = getCart(business.id);
   const subtotal =
     cart?.items.reduce(
@@ -46,6 +48,23 @@ export function CheckoutForm({
     },
   });
 
+  useEffect(() => {
+    if (hasTrackedCheckout.current || !cart || cart.items.length === 0) {
+      return;
+    }
+
+    hasTrackedCheckout.current = true;
+    trackFunnelEvent({
+      eventType: "checkout_started",
+      businessId: business.id,
+      metadata: {
+        businessSlug: business.slug,
+        itemsCount: cart.items.length,
+        subtotal,
+      },
+    });
+  }, [business.id, business.slug, cart, subtotal]);
+
   async function onSubmit(values: CheckoutFormValues) {
     if (!cart || cart.items.length === 0) {
       setErrorMessage("Tu carrito esta vacio.");
@@ -62,6 +81,7 @@ export function CheckoutForm({
         },
         body: JSON.stringify({
           businessSlug: business.slug,
+          funnelSessionId: getFunnelSessionId(),
           customerName: values.customerName,
           customerPhone: values.customerPhone,
           customerNotes: values.customerNotes,

@@ -6,13 +6,18 @@ import {
   getBusinessApplications,
   requireInternalAdminContext,
 } from "@/lib/admin/server";
+import { AdminHeatmap, AdminMetric, AdminSalesBars } from "@/components/admin/admin-charts";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("es-UY", {
     style: "currency",
     currency: "UYU",
     maximumFractionDigits: 0,
-  }).format(amount / 100);
+  }).format(amount);
+}
+
+function formatPercent(bps: number) {
+  return `${(bps / 100).toFixed(2).replace(/\.00$/, "")}%`;
 }
 
 export default async function AdminIndexPage() {
@@ -23,207 +28,186 @@ export default async function AdminIndexPage() {
     getAdminBusinesses(),
   ]);
 
-  const recentBusinesses = businesses.slice(0, 5);
+  const watchlist = [...businesses]
+    .sort((a, b) => {
+      const aScore =
+        (a.paymentConnectionStatus !== "connected" ? 1000 : 0) +
+        (!a.onboardingCompletedAt ? 800 : 0) +
+        (a.platformStatus !== "active" ? 600 : 0) -
+        a.salesLast30Days.revenueAmount;
+      const bScore =
+        (b.paymentConnectionStatus !== "connected" ? 1000 : 0) +
+        (!b.onboardingCompletedAt ? 800 : 0) +
+        (b.platformStatus !== "active" ? 600 : 0) -
+        b.salesLast30Days.revenueAmount;
+      return bScore - aScore;
+    })
+    .slice(0, 8);
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-          Resumen interno
-        </p>
-        <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-foreground)]">
-              Panel de operaciones
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--color-muted)]">
-              Desde acá pueden revisar solicitudes, monitorear negocios ya activos
-              y tener una lectura rápida de onboarding, pagos y ventas recientes.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/admin/solicitudes?status=pending"
-              className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-            >
-              Ver pendientes
-            </Link>
-            <Link
-              href="/admin/negocios"
-              className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-            >
-              Ver negocios
-            </Link>
-          </div>
+    <div className="space-y-4">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-4">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+            Operación
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
+            Overview de plataforma
+          </h1>
         </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <article className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
-              Solicitudes
-            </p>
-            <p className="mt-3 text-3xl font-semibold text-[var(--color-foreground)]">
-              {overview.applications.pending}
-            </p>
-            <p className="mt-2 text-sm text-[var(--color-muted)]">
-              Pendientes de revisión
-            </p>
-          </article>
-
-          <article className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
-              Negocios
-            </p>
-            <p className="mt-3 text-3xl font-semibold text-[var(--color-foreground)]">
-              {overview.businesses.total}
-            </p>
-            <p className="mt-2 text-sm text-[var(--color-muted)]">
-              {overview.businesses.active} activos, {overview.businesses.onboardingCompleted} con onboarding listo
-            </p>
-          </article>
-
-          <article className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
-              Pagos conectados
-            </p>
-            <p className="mt-3 text-3xl font-semibold text-[var(--color-foreground)]">
-              {overview.businesses.connectedPayments}
-            </p>
-            <p className="mt-2 text-sm text-[var(--color-muted)]">
-              Negocios cobrando con su propia cuenta
-            </p>
-          </article>
-
-          <article className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
-              Ventas 30 días
-            </p>
-            <p className="mt-3 text-3xl font-semibold text-[var(--color-foreground)]">
-              {formatCurrency(overview.salesLast30Days.revenueAmount)}
-            </p>
-            <p className="mt-2 text-sm text-[var(--color-muted)]">
-              {overview.salesLast30Days.paidOrders} pagos cobrados
-            </p>
-          </article>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/solicitudes?status=pending"
+            className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
+          >
+            Revisar solicitudes
+          </Link>
+          <Link
+            href="/admin/comisiones"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          >
+            Finanzas
+          </Link>
         </div>
+      </header>
+
+      <section className="grid overflow-hidden rounded-2xl border border-slate-200 bg-white md:grid-cols-3 xl:grid-cols-6">
+        <AdminMetric
+          label="GMV 7 días"
+          value={formatCurrency(overview.salesLast7Days.revenueAmount)}
+          detail={`${overview.salesLast7Days.paidOrders} pagos`}
+        />
+        <AdminMetric
+          label="GMV 30 días"
+          value={formatCurrency(overview.salesLast30Days.revenueAmount)}
+          detail={`${overview.salesLast30Days.paidOrders} pagos`}
+        />
+        <AdminMetric
+          label="Ticket promedio"
+          value={formatCurrency(overview.salesLast30Days.averageTicketAmount)}
+          detail="Últimos 30 días"
+        />
+        <AdminMetric
+          label="Locales activos"
+          value={overview.businesses.active}
+          detail={`${overview.businesses.connectedPayments} con pagos`}
+        />
+        <AdminMetric
+          label="Comisión mes"
+          value={formatCurrency(overview.commissionsCurrentMonth.estimatedAmount)}
+          detail={`${overview.commissionsCurrentMonth.configuredBusinesses} configurados`}
+        />
+        <AdminMetric
+          label="Soporte"
+          value={overview.support.openIncidents}
+          detail={`${overview.support.highSeverityOpenIncidents} alta prioridad`}
+        />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-                Solicitudes pendientes
-              </p>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-                Próximos locales a revisar
-              </h2>
-            </div>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(380px,0.8fr)]">
+        <AdminHeatmap
+          title="Actividad por día y hora"
+          description="Pedidos pagados o autorizados de los últimos 30 días."
+          heatmap={overview.dayHourHeatmapLast30Days}
+        />
+        <AdminSalesBars
+          title="GMV diario"
+          description="Últimos 30 días, volumen procesado día a día."
+          items={overview.salesSeriesLast30Days}
+        />
+      </div>
 
-            <Link
-              href="/admin/solicitudes?status=pending"
-              className="text-sm font-semibold text-[var(--color-accent)]"
-            >
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-950">
+                Solicitudes pendientes
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Pipeline de crecimiento para revisar.
+              </p>
+            </div>
+            <Link href="/admin/solicitudes?status=pending" className="text-sm font-medium text-slate-950">
               Ver todas
             </Link>
           </div>
-
-          {pendingApplications.length === 0 ? (
-            <div className="mt-6 rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-sm text-[var(--color-muted)]">
-              No hay solicitudes pendientes ahora mismo.
-            </div>
-          ) : (
-            <div className="mt-6 space-y-3">
-              {pendingApplications.slice(0, 5).map((application) => (
-                <Link
-                  key={application.id}
-                  href={`/admin/solicitudes/${application.id}`}
-                  className="block rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition hover:border-[var(--color-accent)]"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-semibold text-[var(--color-foreground)]">
-                        {application.businessName}
-                      </h3>
-                      <p className="mt-1 text-sm text-[var(--color-muted)]">
-                        {application.contactName} · {application.email}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-[var(--color-accent)]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
-                      Pendiente
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm text-[var(--color-muted)]">
-                    {application.city ?? "Sin ciudad"} · {application.businessType ?? "Sin tipo"}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-                Negocios recientes
-              </p>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-                Estado general por local
-              </h2>
-            </div>
-
-            <Link
-              href="/admin/negocios"
-              className="text-sm font-semibold text-[var(--color-accent)]"
-            >
-              Ver todos
-            </Link>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            {recentBusinesses.map((business) => (
+          <div className="divide-y divide-slate-200">
+            {pendingApplications.slice(0, 8).map((application) => (
               <Link
-                key={business.id}
-                href={`/admin/negocios/${business.id}`}
-                className="flex flex-wrap items-start justify-between gap-3 rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition hover:border-[var(--color-accent)]"
+                key={application.id}
+                href={`/admin/solicitudes/${application.id}`}
+                className="grid gap-1 px-5 py-3 text-sm hover:bg-slate-50"
               >
-                <div>
-                  <h3 className="text-lg font-semibold text-[var(--color-foreground)]">
-                    {business.name}
-                  </h3>
-                  <p className="mt-1 text-sm text-[var(--color-muted)]">@{business.slug}</p>
-                  <p className="mt-3 text-sm text-[var(--color-muted)]">
-                    {business.salesLast30Days.paidOrders} pagos en 30 días ·{" "}
-                    {formatCurrency(business.salesLast30Days.revenueAmount)}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <span
-                    className={
-                      business.paymentConnectionStatus === "connected"
-                        ? "rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700"
-                        : "rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700"
-                    }
-                  >
-                    {business.paymentConnectionStatus === "connected"
-                      ? "Pagos conectados"
-                      : "Pagos pendientes"}
+                <div className="flex items-center justify-between gap-4">
+                  <span className="font-medium text-slate-950">
+                    {application.businessName}
                   </span>
-                  <span
-                    className={
-                      business.onboardingCompletedAt
-                        ? "rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700"
-                        : "rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-rose-700"
-                    }
-                  >
-                    {business.onboardingCompletedAt ? "Onboarding listo" : "Onboarding pendiente"}
+                  <span className="text-xs text-slate-500">
+                    {new Date(application.createdAt).toLocaleDateString("es-UY")}
                   </span>
                 </div>
+                <span className="text-xs text-slate-500">
+                  {application.contactName} · {application.city ?? "Sin ciudad"} ·{" "}
+                  {application.businessType ?? "Sin tipo"}
+                </span>
               </Link>
             ))}
+            {pendingApplications.length === 0 ? (
+              <p className="px-5 py-4 text-sm text-slate-500">
+                No hay solicitudes pendientes.
+              </p>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-950">Watchlist</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Locales con pendientes operativos o comerciales.
+              </p>
+            </div>
+            <Link href="/admin/negocios" className="text-sm font-medium text-slate-950">
+              Ver negocios
+            </Link>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-[0.12em] text-slate-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Local</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
+                  <th className="px-4 py-3 font-medium">Comisión</th>
+                  <th className="px-4 py-3 font-medium">GMV 30d</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {watchlist.map((business) => (
+                  <tr key={business.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/negocios/${business.id}`}
+                        className="font-medium text-slate-950"
+                      >
+                        {business.name}
+                      </Link>
+                      <p className="mt-0.5 text-xs text-slate-500">@{business.slug}</p>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-500">
+                      {business.platformStatus} · {business.paymentConnectionStatus}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {formatPercent(business.commissionBps)}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-slate-950">
+                      {formatCurrency(business.salesLast30Days.revenueAmount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
       </div>

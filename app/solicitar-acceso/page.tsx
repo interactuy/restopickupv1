@@ -9,69 +9,131 @@ type AccessRequestPageProps = {
   }>;
 };
 
+const processSteps = [
+  {
+    label: "Solicitud",
+    title: "Nos pasás los datos reales del local.",
+  },
+  {
+    label: "Revisión",
+    title: "Evaluamos fit, operación y zona manualmente.",
+  },
+  {
+    label: "Alta",
+    title: "Si avanzamos, creamos tu usuario y vinculamos el negocio.",
+  },
+  {
+    label: "Onboarding",
+    title: "Cargás branding, categorías, productos y pagos desde el dashboard.",
+  },
+];
+
+const fitSignals = [
+  "Locales con retiro por mostrador",
+  "Catálogo claro y actualizable",
+  "Operación preparada para pedidos digitales",
+  "Interés en reducir espera y ordenar la demanda",
+];
+
 export default async function AccessRequestPage({
   searchParams,
 }: AccessRequestPageProps) {
   const query = await searchParams;
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[var(--color-background)] text-[var(--color-foreground)]">
-      <div className="absolute inset-x-0 top-0 h-[30rem] bg-[radial-gradient(circle_at_top,_rgba(198,122,48,0.2),_transparent_62%)]" />
+    <main className="min-h-screen overflow-hidden bg-[#f8f3ec] text-[var(--color-foreground)]">
+      <section className="relative border-b border-[rgba(92,59,34,0.12)]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_8%,rgba(198,122,48,0.2),transparent_32%),linear-gradient(135deg,#f8f3ec_0%,#fbf8f2_48%,#efe2d1_100%)]" />
+        <div className="absolute right-[-12rem] top-[-15rem] h-[34rem] w-[34rem] rounded-full bg-[rgba(196,109,41,0.12)] blur-3xl" />
+        <div className="absolute bottom-[-10rem] left-[-8rem] h-[28rem] w-[28rem] rounded-full bg-white/70 blur-3xl" />
 
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-8 md:px-10 lg:px-12">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
-            Restopickup
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-white/80 px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-          >
-            Volver a la home
-          </Link>
-        </header>
+        <div className="relative mx-auto flex min-h-[74vh] w-full max-w-[1560px] flex-col px-6 py-6 md:px-10 lg:px-14">
+          <header className="flex flex-wrap items-center justify-between gap-4">
+            <Link href="/" className="text-lg font-semibold tracking-tight">
+              Restopickup
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center rounded-full border border-[rgba(92,59,34,0.14)] bg-white/70 px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] shadow-sm backdrop-blur transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+            >
+              Volver a la home
+            </Link>
+          </header>
 
-        <section className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
-          <div className="rounded-[2rem] border border-[var(--color-border)] bg-white/85 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-              Solicitar acceso
-            </p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight">
-              Sumá tu local a Restopickup
-            </h1>
-            <p className="mt-4 text-sm leading-7 text-[var(--color-muted)]">
-              Si te interesa operar pedidos para retirar con una tienda simple y
-              autogestionable, dejános tus datos. Revisamos cada caso manualmente
-              antes de crear accesos.
-            </p>
+          <div className="grid flex-1 gap-10 py-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(560px,1.08fr)] lg:items-center lg:py-16">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[var(--color-accent)]">
+                Trabajá con Restopickup
+              </p>
+              <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-[#21160f] md:text-7xl lg:text-8xl">
+                Tu local, listo para vender sin sumar filas.
+              </h1>
+              <p className="mt-7 max-w-2xl text-base leading-8 text-[var(--color-muted)] md:text-lg">
+                Restopickup ayuda a locales gastronómicos a recibir pedidos online
+                para retiro. La solicitud no crea acceso automático: revisamos cada
+                negocio y, si avanzamos, dejamos el dashboard listo para operar.
+              </p>
 
-            <div className="mt-8 space-y-4">
-              {[
-                "Nos llega tu solicitud con datos reales del negocio.",
-                "La revisamos y definimos si avanzamos con el alta.",
-                "Si aprobamos, creamos el usuario owner y vinculamos el local.",
-                "Después el negocio completa onboarding, categorías y catálogo desde el dashboard.",
-              ].map((item, index) => (
-                <div key={item} className="flex gap-3">
-                  <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)]/10 text-xs font-semibold text-[var(--color-accent)]">
-                    {index + 1}
+              <div className="mt-9 grid gap-3 sm:grid-cols-2">
+                {fitSignals.map((signal) => (
+                  <div
+                    key={signal}
+                    className="rounded-2xl border border-[rgba(92,59,34,0.12)] bg-white/58 px-4 py-3 text-sm font-medium text-[#3b2a1f] shadow-sm backdrop-blur"
+                  >
+                    {signal}
                   </div>
-                  <p className="text-sm leading-7 text-[var(--color-muted)]">
-                    {item}
-                  </p>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[2.25rem] border border-white/70 bg-white/82 p-3 shadow-[0_34px_110px_rgba(62,39,20,0.14)] backdrop-blur-xl">
+              <div className="rounded-[1.85rem] border border-[rgba(92,59,34,0.12)] bg-[#fffaf5] p-5 md:p-7">
+                <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-[rgba(92,59,34,0.12)] pb-5">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+                      Solicitud de acceso
+                    </p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[#21160f]">
+                      Contanos sobre tu local
+                    </h2>
+                  </div>
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                    Revisión manual
+                  </span>
                 </div>
-              ))}
+
+                <BusinessApplicationForm
+                  error={query.error}
+                  success={query.success}
+                />
+              </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/88 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-            <BusinessApplicationForm
-              error={query.error}
-              success={query.success}
-            />
-          </section>
-        </section>
-      </div>
+      <section className="bg-[#fffaf5]">
+        <div className="mx-auto grid w-full max-w-[1560px] gap-6 px-6 py-10 md:px-10 lg:grid-cols-4 lg:px-14">
+          {processSteps.map((step, index) => (
+            <article
+              key={step.label}
+              className="border-l border-[rgba(92,59,34,0.16)] pl-5"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#21160f] text-xs font-semibold text-white">
+                  {index + 1}
+                </span>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                  {step.label}
+                </p>
+              </div>
+              <p className="mt-4 max-w-xs text-sm leading-6 text-[var(--color-muted)]">
+                {step.title}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }

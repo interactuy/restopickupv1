@@ -103,6 +103,14 @@ export default async function AdminApplicationDetailPage({
                   {application.city ?? "Sin ciudad"}
                 </dd>
               </div>
+              <div className="md:col-span-2">
+                <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
+                  Dirección de retiro
+                </dt>
+                <dd className="mt-1 text-sm text-[var(--color-foreground)]">
+                  {application.pickupAddress ?? "Sin dirección"}
+                </dd>
+              </div>
             </dl>
           </article>
 
@@ -125,6 +133,22 @@ export default async function AdminApplicationDetailPage({
                 </dt>
                 <dd className="mt-1 text-sm text-[var(--color-foreground)]">
                   {application.instagramOrWebsite ?? "Sin dato"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
+                  Venta online actual
+                </dt>
+                <dd className="mt-1 text-sm text-[var(--color-foreground)]">
+                  {application.currentSalesChannels ?? "Sin dato"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">
+                  Volumen estimado
+                </dt>
+                <dd className="mt-1 text-sm text-[var(--color-foreground)]">
+                  {application.estimatedOrderVolume ?? "Sin dato"}
                 </dd>
               </div>
             </dl>

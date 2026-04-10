@@ -23,7 +23,10 @@ export async function submitBusinessApplicationAction(formData: FormData) {
       phone: payload.phone,
       instagram_or_website: payload.instagramOrWebsite,
       city: payload.city,
+      pickup_address: payload.pickupAddress,
       business_type: payload.businessType,
+      current_sales_channels: payload.currentSalesChannels,
+      estimated_order_volume: payload.estimatedOrderVolume,
       message: payload.message,
       status: "pending",
     });
