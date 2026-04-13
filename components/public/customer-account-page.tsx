@@ -168,6 +168,7 @@ export function CustomerAccountPage() {
     [],
   );
   const [activeOrders, setActiveOrders] = useState<ActiveCustomerOrder[]>([]);
+  const [previousOrders, setPreviousOrders] = useState<ActiveCustomerOrder[]>([]);
   const [storedLocation, setStoredLocation] = useState<ReturnType<typeof getStoredCustomerLocation>>(
     null,
   );
@@ -194,7 +195,7 @@ export function CustomerAccountPage() {
         return;
       }
 
-      const [bootstrapped, activeOrders] = await Promise.all([
+      const [bootstrapped, orders] = await Promise.all([
         bootstrapCustomerAccountState(),
         getCustomerActiveOrders(),
       ]);
@@ -210,7 +211,8 @@ export function CustomerAccountPage() {
         setEmail(bootstrapped.user.email ?? "");
       }
 
-      setActiveOrders(activeOrders);
+      setActiveOrders(orders.activeOrders);
+      setPreviousOrders(orders.previousOrders);
 
       setAuthState("authenticated");
     };
@@ -285,21 +287,43 @@ export function CustomerAccountPage() {
       setAuthState("guest");
       setCurrentUserEmail(null);
       setActiveOrders([]);
+      setPreviousOrders([]);
     });
   }
 
   const hasFavorites = profile.favoriteBusinesses.length > 0;
   const hasRecentPurchases = recentPurchases.length > 0;
   const hasActiveOrders = activeOrders.length > 0;
+  const hasPreviousOrders = previousOrders.length > 0;
 
   function formatOrderTime(value: string, timeZone: string) {
+    const resolvedTimeZone =
+      !timeZone || timeZone === "UTC" ? "America/Montevideo" : timeZone;
+
     return new Intl.DateTimeFormat("es-UY", {
       day: "numeric",
       month: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      timeZone,
+      timeZone: resolvedTimeZone,
     }).format(new Date(value));
+  }
+
+  function formatOrderAmount(amount: number, currencyCode: string) {
+    return new Intl.NumberFormat("es-UY", {
+      style: "currency",
+      currency: currencyCode,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }
+
+  function formatOrderItems(
+    items: {
+      productName: string;
+      quantity: number;
+    }[]
+  ) {
+    return items.map((item) => `${item.quantity}x ${item.productName}`).join(" · ");
   }
 
   return (
@@ -597,8 +621,10 @@ export function CustomerAccountPage() {
                   meta={
                     hasActiveOrders
                       ? `${activeOrders.length} pedido${activeOrders.length === 1 ? "" : "s"} en curso`
-                      : hasRecentPurchases
-                        ? `${recentPurchases.length} locales con compras`
+                      : hasPreviousOrders
+                        ? `${previousOrders.length} compra${previousOrders.length === 1 ? "" : "s"} anterior${previousOrders.length === 1 ? "" : "es"}`
+                        : hasRecentPurchases
+                          ? `${recentPurchases.length} locales con compras`
                         : "Compras anteriores"
                   }
                   isOpen={openSection === "orders"}
@@ -623,7 +649,7 @@ export function CustomerAccountPage() {
                                 {order.businessName}
                               </p>
                               <p className="mt-1 text-sm text-[var(--color-muted)]">
-                                Pedido #{order.orderNumber}
+                                {formatOrderItems(order.items)}
                               </p>
                               <p className="mt-1 text-sm text-[var(--color-muted)]">
                                 {order.estimatedReadyAt
@@ -631,15 +657,48 @@ export function CustomerAccountPage() {
                                   : `Hecho el ${formatOrderTime(order.placedAt, order.businessTimezone)}`}
                               </p>
                             </div>
-                            <span className="shrink-0 rounded-full border border-[rgba(63,92,78,0.18)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-secondary)]">
-                              Ver pedido
-                            </span>
+                            <div className="shrink-0 text-right">
+                              <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                                {formatOrderAmount(order.totalAmount, order.currencyCode)}
+                              </p>
+                              <span className="mt-1 inline-flex rounded-full border border-[rgba(63,92,78,0.18)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-secondary)]">
+                                Ver pedido
+                              </span>
+                            </div>
                           </Link>
                         ))}
                       </div>
                     ) : null}
 
-                    {hasRecentPurchases ? (
+                    {hasPreviousOrders ? (
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-muted)]">
+                          Anteriores
+                        </p>
+                        {previousOrders.map((order) => (
+                          <Link
+                            key={`${order.businessSlug}-${order.orderNumber}`}
+                            href={`/locales/${order.businessSlug}`}
+                            className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-[var(--color-border)] bg-white p-4 transition hover:border-[var(--color-accent)]"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-semibold text-[var(--color-foreground)]">
+                                {order.businessName}
+                              </p>
+                              <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                {formatOrderItems(order.items)}
+                              </p>
+                              <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                {formatOrderTime(order.placedAt, order.businessTimezone)}
+                              </p>
+                            </div>
+                            <p className="shrink-0 text-sm font-semibold text-[var(--color-foreground)]">
+                              {formatOrderAmount(order.totalAmount, order.currencyCode)}
+                            </p>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : hasRecentPurchases ? (
                       <div className="space-y-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-muted)]">
                           Anteriores
@@ -655,7 +714,7 @@ export function CustomerAccountPage() {
                                 {purchase.businessName}
                               </p>
                               <p className="mt-1 text-sm text-[var(--color-muted)]">
-                                Pedido #{purchase.orderNumber}
+                                Pedido anterior
                               </p>
                             </div>
                             <span className="shrink-0 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)]">

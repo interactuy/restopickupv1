@@ -23,7 +23,7 @@ type ConfirmationPageProps = {
 };
 
 const statusLabels: Record<string, string> = {
-  pending: "Pendiente",
+  pending: "Recibido",
   confirmed: "Confirmado",
   preparing: "En preparacion",
   ready_for_pickup: "Listo para retirar",
@@ -53,21 +53,27 @@ function buildMapboxStaticMapUrl(params: {
 }
 
 function formatDateTime(value: string, timeZone: string) {
+  const resolvedTimeZone =
+    !timeZone || timeZone === "UTC" ? "America/Montevideo" : timeZone;
+
   return new Intl.DateTimeFormat("es-UY", {
     day: "numeric",
     month: "numeric",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone,
+    timeZone: resolvedTimeZone,
   }).format(new Date(value));
 }
 
 function formatTime(value: string, timeZone: string) {
+  const resolvedTimeZone =
+    !timeZone || timeZone === "UTC" ? "America/Montevideo" : timeZone;
+
   return new Intl.DateTimeFormat("es-UY", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone,
+    timeZone: resolvedTimeZone,
   }).format(new Date(value));
 }
 

@@ -30,6 +30,12 @@ export type ActiveCustomerOrder = {
   businessName: string;
   businessSlug: string;
   businessTimezone: string;
+  totalAmount: number;
+  currencyCode: string;
+  items: {
+    productName: string;
+    quantity: number;
+  }[];
 };
 
 function getSiteUrl() {
@@ -115,7 +121,7 @@ export async function signOutCustomer() {
 }
 
 export async function getCustomerActiveOrders() {
-  const response = await fetch("/api/customer/active-orders", {
+  const response = await fetch("/api/customer/orders", {
     method: "GET",
     credentials: "include",
     cache: "no-store",
@@ -126,10 +132,14 @@ export async function getCustomerActiveOrders() {
   }
 
   const payload = (await response.json()) as {
-    orders?: ActiveCustomerOrder[];
+    activeOrders?: ActiveCustomerOrder[];
+    previousOrders?: ActiveCustomerOrder[];
   };
 
-  return payload.orders ?? [];
+  return {
+    activeOrders: payload.activeOrders ?? [],
+    previousOrders: payload.previousOrders ?? [],
+  };
 }
 
 export async function bootstrapCustomerAccountState(): Promise<AccountState | null> {
