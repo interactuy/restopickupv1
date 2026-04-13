@@ -9,7 +9,6 @@ import {
   getCustomerUser,
 } from "@/lib/customer-account-client";
 import {
-  clearStoredActiveOrder,
   CUSTOMER_PROFILE_UPDATED_EVENT,
   getStoredActiveOrder,
   saveStoredActiveOrder,
@@ -88,8 +87,15 @@ export function ActiveOrderLink() {
           return;
         }
 
-        clearStoredActiveOrder();
-        setActiveOrder(null);
+        if (storedOrder) {
+          setActiveOrder({
+            businessSlug: storedOrder.businessSlug,
+            businessName: storedOrder.businessName,
+            orderNumber: storedOrder.orderNumber,
+          });
+        } else {
+          setActiveOrder(null);
+        }
       } catch {
         if (!cancelled && storedOrder) {
           setActiveOrder({
@@ -120,8 +126,9 @@ export function ActiveOrderLink() {
       className="inline-flex items-center gap-2 rounded-full border border-[rgba(63,92,78,0.2)] bg-[rgba(63,92,78,0.08)] px-3.5 py-2 text-sm font-medium text-[var(--color-secondary)] transition hover:border-[var(--color-secondary)]"
     >
       <span className="inline-flex h-2.5 w-2.5 rounded-full bg-[var(--color-success)]" />
+      <span>Pedido en curso</span>
+      <span className="hidden text-[var(--color-muted)] sm:inline">·</span>
       <span className="hidden sm:inline">{activeOrder.businessName}</span>
-      <span className="sm:hidden">Pedido en curso</span>
       <span className="text-[var(--color-muted)]">#{activeOrder.orderNumber}</span>
     </Link>
   );

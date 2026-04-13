@@ -8,6 +8,7 @@ import {
   CUSTOMER_PROFILE_UPDATED_EVENT,
   type CustomerProfile,
   getRecentPurchases,
+  getStoredActiveOrder,
   getStoredCustomerLocation,
   getStoredCustomerProfile,
   saveStoredCustomerProfile,
@@ -173,6 +174,9 @@ export function CustomerAccountPage() {
   const [storedLocation, setStoredLocation] = useState<ReturnType<typeof getStoredCustomerLocation>>(
     null,
   );
+  const [storedActiveOrder, setStoredActiveOrder] = useState<ReturnType<typeof getStoredActiveOrder>>(
+    null,
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -188,6 +192,7 @@ export function CustomerAccountPage() {
       setProfile(storedProfile);
       setRecentPurchases(getRecentPurchases());
       setStoredLocation(getStoredCustomerLocation());
+      setStoredActiveOrder(getStoredActiveOrder());
       setCurrentUserEmail(user?.email ?? null);
       setEmail(user?.email ?? "");
 
@@ -224,6 +229,7 @@ export function CustomerAccountPage() {
       setProfile(getStoredCustomerProfile());
       setRecentPurchases(getRecentPurchases());
       setStoredLocation(getStoredCustomerLocation());
+      setStoredActiveOrder(getStoredActiveOrder());
     }
 
     window.addEventListener(CUSTOMER_PROFILE_UPDATED_EVENT, syncFromStorage);
@@ -290,6 +296,7 @@ export function CustomerAccountPage() {
       setCurrentUserEmail(null);
       setActiveOrders([]);
       setPreviousOrders([]);
+      setStoredActiveOrder(null);
     });
   }
 
@@ -297,6 +304,7 @@ export function CustomerAccountPage() {
   const hasRecentPurchases = recentPurchases.length > 0;
   const hasActiveOrders = activeOrders.length > 0;
   const hasPreviousOrders = previousOrders.length > 0;
+  const hasStoredActiveOrder = Boolean(storedActiveOrder);
 
   function formatOrderTime(value: string, timeZone: string) {
     const resolvedTimeZone =
@@ -327,6 +335,8 @@ export function CustomerAccountPage() {
   ) {
     return items.map((item) => `${item.quantity}x ${item.productName}`).join(" · ");
   }
+
+  const activeOrderFallback = !hasActiveOrders && storedActiveOrder ? storedActiveOrder : null;
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] px-6 py-8 md:px-10 md:py-10 lg:px-12">
@@ -623,6 +633,8 @@ export function CustomerAccountPage() {
                   meta={
                     hasActiveOrders
                       ? `${activeOrders.length} pedido${activeOrders.length === 1 ? "" : "s"} en curso`
+                      : hasStoredActiveOrder
+                        ? "1 pedido en curso"
                       : hasPreviousOrders
                         ? `${previousOrders.length} compra${previousOrders.length === 1 ? "" : "s"} anterior${previousOrders.length === 1 ? "" : "es"}`
                         : hasRecentPurchases
@@ -669,6 +681,44 @@ export function CustomerAccountPage() {
                             </div>
                           </Link>
                         ))}
+                      </div>
+                    ) : activeOrderFallback ? (
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                          En curso
+                        </p>
+                        <Link
+                          href={`/locales/${activeOrderFallback.businessSlug}/pedido/${activeOrderFallback.orderNumber}`}
+                          className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-[rgba(63,92,78,0.16)] bg-[rgba(63,92,78,0.06)] p-4 transition hover:border-[var(--color-accent)]"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-semibold text-[var(--color-foreground)]">
+                              {activeOrderFallback.businessName}
+                            </p>
+                            <p className="mt-1 text-sm text-[var(--color-muted)]">
+                              {activeOrderFallback.itemSummary || `Pedido #${activeOrderFallback.orderNumber}`}
+                            </p>
+                            <p className="mt-1 text-sm text-[var(--color-muted)]">
+                              {activeOrderFallback.estimatedReadyAt
+                                ? `Retiro estimado ${formatOrderTime(activeOrderFallback.estimatedReadyAt, "America/Montevideo")}`
+                                : `Hecho el ${formatOrderTime(activeOrderFallback.placedAt, "America/Montevideo")}`}
+                            </p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            {typeof activeOrderFallback.totalAmount === "number" &&
+                            activeOrderFallback.currencyCode ? (
+                              <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                                {formatOrderAmount(
+                                  activeOrderFallback.totalAmount,
+                                  activeOrderFallback.currencyCode,
+                                )}
+                              </p>
+                            ) : null}
+                            <span className="mt-1 inline-flex rounded-full border border-[rgba(63,92,78,0.18)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-secondary)]">
+                              Ver pedido
+                            </span>
+                          </div>
+                        </Link>
                       </div>
                     ) : null}
 
