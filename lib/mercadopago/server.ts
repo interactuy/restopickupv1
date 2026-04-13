@@ -124,21 +124,12 @@ export function getMercadoPagoReturnLabel(
   paymentStatus: string,
   checkoutStatus?: string | null
 ) {
-  if (paymentStatus === "paid") {
+  if (paymentStatus === "paid" || paymentStatus === "authorized") {
     return {
       eyebrow: "Pago aprobado",
       title: "Pago confirmado",
       description:
         "Tu pago fue aprobado y el local ya recibió el pedido para prepararlo.",
-    };
-  }
-
-  if (paymentStatus === "authorized") {
-    return {
-      eyebrow: "Pago autorizado",
-      title: "Pago autorizado",
-      description:
-        "Mercado Pago autorizó el pago y el local ya puede preparar tu pedido.",
     };
   }
 
@@ -513,12 +504,53 @@ export async function syncMercadoPagoPaymentFromWebhook(
   return syncMercadoPagoPayment(paymentId, notificationPayload);
 }
 
+export async function markMercadoPagoRedirectAsAuthorized(params: {
+  orderId: string;
+}) {
+  const supabase = createAdminClient();
+
+  const { data: order, error: orderLookupError } = await supabase
+    .from("orders")
+    .select("id, metadata, payment_status")
+    .eq("id", params.orderId)
+    .maybeSingle<{
+      id: string;
+      metadata: Record<string, unknown> | null;
+      payment_status: string;
+    }>();
+
+  if (orderLookupError || !order) {
+    throw new Error("No encontramos el pedido para confirmar el pago.");
+  }
+
+  if (["paid", "authorized"].includes(order.payment_status)) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      payment_provider: "mercado_pago",
+      payment_status: "authorized",
+      metadata: {
+        ...(order.metadata ?? {}),
+        mercadopago_redirect_status: "success",
+        mercadopago_redirect_assumed_authorized: true,
+      },
+    })
+    .eq("id", params.orderId);
+
+  if (error) {
+    throw new Error(`No pudimos confirmar el pago desde el retorno: ${error.message}`);
+  }
+}
+
 export function getFormattedPaymentStatus(paymentStatus: string) {
   switch (paymentStatus) {
     case "paid":
       return "Pagado";
     case "authorized":
-      return "Autorizado";
+      return "Pagado";
     case "failed":
       return "Fallido";
     case "refunded":

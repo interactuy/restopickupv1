@@ -6,6 +6,7 @@ import { RecentOrderMemory } from "@/components/public/recent-order-memory";
 import {
   getFormattedPaymentStatus,
   getMercadoPagoReturnLabel,
+  markMercadoPagoRedirectAsAuthorized,
   syncMercadoPagoPayment,
   syncMercadoPagoPaymentByExternalReference,
 } from "@/lib/mercadopago/server";
@@ -134,6 +135,17 @@ export default async function ConfirmationPage({
         break;
       }
     }
+  }
+
+  if (
+    checkout_status === "success" &&
+    confirmation &&
+    !["paid", "authorized"].includes(confirmation.order.paymentStatus)
+  ) {
+    await markMercadoPagoRedirectAsAuthorized({
+      orderId: confirmation.order.id,
+    });
+    confirmation = await syncAndReload();
   }
   const finalConfirmation = confirmation ?? resolvedConfirmation;
 

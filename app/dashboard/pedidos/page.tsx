@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AutoRefresh } from "@/components/live/auto-refresh";
+import { getFormattedPaymentStatus } from "@/lib/mercadopago/server";
 import { formatPrice } from "@/lib/public-catalog";
 import {
   getDashboardOrders,
@@ -177,7 +178,7 @@ function OrdersList({
                   </p>
                   {showAdminDetails ? (
                     <p className="mt-2 text-sm text-[var(--color-muted)]">
-                      Pago {order.paymentStatus}
+                      Pago {getFormattedPaymentStatus(order.paymentStatus)}
                     </p>
                   ) : (
                     <p className="mt-2 text-sm text-[var(--color-muted)]">
@@ -270,7 +271,7 @@ function OrdersList({
                   Creado {new Date(order.placedAt).toLocaleString("es-UY")}
                 </span>
                 <span className="rounded-full border border-[var(--color-border)] bg-white px-3 py-1.5">
-                  Pago {order.paymentStatus}
+                  Pago {getFormattedPaymentStatus(order.paymentStatus)}
                 </span>
               </div>
             ) : null}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { getFormattedPaymentStatus } from "@/lib/mercadopago/server";
 import {
   getAdminBusinesses,
   getAdminGlobalOrders,
@@ -167,7 +168,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                             : "warning"
                       }
                     >
-                      {order.paymentStatus}
+                      {getFormattedPaymentStatus(order.paymentStatus)}
                     </AdminStatusPill>
                   </td>
                   <td className={`${adminTableClasses.td} font-medium text-slate-950`}>
