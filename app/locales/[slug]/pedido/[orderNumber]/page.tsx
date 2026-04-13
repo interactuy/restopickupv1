@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { AutoRefresh } from "@/components/live/auto-refresh";
 import { RecentOrderMemory } from "@/components/public/recent-order-memory";
@@ -35,9 +35,35 @@ function buildGoogleMapsUrl(address: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
 }
 
-function buildAppleMapsUrl(address: string) {
-  const encodedAddress = encodeURIComponent(address);
-  return `https://maps.apple.com/?q=${encodedAddress}`;
+function buildMapboxStaticMapUrl(params: {
+  token: string;
+  latitude: number;
+  longitude: number;
+}) {
+  const { token, latitude, longitude } = params;
+  const marker = `pin-s+cc7a30(${longitude},${latitude})`;
+  const viewport = `${longitude},${latitude},15,0`;
+
+  return `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${marker}/${viewport}/960x540?access_token=${token}`;
+}
+
+function formatDateTime(value: string, timeZone: string) {
+  return new Intl.DateTimeFormat("es-UY", {
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  }).format(new Date(value));
+}
+
+function formatTime(value: string, timeZone: string) {
+  return new Intl.DateTimeFormat("es-UY", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  }).format(new Date(value));
 }
 
 export default async function ConfirmationPage({
@@ -59,8 +85,6 @@ export default async function ConfirmationPage({
   }
 
   const returnedPaymentId = payment_id ?? collection_id;
-  let syncErrorMessage: string | null = null;
-
   try {
     if (returnedPaymentId) {
       await syncMercadoPagoPayment(returnedPaymentId);
@@ -68,17 +92,15 @@ export default async function ConfirmationPage({
       await syncMercadoPagoPaymentByExternalReference(initialConfirmation.order.id);
     }
   } catch (error) {
-    syncErrorMessage =
-      error instanceof Error
-        ? error.message
-        : "No pudimos sincronizar el estado del pago.";
-
     console.error("[mercadopago:return] payment sync failed", {
       slug,
       orderNumber: parsedOrderNumber,
       checkoutStatus: checkout_status,
       returnedPaymentId,
-      error: syncErrorMessage,
+      error:
+        error instanceof Error
+          ? error.message
+          : "No pudimos sincronizar el estado del pago.",
     });
   }
 
@@ -89,12 +111,38 @@ export default async function ConfirmationPage({
     confirmation.order.paymentStatus,
     checkout_status
   );
+  const isPaymentConfirmed = ["paid", "authorized"].includes(
+    confirmation.order.paymentStatus
+  );
+
+  if (!isPaymentConfirmed) {
+    redirect(
+      `/locales/${confirmation.business.slug}/checkout?payment=${
+        confirmation.order.paymentStatus === "failed" ||
+        confirmation.order.paymentStatus === "canceled" ||
+        checkout_status === "failure"
+          ? "failed"
+          : "pending"
+      }`
+    );
+  }
+
   const shouldAutoRefresh =
-    !["completed", "canceled"].includes(confirmation.order.statusCode) ||
-    !["paid", "authorized"].includes(confirmation.order.paymentStatus);
+    !["completed", "canceled"].includes(confirmation.order.statusCode);
   const googleMapsUrl = buildGoogleMapsUrl(confirmation.order.pickupAddress);
-  const appleMapsUrl = buildAppleMapsUrl(confirmation.order.pickupAddress);
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  const mapboxPreviewUrl =
+    mapboxToken &&
+    confirmation.business.latitude != null &&
+    confirmation.business.longitude != null
+      ? buildMapboxStaticMapUrl({
+          token: mapboxToken,
+          latitude: confirmation.business.latitude,
+          longitude: confirmation.business.longitude,
+        })
+      : null;
   const contactAction = getBusinessContactAction(confirmation.business);
+  const businessTimezone = confirmation.business.timezone;
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] px-6 py-10 md:px-10 lg:px-12">
@@ -117,13 +165,6 @@ export default async function ConfirmationPage({
           <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
             {paymentLabel.description}
           </p>
-          {syncErrorMessage ? (
-            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Todavía estamos confirmando el pago. Esta pantalla se actualiza sola
-              en unos segundos.
-            </div>
-          ) : null}
-
           <div className="mt-6 flex flex-wrap gap-3">
             <span className="rounded-full bg-[var(--color-surface-strong)] px-4 py-2 text-sm font-semibold text-[var(--color-foreground)]">
               {statusLabels[confirmation.order.statusCode] ??
@@ -138,13 +179,7 @@ export default async function ConfirmationPage({
             {confirmation.order.estimatedReadyAt ? (
               <span className="rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm text-[var(--color-muted)]">
                 Retiro aprox.{" "}
-                {new Date(confirmation.order.estimatedReadyAt).toLocaleTimeString(
-                  "es-UY",
-                  {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }
-                )}
+                {formatTime(confirmation.order.estimatedReadyAt, businessTimezone)}
               </span>
             ) : null}
           </div>
@@ -172,17 +207,15 @@ export default async function ConfirmationPage({
                   Pedido realizado
                 </p>
                 <p className="mt-2 text-sm font-medium text-[var(--color-foreground)]">
-                  {new Date(confirmation.order.placedAt).toLocaleString("es-UY")}
+                  {formatDateTime(confirmation.order.placedAt, businessTimezone)}
                 </p>
                 {confirmation.order.estimatedReadyAt ? (
                   <p className="mt-1 text-sm text-[var(--color-muted)]">
                     Estimado de retiro:{" "}
-                    {new Date(
-                      confirmation.order.estimatedReadyAt
-                    ).toLocaleTimeString("es-UY", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {formatTime(
+                      confirmation.order.estimatedReadyAt,
+                      businessTimezone
+                    )}
                   </p>
                 ) : null}
               </div>
@@ -258,31 +291,22 @@ export default async function ConfirmationPage({
                   {confirmation.order.pickupAddress}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-3 p-4">
+              {mapboxPreviewUrl ? (
                 <a
                   href={googleMapsUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex flex-1 items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+                  className="block border-t border-[var(--color-border)]"
                 >
-                  Cómo llegar
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={mapboxPreviewUrl}
+                    alt={`Mapa de ${confirmation.order.businessName}`}
+                    className="h-52 w-full object-cover"
+                  />
                 </a>
-                <a
-                  href={appleMapsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex flex-1 items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-                >
-                  Abrir en mapas
-                </a>
-              </div>
+              ) : null}
             </div>
-            <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
-              Retirás en{" "}
-              <span className="text-[var(--color-accent)]">
-                {confirmation.order.businessName}
-              </span>
-            </p>
             <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
               Estado del pago:{" "}
               <span className="text-[var(--color-accent)]">
@@ -300,13 +324,7 @@ export default async function ConfirmationPage({
               <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
                 Tiempo aproximado:{" "}
                 <span className="text-[var(--color-accent)]">
-                  hasta las{" "}
-                  {new Date(
-                    confirmation.order.estimatedReadyAt
-                  ).toLocaleTimeString("es-UY", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  hasta las {formatTime(confirmation.order.estimatedReadyAt, businessTimezone)}
                 </span>
               </p>
             ) : null}

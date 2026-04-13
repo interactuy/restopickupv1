@@ -25,15 +25,17 @@ type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
 type CheckoutFormProps = {
   business: PublicBusiness;
   isMercadoPagoTestMode: boolean;
+  paymentFeedback: "failed" | "pending" | null;
 };
 
 export function CheckoutForm({
   business,
   isMercadoPagoTestMode,
+  paymentFeedback,
 }: CheckoutFormProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const { getCart, clearCart, isReady } = useCart();
+  const { getCart, isReady } = useCart();
   const hasTrackedCheckout = useRef(false);
   const cart = getCart(business.id);
   const subtotal =
@@ -130,8 +132,6 @@ export function CheckoutForm({
         );
         return;
       }
-
-      clearCart(business.id);
       window.location.href = payload.checkoutUrl;
     });
   }
@@ -153,6 +153,18 @@ export function CheckoutForm({
         <div className="mt-6">
           <MercadoPagoTestModeNote enabled={isMercadoPagoTestMode} />
         </div>
+
+        {paymentFeedback === "failed" ? (
+          <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            El pago no se pudo confirmar. Podés revisar tus datos e intentarlo de nuevo.
+          </div>
+        ) : null}
+
+        {paymentFeedback === "pending" ? (
+          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            El pago quedó pendiente. Si querés, podés intentar nuevamente desde acá.
+          </div>
+        ) : null}
 
         <form
           onSubmit={form.handleSubmit(onSubmit)}

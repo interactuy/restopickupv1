@@ -6,6 +6,7 @@ import { ZodError } from "zod";
 import { recordFunnelEvent } from "@/lib/analytics/funnel-server";
 import { createMercadoPagoPreference } from "@/lib/mercadopago/server";
 import { createGuestOrder } from "@/lib/supabase/orders";
+import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -29,7 +30,12 @@ export async function POST(request: Request) {
           : null,
     });
 
-    const order = await createGuestOrder(payload);
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const order = await createGuestOrder(payload, user?.id ?? null);
 
     console.info("[checkout] order created", {
       requestId,

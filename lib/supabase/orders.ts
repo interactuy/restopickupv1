@@ -303,7 +303,8 @@ function buildDefaultEstimatedReadyAt(
 }
 
 export async function createGuestOrder(
-  rawInput: CheckoutInput
+  rawInput: CheckoutInput,
+  customerUserId?: string | null
 ): Promise<CreatedGuestOrder> {
   const input = checkoutSchema.parse(rawInput);
   const supabase = createAdminClient();
@@ -461,6 +462,7 @@ export async function createGuestOrder(
     .from("orders")
     .insert({
       business_id: business.id,
+      customer_user_id: customerUserId ?? null,
       status_code: "pending",
       fulfillment_type: "pickup",
       customer_name: input.customerName.trim(),

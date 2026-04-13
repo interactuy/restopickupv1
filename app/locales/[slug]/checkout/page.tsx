@@ -7,10 +7,15 @@ import { getPublicBusinessCatalog } from "@/lib/supabase/public";
 
 type CheckoutPageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ payment?: string }>;
 };
 
-export default async function CheckoutPage({ params }: CheckoutPageProps) {
+export default async function CheckoutPage({
+  params,
+  searchParams,
+}: CheckoutPageProps) {
   const { slug } = await params;
+  const query = await searchParams;
   const catalog = await getPublicBusinessCatalog(slug);
 
   if (!catalog) {
@@ -35,6 +40,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
         <CheckoutForm
           business={catalog.business}
           isMercadoPagoTestMode={isMercadoPagoSandboxMode()}
+          paymentFeedback={query.payment === "failed" ? "failed" : query.payment === "pending" ? "pending" : null}
         />
       </div>
     </main>

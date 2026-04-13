@@ -20,12 +20,30 @@ type AccountState = {
   recentPurchases: RecentPurchaseEntry[];
 };
 
+export type ActiveCustomerOrder = {
+  id: string;
+  orderNumber: number;
+  statusCode: string;
+  paymentStatus: string;
+  placedAt: string;
+  estimatedReadyAt: string | null;
+  businessName: string;
+  businessSlug: string;
+  businessTimezone: string;
+};
+
 function getSiteUrl() {
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (configuredSiteUrl) {
+    return configuredSiteUrl.replace(/\/+$/, "");
+  }
+
   if (typeof window !== "undefined") {
     return window.location.origin;
   }
 
-  return process.env.NEXT_PUBLIC_SITE_URL ?? process.env.APP_URL ?? "";
+  return process.env.APP_URL?.trim().replace(/\/+$/, "") ?? "";
 }
 
 function mergeFavorites(
@@ -94,6 +112,24 @@ export async function signOutCustomer() {
   if (error) {
     throw error;
   }
+}
+
+export async function getCustomerActiveOrders() {
+  const response = await fetch("/api/customer/active-orders", {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("No pudimos cargar tus pedidos en curso.");
+  }
+
+  const payload = (await response.json()) as {
+    orders?: ActiveCustomerOrder[];
+  };
+
+  return payload.orders ?? [];
 }
 
 export async function bootstrapCustomerAccountState(): Promise<AccountState | null> {

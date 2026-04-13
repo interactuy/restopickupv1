@@ -12,7 +12,9 @@ import {
   saveStoredCustomerProfile,
 } from "@/lib/customer-profile";
 import {
+  type ActiveCustomerOrder,
   bootstrapCustomerAccountState,
+  getCustomerActiveOrders,
   getCustomerUser,
   saveCustomerProfileToAccount,
   sendCustomerMagicLink,
@@ -165,6 +167,7 @@ export function CustomerAccountPage() {
   const [recentPurchases, setRecentPurchases] = useState<ReturnType<typeof getRecentPurchases>>(
     [],
   );
+  const [activeOrders, setActiveOrders] = useState<ActiveCustomerOrder[]>([]);
   const [storedLocation, setStoredLocation] = useState<ReturnType<typeof getStoredCustomerLocation>>(
     null,
   );
@@ -191,7 +194,10 @@ export function CustomerAccountPage() {
         return;
       }
 
-      const bootstrapped = await bootstrapCustomerAccountState();
+      const [bootstrapped, activeOrders] = await Promise.all([
+        bootstrapCustomerAccountState(),
+        getCustomerActiveOrders(),
+      ]);
 
       if (!isMounted) {
         return;
@@ -203,6 +209,8 @@ export function CustomerAccountPage() {
         setCurrentUserEmail(bootstrapped.user.email ?? null);
         setEmail(bootstrapped.user.email ?? "");
       }
+
+      setActiveOrders(activeOrders);
 
       setAuthState("authenticated");
     };
@@ -276,11 +284,23 @@ export function CustomerAccountPage() {
       await signOutCustomer();
       setAuthState("guest");
       setCurrentUserEmail(null);
+      setActiveOrders([]);
     });
   }
 
   const hasFavorites = profile.favoriteBusinesses.length > 0;
   const hasRecentPurchases = recentPurchases.length > 0;
+  const hasActiveOrders = activeOrders.length > 0;
+
+  function formatOrderTime(value: string, timeZone: string) {
+    return new Intl.DateTimeFormat("es-UY", {
+      day: "numeric",
+      month: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone,
+    }).format(new Date(value));
+  }
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] px-6 py-8 md:px-10 md:py-10 lg:px-12">
@@ -575,9 +595,11 @@ export function CustomerAccountPage() {
                   icon="orders"
                   title="Compras"
                   meta={
-                    hasRecentPurchases
-                      ? `${recentPurchases.length} locales con compras`
-                      : "Compras anteriores"
+                    hasActiveOrders
+                      ? `${activeOrders.length} pedido${activeOrders.length === 1 ? "" : "s"} en curso`
+                      : hasRecentPurchases
+                        ? `${recentPurchases.length} locales con compras`
+                        : "Compras anteriores"
                   }
                   isOpen={openSection === "orders"}
                   onToggle={() =>
@@ -585,31 +607,68 @@ export function CustomerAccountPage() {
                   }
                 >
                   <div className="space-y-3">
+                    {hasActiveOrders ? (
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                          En curso
+                        </p>
+                        {activeOrders.map((order) => (
+                          <Link
+                            key={order.id}
+                            href={`/locales/${order.businessSlug}/pedido/${order.orderNumber}`}
+                            className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-[rgba(63,92,78,0.16)] bg-[rgba(63,92,78,0.06)] p-4 transition hover:border-[var(--color-accent)]"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-semibold text-[var(--color-foreground)]">
+                                {order.businessName}
+                              </p>
+                              <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                Pedido #{order.orderNumber}
+                              </p>
+                              <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                {order.estimatedReadyAt
+                                  ? `Retiro estimado ${formatOrderTime(order.estimatedReadyAt, order.businessTimezone)}`
+                                  : `Hecho el ${formatOrderTime(order.placedAt, order.businessTimezone)}`}
+                              </p>
+                            </div>
+                            <span className="shrink-0 rounded-full border border-[rgba(63,92,78,0.18)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-secondary)]">
+                              Ver pedido
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
+
                     {hasRecentPurchases ? (
-                      recentPurchases.map((purchase) => (
-                        <Link
-                          key={`${purchase.businessSlug}-${purchase.orderNumber}`}
-                          href={`/locales/${purchase.businessSlug}`}
-                          className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-[var(--color-border)] bg-white p-4 transition hover:border-[var(--color-accent)]"
-                        >
-                          <div className="min-w-0">
-                            <p className="font-semibold text-[var(--color-foreground)]">
-                              {purchase.businessName}
-                            </p>
-                            <p className="mt-1 text-sm text-[var(--color-muted)]">
-                              Pedido #{purchase.orderNumber}
-                            </p>
-                          </div>
-                          <span className="shrink-0 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)]">
-                            Ver local
-                          </span>
-                        </Link>
-                      ))
-                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-muted)]">
+                          Anteriores
+                        </p>
+                        {recentPurchases.map((purchase) => (
+                          <Link
+                            key={`${purchase.businessSlug}-${purchase.orderNumber}`}
+                            href={`/locales/${purchase.businessSlug}`}
+                            className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-[var(--color-border)] bg-white p-4 transition hover:border-[var(--color-accent)]"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-semibold text-[var(--color-foreground)]">
+                                {purchase.businessName}
+                              </p>
+                              <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                Pedido #{purchase.orderNumber}
+                              </p>
+                            </div>
+                            <span className="shrink-0 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)]">
+                              Ver local
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : !hasActiveOrders ? (
                       <div className="rounded-[1.5rem] border border-dashed border-[var(--color-border)] bg-white p-5 text-sm leading-7 text-[var(--color-muted)]">
                         Todavía no hay compras guardadas.
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </AccountSection>
               </div>

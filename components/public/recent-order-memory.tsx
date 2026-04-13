@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 
+import { useCart } from "@/components/cart/cart-provider";
 import { saveRecentPurchaseToAccount } from "@/lib/customer-account-client";
 
 type RecentOrderMemoryProps = {
@@ -23,12 +24,15 @@ export function RecentOrderMemory({
   orderNumber,
   paymentStatus,
 }: RecentOrderMemoryProps) {
+  const { clearCart } = useCart();
+
   useEffect(() => {
     if (!isPurchaseConfirmed(paymentStatus)) {
       return;
     }
 
     try {
+      clearCart(businessId);
       void saveRecentPurchaseToAccount({
         businessId,
         businessSlug,
@@ -39,7 +43,7 @@ export function RecentOrderMemory({
     } catch {
       // Ignore local persistence issues for this convenience feature.
     }
-  }, [businessId, businessName, businessSlug, orderNumber, paymentStatus]);
+  }, [businessId, businessName, businessSlug, clearCart, orderNumber, paymentStatus]);
 
   return null;
 }
