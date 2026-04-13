@@ -30,6 +30,10 @@ const statusLabels: Record<string, string> = {
   canceled: "Cancelado",
 };
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function buildGoogleMapsUrl(address: string) {
   const encodedAddress = encodeURIComponent(address);
   return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
@@ -83,43 +87,69 @@ export default async function ConfirmationPage({
   if (!initialConfirmation) {
     notFound();
   }
+  const baseConfirmation = initialConfirmation;
 
   const returnedPaymentId = payment_id ?? collection_id;
-  try {
-    if (returnedPaymentId) {
-      await syncMercadoPagoPayment(returnedPaymentId);
-    } else if (checkout_status) {
-      await syncMercadoPagoPaymentByExternalReference(initialConfirmation.order.id);
+  async function syncAndReload() {
+    try {
+      if (returnedPaymentId) {
+        await syncMercadoPagoPayment(returnedPaymentId);
+      } else if (checkout_status) {
+        await syncMercadoPagoPaymentByExternalReference(baseConfirmation.order.id);
+      }
+    } catch (error) {
+      console.error("[mercadopago:return] payment sync failed", {
+        slug,
+        orderNumber: parsedOrderNumber,
+        checkoutStatus: checkout_status,
+        returnedPaymentId,
+        error:
+          error instanceof Error
+            ? error.message
+            : "No pudimos sincronizar el estado del pago.",
+      });
     }
-  } catch (error) {
-    console.error("[mercadopago:return] payment sync failed", {
-      slug,
-      orderNumber: parsedOrderNumber,
-      checkoutStatus: checkout_status,
-      returnedPaymentId,
-      error:
-        error instanceof Error
-          ? error.message
-          : "No pudimos sincronizar el estado del pago.",
-    });
+
+    const nextConfirmation = await getOrderConfirmation(slug, parsedOrderNumber);
+
+    return nextConfirmation ?? baseConfirmation;
   }
 
-  const confirmation =
-    (await getOrderConfirmation(slug, parsedOrderNumber)) ?? initialConfirmation;
+  let confirmation = await syncAndReload();
+
+  if (!confirmation) {
+    notFound();
+  }
+  const resolvedConfirmation = confirmation;
+
+  if (
+    checkout_status === "success" &&
+    !["paid", "authorized"].includes(resolvedConfirmation.order.paymentStatus)
+  ) {
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await sleep(1500);
+      confirmation = await syncAndReload();
+
+      if (confirmation && ["paid", "authorized"].includes(confirmation.order.paymentStatus)) {
+        break;
+      }
+    }
+  }
+  const finalConfirmation = confirmation ?? resolvedConfirmation;
 
   const paymentLabel = getMercadoPagoReturnLabel(
-    confirmation.order.paymentStatus,
+    finalConfirmation.order.paymentStatus,
     checkout_status
   );
   const isPaymentConfirmed = ["paid", "authorized"].includes(
-    confirmation.order.paymentStatus
+    finalConfirmation.order.paymentStatus
   );
 
   if (!isPaymentConfirmed) {
     redirect(
-      `/locales/${confirmation.business.slug}/checkout?payment=${
-        confirmation.order.paymentStatus === "failed" ||
-        confirmation.order.paymentStatus === "canceled" ||
+      `/locales/${finalConfirmation.business.slug}/checkout?payment=${
+        finalConfirmation.order.paymentStatus === "failed" ||
+        finalConfirmation.order.paymentStatus === "canceled" ||
         checkout_status === "failure"
           ? "failed"
           : "pending"
@@ -128,30 +158,30 @@ export default async function ConfirmationPage({
   }
 
   const shouldAutoRefresh =
-    !["completed", "canceled"].includes(confirmation.order.statusCode);
-  const googleMapsUrl = buildGoogleMapsUrl(confirmation.order.pickupAddress);
+    !["completed", "canceled"].includes(finalConfirmation.order.statusCode);
+  const googleMapsUrl = buildGoogleMapsUrl(finalConfirmation.order.pickupAddress);
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const mapboxPreviewUrl =
     mapboxToken &&
-    confirmation.business.latitude != null &&
-    confirmation.business.longitude != null
+    finalConfirmation.business.latitude != null &&
+    finalConfirmation.business.longitude != null
       ? buildMapboxStaticMapUrl({
           token: mapboxToken,
-          latitude: confirmation.business.latitude,
-          longitude: confirmation.business.longitude,
+          latitude: finalConfirmation.business.latitude,
+          longitude: finalConfirmation.business.longitude,
         })
       : null;
-  const contactAction = getBusinessContactAction(confirmation.business);
-  const businessTimezone = confirmation.business.timezone;
+  const contactAction = getBusinessContactAction(finalConfirmation.business);
+  const businessTimezone = finalConfirmation.business.timezone;
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] px-6 py-10 md:px-10 lg:px-12">
       <RecentOrderMemory
-        businessId={confirmation.business.id}
-        businessSlug={confirmation.business.slug}
-        businessName={confirmation.business.name}
-        orderNumber={confirmation.order.orderNumber}
-        paymentStatus={confirmation.order.paymentStatus}
+        businessId={finalConfirmation.business.id}
+        businessSlug={finalConfirmation.business.slug}
+        businessName={finalConfirmation.business.name}
+        orderNumber={finalConfirmation.order.orderNumber}
+        paymentStatus={finalConfirmation.order.paymentStatus}
       />
       <AutoRefresh enabled={shouldAutoRefresh} intervalMs={12000} />
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
@@ -160,26 +190,26 @@ export default async function ConfirmationPage({
             {paymentLabel.eyebrow}
           </p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-[var(--color-foreground)]">
-            Pedido #{confirmation.order.orderNumber}
+            Pedido #{finalConfirmation.order.orderNumber}
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
             {paymentLabel.description}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <span className="rounded-full bg-[var(--color-surface-strong)] px-4 py-2 text-sm font-semibold text-[var(--color-foreground)]">
-              {statusLabels[confirmation.order.statusCode] ??
-                confirmation.order.statusCode}
+              {statusLabels[finalConfirmation.order.statusCode] ??
+                finalConfirmation.order.statusCode}
             </span>
             <span className="rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm text-[var(--color-muted)]">
-              Pago {getFormattedPaymentStatus(confirmation.order.paymentStatus)}
+              Pago {getFormattedPaymentStatus(finalConfirmation.order.paymentStatus)}
             </span>
             <span className="rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm text-[var(--color-muted)]">
-              Total {confirmation.order.formattedTotal}
+              Total {finalConfirmation.order.formattedTotal}
             </span>
-            {confirmation.order.estimatedReadyAt ? (
+            {finalConfirmation.order.estimatedReadyAt ? (
               <span className="rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm text-[var(--color-muted)]">
                 Retiro aprox.{" "}
-                {formatTime(confirmation.order.estimatedReadyAt, businessTimezone)}
+                {formatTime(finalConfirmation.order.estimatedReadyAt, businessTimezone)}
               </span>
             ) : null}
           </div>
@@ -196,10 +226,10 @@ export default async function ConfirmationPage({
                   Cliente
                 </p>
                 <p className="mt-2 text-sm font-medium text-[var(--color-foreground)]">
-                  {confirmation.order.customerName}
+                  {finalConfirmation.order.customerName}
                 </p>
                 <p className="mt-1 text-sm text-[var(--color-muted)]">
-                  {confirmation.order.customerPhone ?? "Sin celular cargado"}
+                  {finalConfirmation.order.customerPhone ?? "Sin celular cargado"}
                 </p>
               </div>
               <div>
@@ -207,13 +237,13 @@ export default async function ConfirmationPage({
                   Pedido realizado
                 </p>
                 <p className="mt-2 text-sm font-medium text-[var(--color-foreground)]">
-                  {formatDateTime(confirmation.order.placedAt, businessTimezone)}
+                  {formatDateTime(finalConfirmation.order.placedAt, businessTimezone)}
                 </p>
-                {confirmation.order.estimatedReadyAt ? (
+                {finalConfirmation.order.estimatedReadyAt ? (
                   <p className="mt-1 text-sm text-[var(--color-muted)]">
                     Estimado de retiro:{" "}
                     {formatTime(
-                      confirmation.order.estimatedReadyAt,
+                      finalConfirmation.order.estimatedReadyAt,
                       businessTimezone
                     )}
                   </p>
@@ -221,7 +251,7 @@ export default async function ConfirmationPage({
               </div>
             </div>
             <div className="mt-6 space-y-4">
-              {confirmation.order.items.map((item) => (
+              {finalConfirmation.order.items.map((item) => (
                 <div
                   key={item.id}
                   className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] pb-4"
@@ -260,16 +290,16 @@ export default async function ConfirmationPage({
 
             <div className="mt-6 flex items-center justify-between text-base font-semibold text-[var(--color-foreground)]">
               <span>Total</span>
-              <span>{confirmation.order.formattedTotal}</span>
+              <span>{finalConfirmation.order.formattedTotal}</span>
             </div>
 
-            {confirmation.order.customerNotes ? (
+            {finalConfirmation.order.customerNotes ? (
               <div className="mt-6 rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
                   Comentario para el local
                 </p>
                 <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
-                  {confirmation.order.customerNotes}
+                  {finalConfirmation.order.customerNotes}
                 </p>
               </div>
             ) : null}
@@ -285,10 +315,10 @@ export default async function ConfirmationPage({
                   Punto de retiro
                 </p>
                 <p className="mt-3 text-lg font-semibold text-[var(--color-foreground)]">
-                  {confirmation.order.businessName}
+                  {finalConfirmation.order.businessName}
                 </p>
                 <p className="mt-2 text-sm leading-7 text-[var(--color-foreground)]">
-                  {confirmation.order.pickupAddress}
+                  {finalConfirmation.order.pickupAddress}
                 </p>
               </div>
               {mapboxPreviewUrl ? (
@@ -301,7 +331,7 @@ export default async function ConfirmationPage({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={mapboxPreviewUrl}
-                    alt={`Mapa de ${confirmation.order.businessName}`}
+                    alt={`Mapa de ${finalConfirmation.order.businessName}`}
                     className="h-52 w-full object-cover"
                   />
                 </a>
@@ -310,31 +340,31 @@ export default async function ConfirmationPage({
             <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
               Estado del pago:{" "}
               <span className="text-[var(--color-accent)]">
-                {getFormattedPaymentStatus(confirmation.order.paymentStatus)}
+                {getFormattedPaymentStatus(finalConfirmation.order.paymentStatus)}
               </span>
             </p>
             <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
               Estado del pedido:{" "}
               <span className="text-[var(--color-accent)]">
-                {statusLabels[confirmation.order.statusCode] ??
-                  confirmation.order.statusCode}
+                {statusLabels[finalConfirmation.order.statusCode] ??
+                  finalConfirmation.order.statusCode}
               </span>
             </p>
-            {confirmation.order.estimatedReadyAt ? (
+            {finalConfirmation.order.estimatedReadyAt ? (
               <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
                 Tiempo aproximado:{" "}
                 <span className="text-[var(--color-accent)]">
-                  hasta las {formatTime(confirmation.order.estimatedReadyAt, businessTimezone)}
+                  hasta las {formatTime(finalConfirmation.order.estimatedReadyAt, businessTimezone)}
                 </span>
               </p>
             ) : null}
-            {confirmation.order.pickupInstructions ? (
+            {finalConfirmation.order.pickupInstructions ? (
               <div className="mt-4 rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
                   Instrucciones de retiro
                 </p>
                 <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
-                  {confirmation.order.pickupInstructions}
+                  {finalConfirmation.order.pickupInstructions}
                 </p>
               </div>
             ) : null}
@@ -343,12 +373,12 @@ export default async function ConfirmationPage({
                 <a
                   href={contactAction.href}
                   target={
-                    confirmation.business.contactActionType === "whatsapp"
+                    finalConfirmation.business.contactActionType === "whatsapp"
                       ? "_blank"
                       : undefined
                   }
                   rel={
-                    confirmation.business.contactActionType === "whatsapp"
+                    finalConfirmation.business.contactActionType === "whatsapp"
                       ? "noreferrer"
                       : undefined
                   }
@@ -359,11 +389,11 @@ export default async function ConfirmationPage({
               </div>
             ) : null}
             <p className="mt-6 text-sm text-[var(--color-muted)]">
-              A nombre de {confirmation.order.customerName}
+              A nombre de {finalConfirmation.order.customerName}
             </p>
             <div className="mt-8">
               <Link
-                href={`/locales/${confirmation.business.slug}`}
+                href={`/locales/${finalConfirmation.business.slug}`}
                 className="inline-flex w-full items-center justify-center rounded-full bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-95"
               >
                 Volver al menu
