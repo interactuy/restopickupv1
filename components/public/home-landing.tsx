@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
+import { CustomerAccountLink } from "@/components/public/customer-account-link";
 import { EmptyState } from "@/components/public/empty-state";
 import type { HomePageData } from "@/lib/public-catalog";
 import {
@@ -10,6 +11,12 @@ import {
   formatPrice,
   getBusinessOpenStatusLabel,
 } from "@/lib/public-catalog";
+import {
+  RECENT_PURCHASES_STORAGE_KEY,
+  getStoredCustomerLocation,
+  saveStoredCustomerLocation,
+  type RecentPurchaseEntry,
+} from "@/lib/customer-profile";
 
 type HomeLandingProps = {
   data: HomePageData;
@@ -21,7 +28,6 @@ type UserLocation = {
 };
 
 type LocationStatus = "idle" | "loading" | "ready" | "denied" | "unsupported";
-
 const quickSearches = ["Burgers", "Pizzas", "Café", "Almuerzo"];
 
 const searchSynonyms: Record<string, string[]> = {
@@ -158,10 +164,45 @@ function getDaypartScore(values: string[], daypart: ReturnType<typeof getDaypart
   return keywords.some((keyword) => haystack.includes(keyword)) ? 1 : 0;
 }
 
+function getRecentPurchaseBusinessSlugs() {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const raw = window.localStorage.getItem(RECENT_PURCHASES_STORAGE_KEY);
+
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw) as RecentPurchaseEntry[];
+    return parsed
+      .map((entry) => entry.businessSlug)
+      .filter((value, index, array) => Boolean(value) && array.indexOf(value) === index);
+  } catch {
+    return [];
+  }
+}
+
 export function HomeLanding({ data }: HomeLandingProps) {
   const [query, setQuery] = useState("");
-  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
-  const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(() => {
+    const storedLocation = getStoredCustomerLocation();
+
+    if (!storedLocation) {
+      return null;
+    }
+
+    return {
+      latitude: storedLocation.latitude,
+      longitude: storedLocation.longitude,
+    };
+  });
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>(() =>
+    getStoredCustomerLocation() ? "ready" : "idle",
+  );
+  const [recentPurchaseSlugs] = useState<string[]>(() => getRecentPurchaseBusinessSlugs());
   const deferredQuery = useDeferredValue(query.trim());
   const daypart = getDaypart();
 
@@ -174,9 +215,14 @@ export function HomeLanding({ data }: HomeLandingProps) {
     setLocationStatus("loading");
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setUserLocation({
+        const nextLocation = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
+        };
+        setUserLocation(nextLocation);
+        saveStoredCustomerLocation({
+          ...nextLocation,
+          savedAt: new Date().toISOString(),
         });
         setLocationStatus("ready");
       },
@@ -212,6 +258,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
     return [...data.topBusinesses]
       .map((business, index) => {
         const distanceKm = userLocation ? getDistanceKm(userLocation, business) : null;
+        const hasRecentPurchase = recentPurchaseSlugs.includes(business.slug);
         const daypartScore = getDaypartScore(
           [
             business.name,
@@ -221,16 +268,24 @@ export function HomeLanding({ data }: HomeLandingProps) {
           ],
           daypart
         );
+        const openStatus = getBusinessOpenStatusLabel(business);
+        const isOpen = openStatus === null;
         const distanceScore =
           distanceKm === null ? 0 : Math.max(0, 1 - Math.min(distanceKm, 12) / 12);
-        const salesScore = business.paidOrdersCount > 0 ? 0.15 : 0;
+        const salesScore =
+          business.paidOrdersCount > 0 ? Math.min(1.25, business.paidOrdersCount / 20) : 0;
+        const repeatScore = hasRecentPurchase ? 3.2 : 0;
+        const openScore = isOpen ? 2.5 : -4.5;
 
         return {
           business,
           distanceKm,
+          hasRecentPurchase,
           score:
-            (userLocation ? distanceScore * 8 : 0) +
-            daypartScore * 2 +
+            daypartScore * 12 +
+            (userLocation ? distanceScore * 6 : 0) +
+            repeatScore +
+            openScore +
             salesScore -
             index * 0.001,
         };
@@ -246,7 +301,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
 
         return 0;
       });
-  }, [data.topBusinesses, daypart, userLocation]);
+  }, [data.topBusinesses, daypart, recentPurchaseSlugs, userLocation]);
 
   const visibleBusinesses = orderedBusinesses.slice(0, 6);
   const featuredBusiness = visibleBusinesses[0]?.business ?? data.featuredBusiness;
@@ -264,6 +319,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
     return [...data.featuredProducts]
       .map((product, index) => {
         const distanceKm = userLocation ? getDistanceKm(userLocation, product.business) : null;
+        const hasRecentPurchase = recentPurchaseSlugs.includes(product.business.slug);
         const daypartScore = getDaypartScore(
           [
             product.name,
@@ -275,16 +331,26 @@ export function HomeLanding({ data }: HomeLandingProps) {
           ],
           daypart
         );
+        const linkedBusiness = data.topBusinesses.find(
+          (business) => business.id === product.business.id
+        );
+        const openStatus = linkedBusiness ? getBusinessOpenStatusLabel(linkedBusiness) : null;
+        const isOpen = openStatus === null;
         const distanceScore =
           distanceKm === null ? 0 : Math.max(0, 1 - Math.min(distanceKm, 12) / 12);
-        const salesScore = product.paidUnitsSold > 0 ? 0.15 : 0;
+        const salesScore =
+          product.paidUnitsSold > 0 ? Math.min(1, product.paidUnitsSold / 25) : 0;
+        const repeatScore = hasRecentPurchase ? 2.4 : 0;
+        const openScore = isOpen ? 1.5 : -4;
 
         return {
           product,
           distanceKm,
           score:
-            (userLocation ? distanceScore * 8 : 0) +
-            daypartScore * 2 +
+            daypartScore * 12 +
+            (userLocation ? distanceScore * 6 : 0) +
+            repeatScore +
+            openScore +
             salesScore -
             index * 0.001,
         };
@@ -301,7 +367,18 @@ export function HomeLanding({ data }: HomeLandingProps) {
         return 0;
       })
       .slice(0, 6);
-  }, [data.featuredProducts, daypart, userLocation]);
+  }, [data.featuredProducts, data.topBusinesses, daypart, recentPurchaseSlugs, userLocation]);
+
+  const repeatBusinesses = useMemo(() => {
+    if (recentPurchaseSlugs.length === 0) {
+      return [];
+    }
+
+    return recentPurchaseSlugs
+      .map((slug) => orderedBusinesses.find((entry) => entry.business.slug === slug) ?? null)
+      .filter((entry): entry is (typeof orderedBusinesses)[number] => entry !== null)
+      .slice(0, 4);
+  }, [orderedBusinesses, recentPurchaseSlugs]);
 
   const filteredBusinesses = deferredQuery
     ? orderedBusinesses.map((item) => item.business).filter((business) =>
@@ -339,20 +416,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
             <Link href="/" className="text-lg font-semibold tracking-tight">
               Restopickup
             </Link>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--color-muted)]">
-              <Link
-                href="/soporte"
-                className="transition hover:text-[var(--color-accent)]"
-              >
-                Soporte
-              </Link>
-              <Link
-                href="/solicitar-acceso"
-                className="transition hover:text-[var(--color-accent)]"
-              >
-                ¿Tenés un local? Solicitar acceso
-              </Link>
-            </div>
+            <CustomerAccountLink />
           </header>
 
           <div className="pb-10 md:pb-14">
@@ -528,6 +592,93 @@ export function HomeLanding({ data }: HomeLandingProps) {
         id="locales"
         className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-16 pt-10 md:px-10 md:pt-12 lg:px-12"
       >
+        {repeatBusinesses.length > 0 ? (
+          <div className="mb-12" id="volver-a-pedir">
+            <div className="flex items-end justify-between gap-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
+                  Volvé a pedir
+                </p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+                  Locales donde ya compraste
+                </h2>
+                <p className="mt-3 max-w-2xl text-base leading-7 text-[var(--color-muted)]">
+                  Te los dejamos primero para resolver rápido cuando ya sabés qué te funciona.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+              {repeatBusinesses.map(({ business, distanceKm }) => {
+                const openStatus = getBusinessOpenStatusLabel(business);
+                const prepTimeLabel = formatPrepTimeRange(
+                  business.prepTimeMinMinutes,
+                  business.prepTimeMaxMinutes
+                );
+
+                return (
+                  <Link
+                    key={`repeat-${business.id}`}
+                    href={`/locales/${business.slug}`}
+                    className="group rounded-[1.75rem] border border-[var(--color-border)] bg-white p-5 shadow-[0_20px_60px_rgba(39,24,13,0.06)] transition hover:-translate-y-1"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-[1.1rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
+                        {business.profileImageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={business.profileImageUrl}
+                            alt={business.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-lg font-semibold text-[var(--color-foreground)]">
+                            {business.name.slice(0, 1).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-lg font-semibold text-[var(--color-foreground)]">
+                          {business.name}
+                        </p>
+                        <p className="truncate text-sm text-[var(--color-muted)]">
+                          {business.cuisineLabels.length > 0
+                            ? business.cuisineLabels.join(" · ")
+                            : "Menú para retirar"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {openStatus ? (
+                        <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">
+                          {openStatus.label}
+                        </span>
+                      ) : (
+                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                          Abierto ahora
+                        </span>
+                      )}
+                      {prepTimeLabel ? (
+                        <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-foreground)]">
+                          {prepTimeLabel}
+                        </span>
+                      ) : null}
+                      {distanceKm !== null ? (
+                        <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)]">
+                          {distanceKm < 1
+                            ? `${Math.round(distanceKm * 1000)} m`
+                            : `${distanceKm.toFixed(1)} km`}
+                        </span>
+                      ) : null}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
         <div className="flex items-end justify-between gap-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">

@@ -18,6 +18,8 @@ import {
 } from "@/lib/public-catalog";
 
 import { EmptyState } from "@/components/public/empty-state";
+import { CustomerAccountLink } from "@/components/public/customer-account-link";
+import { FavoriteBusinessButton } from "@/components/public/favorite-business-button";
 import { ProductCard } from "@/components/public/product-card";
 
 type BusinessCatalogProps = {
@@ -186,14 +188,17 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
                 Restopickup
               </Link>
 
-              {hasMounted && cartCount > 0 ? (
-                <Link
-                  href={`/locales/${business.slug}/carrito`}
-                  className="rounded-full border border-[var(--color-accent)] bg-[rgba(198,122,48,0.1)] px-4 py-2 text-sm font-medium text-[var(--color-accent)] transition hover:brightness-95"
-                >
-                  Ver carrito · {cartCount}
-                </Link>
-              ) : null}
+              <div className="flex flex-wrap items-center gap-3">
+                <CustomerAccountLink />
+                {hasMounted && cartCount > 0 ? (
+                  <Link
+                    href={`/locales/${business.slug}/carrito`}
+                    className="rounded-full border border-[var(--color-accent)] bg-[rgba(198,122,48,0.1)] px-4 py-2 text-sm font-medium text-[var(--color-accent)] transition hover:brightness-95"
+                  >
+                    Ver carrito · {cartCount}
+                  </Link>
+                ) : null}
+              </div>
             </div>
 
             <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)] lg:items-start">
@@ -225,6 +230,14 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-3">
+                  <FavoriteBusinessButton
+                    favorite={{
+                      slug: business.slug,
+                      name: business.name,
+                      pickupAddress: business.pickupAddress,
+                      profileImageUrl: business.profileImageUrl,
+                    }}
+                  />
                   {openStatus ? (
                     <span className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700">
                       {openStatus.label}

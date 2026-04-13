@@ -8,6 +8,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCart } from "@/components/cart/cart-provider";
 import { MercadoPagoTestModeNote } from "@/components/cart/mercadopago-test-mode-note";
 import { getFunnelSessionId, trackFunnelEvent } from "@/lib/analytics/funnel-client";
+import {
+  getStoredCustomerProfile,
+  saveStoredCustomerProfile,
+} from "@/lib/customer-profile";
 import { formatPrice, type PublicBusiness } from "@/lib/public-catalog";
 
 const checkoutFormSchema = z.object({
@@ -49,6 +53,15 @@ export function CheckoutForm({
   });
 
   useEffect(() => {
+    const storedProfile = getStoredCustomerProfile();
+    form.reset((currentValues) => ({
+      ...currentValues,
+      customerName: storedProfile.name,
+      customerPhone: storedProfile.phone,
+    }));
+  }, [form]);
+
+  useEffect(() => {
     if (hasTrackedCheckout.current || !cart || cart.items.length === 0) {
       return;
     }
@@ -74,6 +87,13 @@ export function CheckoutForm({
     setErrorMessage(null);
 
     startTransition(async () => {
+      const storedProfile = getStoredCustomerProfile();
+      saveStoredCustomerProfile({
+        ...storedProfile,
+        name: values.customerName.trim(),
+        phone: values.customerPhone?.trim() ?? "",
+      });
+
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: {

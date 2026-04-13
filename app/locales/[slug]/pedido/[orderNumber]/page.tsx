@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AutoRefresh } from "@/components/live/auto-refresh";
+import { RecentOrderMemory } from "@/components/public/recent-order-memory";
 import {
   getFormattedPaymentStatus,
   getMercadoPagoReturnLabel,
@@ -97,6 +98,12 @@ export default async function ConfirmationPage({
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] px-6 py-10 md:px-10 lg:px-12">
+      <RecentOrderMemory
+        businessSlug={confirmation.business.slug}
+        businessName={confirmation.business.name}
+        orderNumber={confirmation.order.orderNumber}
+        paymentStatus={confirmation.order.paymentStatus}
+      />
       <AutoRefresh enabled={shouldAutoRefresh} intervalMs={12000} />
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
         <div className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
