@@ -145,7 +145,8 @@ export default async function ConfirmationPage({
     await markMercadoPagoRedirectAsAuthorized({
       orderId: confirmation.order.id,
     });
-    confirmation = await syncAndReload();
+    confirmation =
+      (await getOrderConfirmation(slug, parsedOrderNumber)) ?? confirmation;
   }
   const finalConfirmation = confirmation ?? resolvedConfirmation;
 
