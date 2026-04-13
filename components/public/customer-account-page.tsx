@@ -23,6 +23,7 @@ import {
   signOutCustomer,
 } from "@/lib/customer-account-client";
 import { CustomerSessionBootstrap } from "@/components/public/customer-session-bootstrap";
+import { createClient } from "@/lib/supabase/client";
 
 function ProfileField({
   label,
@@ -113,11 +114,11 @@ function AccountSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
+    <section className="overflow-hidden border-b border-[var(--color-border)] last:border-b-0">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-white/40"
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-white/35 md:px-6"
         aria-expanded={isOpen}
       >
         <div className="flex min-w-0 items-center gap-3">
@@ -147,7 +148,11 @@ function AccountSection({
         </span>
       </button>
 
-      {isOpen ? <div className="border-t border-[var(--color-border)] px-5 py-5">{children}</div> : null}
+      {isOpen ? (
+        <div className="border-t border-[var(--color-border)] bg-white px-5 py-5 md:px-6">
+          {children}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -180,6 +185,7 @@ export function CustomerAccountPage() {
 
   useEffect(() => {
     let isMounted = true;
+    const supabase = createClient();
 
     const initialize = async () => {
       const storedProfile = getStoredCustomerProfile();
@@ -234,9 +240,18 @@ export function CustomerAccountPage() {
 
     window.addEventListener(CUSTOMER_PROFILE_UPDATED_EVENT, syncFromStorage);
 
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
+        void initialize();
+      }
+    });
+
     return () => {
       isMounted = false;
       window.removeEventListener(CUSTOMER_PROFILE_UPDATED_EVENT, syncFromStorage);
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -339,14 +354,14 @@ export function CustomerAccountPage() {
   const activeOrderFallback = !hasActiveOrders && storedActiveOrder ? storedActiveOrder : null;
 
   return (
-    <main className="min-h-screen bg-[var(--color-background)] px-6 py-8 md:px-10 md:py-10 lg:px-12">
+    <main className="min-h-screen bg-[var(--color-background)] px-6 py-6 md:px-10 md:py-8 lg:px-12">
       <CustomerSessionBootstrap />
 
-      <div className="mx-auto w-full max-w-6xl">
-        <div className="rounded-[2.4rem] border border-[var(--color-border)] bg-white/90 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-          <div className="border-b border-[var(--color-border)] px-6 py-5 md:px-8 lg:px-10">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="overflow-hidden rounded-[2rem] border border-[var(--color-border)] bg-white/96">
+          <div className="border-b border-[var(--color-border)] px-6 py-6 md:px-8 lg:px-10">
             <div className="flex flex-wrap items-start justify-between gap-5">
-              <div className="max-w-2xl">
+              <div className="max-w-3xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
                   Cuenta cliente
                 </p>
@@ -372,6 +387,15 @@ export function CustomerAccountPage() {
           </div>
 
           {authState !== "authenticated" ? (
+            authState === "loading" ? (
+              <div className="px-6 py-10 md:px-8 lg:px-10">
+                <div className="mx-auto max-w-lg">
+                  <div className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-8 text-sm text-[var(--color-muted)]">
+                    Cargando tu cuenta...
+                  </div>
+                </div>
+              </div>
+            ) : (
             <div className="grid gap-0 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.85fr)]">
               <section className="order-2 border-t border-[var(--color-border)] px-6 py-6 md:px-8 lg:order-1 lg:border-t-0 lg:border-r lg:px-10 lg:py-10">
                 <div className="max-w-xl">
@@ -385,8 +409,8 @@ export function CustomerAccountPage() {
                     Guardá tus datos para comprar más rápido y encontrá fácil los locales que más usás.
                   </p>
 
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                  <div className="mt-6 divide-y divide-[var(--color-border)] overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
+                    <div className="p-5">
                       <p className="text-sm font-semibold text-[var(--color-foreground)]">
                         Checkout
                       </p>
@@ -394,7 +418,7 @@ export function CustomerAccountPage() {
                         Tus datos quedan listos para completar el pedido más rápido.
                       </p>
                     </div>
-                    <div className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                    <div className="p-5">
                       <p className="text-sm font-semibold text-[var(--color-foreground)]">
                         Favoritos y compras
                       </p>
@@ -466,9 +490,10 @@ export function CustomerAccountPage() {
                 </div>
               </section>
             </div>
+            )
           ) : (
             <div className="px-6 py-6 md:px-8 lg:px-10 lg:py-8">
-              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-border)] pb-5">
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-border)] pb-6">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
                     Mi cuenta
@@ -498,7 +523,7 @@ export function CustomerAccountPage() {
                 </div>
               </div>
 
-              <div className="mt-6 space-y-4">
+              <div className="mt-6 overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
                 <AccountSection
                   icon="profile"
                   title="Info personal"

@@ -23,7 +23,7 @@ export default async function CheckoutPage({
   }
 
   return (
-    <main className="min-h-screen bg-[var(--color-background)] px-6 py-10 md:px-10 lg:px-12">
+    <main className="min-h-screen bg-[var(--color-background)] px-6 py-6 md:px-10 md:py-8 lg:px-12">
       <div className="mx-auto w-full max-w-7xl">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Link

@@ -138,33 +138,35 @@ export function CheckoutForm({
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_380px] lg:items-start">
-      <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-7 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-          Checkout invitado
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--color-foreground)]">
-          Confirmá tu pedido
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
-          No necesitas crear una cuenta. Solo dejanos tu nombre y, si querés,
-          un celular o comentario para el pedido.
-        </p>
-
-        <div className="mt-6">
-          <MercadoPagoTestModeNote enabled={isMercadoPagoTestMode} />
+      <section className="overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-white">
+        <div className="border-b border-[var(--color-border)] px-6 py-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
+            Checkout invitado
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--color-foreground)]">
+            Confirmá tu pedido
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
+            Dejanos tu nombre y, si querés, un celular o comentario para el pedido.
+          </p>
         </div>
 
-        {paymentFeedback === "failed" ? (
-          <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            El pago no se pudo confirmar. Podés revisar tus datos e intentarlo de nuevo.
-          </div>
-        ) : null}
+        <div className="px-6 py-6">
+          <div className="space-y-4">
+            <MercadoPagoTestModeNote enabled={isMercadoPagoTestMode} />
 
-        {paymentFeedback === "pending" ? (
-          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            El pago quedó pendiente. Si querés, podés intentar nuevamente desde acá.
+            {paymentFeedback === "failed" ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                El pago no se pudo confirmar. Podés revisar tus datos e intentarlo de nuevo.
+              </div>
+            ) : null}
+
+            {paymentFeedback === "pending" ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                El pago quedó pendiente. Si querés, podés intentar nuevamente desde acá.
+              </div>
+            ) : null}
           </div>
-        ) : null}
 
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -235,38 +237,43 @@ export function CheckoutForm({
             {isPending ? "Preparando pago..." : "Pagar con Mercado Pago"}
           </button>
         </form>
+        </div>
       </section>
 
-      <aside className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm lg:sticky lg:top-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-          Resumen
-        </p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-          {business.name}
-        </h2>
-        <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
-          Retiro en {business.pickupAddress}
-        </p>
-        {business.pickupInstructions ? (
-          <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
-            {business.pickupInstructions}
+      <aside className="overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-white lg:sticky lg:top-6">
+        <div className="border-b border-[var(--color-border)] px-6 py-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
+            Resumen
           </p>
-        ) : null}
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+            {business.name}
+          </h2>
+          <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+            Retiro en {business.pickupAddress}
+          </p>
+          {business.pickupInstructions ? (
+            <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+              {business.pickupInstructions}
+            </p>
+          ) : null}
+        </div>
 
         {!isReady || !cart || cart.items.length === 0 ? (
-          <div className="mt-6 rounded-[1.5rem] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <div className="px-6 py-6">
+          <div className="rounded-[1.25rem] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-5">
             <p className="text-sm leading-7 text-[var(--color-muted)]">
               Tu carrito esta vacio. Volve al menu del local para sumar
               productos antes de confirmar.
             </p>
           </div>
+          </div>
         ) : (
           <>
-            <div className="mt-6 space-y-4">
+            <div className="divide-y divide-[var(--color-border)] px-6">
               {cart.items.map((item) => (
                 <div
                   key={item.lineId}
-                  className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] pb-4"
+                  className="flex items-start justify-between gap-4 py-4"
                 >
                   <div>
                     <p className="text-sm font-semibold text-[var(--color-foreground)]">
@@ -307,9 +314,11 @@ export function CheckoutForm({
               ))}
             </div>
 
-            <div className="mt-6 flex items-center justify-between text-base font-semibold text-[var(--color-foreground)]">
-              <span>Subtotal</span>
-              <span>{formatPrice(subtotal, business.currencyCode)}</span>
+            <div className="bg-[var(--color-surface)] px-6 py-5">
+              <div className="flex items-center justify-between text-base font-semibold text-[var(--color-foreground)]">
+                <span>Subtotal</span>
+                <span>{formatPrice(subtotal, business.currencyCode)}</span>
+              </div>
             </div>
           </>
         )}

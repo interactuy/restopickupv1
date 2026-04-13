@@ -29,10 +29,11 @@ export function CartSummaryPanel({
 
   return (
     <aside
-      className={`rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm ${
+      className={`overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-white ${
         isPage ? "" : "lg:sticky lg:top-6"
       }`}
     >
+      <div className="border-b border-[var(--color-border)] px-6 py-5">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
@@ -51,9 +52,11 @@ export function CartSummaryPanel({
           {itemCount}
         </span>
       </div>
+      </div>
 
       {!isReady || !cart || cart.items.length === 0 ? (
-        <div className="mt-6 rounded-[1.5rem] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+        <div className="px-6 py-6">
+        <div className="rounded-[1.25rem] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <p className="text-sm leading-7 text-[var(--color-muted)]">
             Agregá productos del menú para ver el resumen del pedido antes de pasar
             al checkout.
@@ -67,13 +70,14 @@ export function CartSummaryPanel({
             </Link>
           </div>
         </div>
+        </div>
       ) : (
         <>
-          <div className="mt-6 space-y-4">
+          <div className="divide-y divide-[var(--color-border)]">
             {cart.items.map((item) => (
               <div
                 key={item.lineId}
-                className="rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+                className="px-6 py-5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -155,19 +159,19 @@ export function CartSummaryPanel({
             ))}
           </div>
 
-          <div className="mt-6 rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-            <div className="flex items-center justify-between text-sm text-[var(--color-muted)]">
+          <div className="bg-[var(--color-surface)] px-6 py-5">
+            <div className="flex items-center justify-between text-base font-medium text-[var(--color-foreground)]">
               <span>Subtotal</span>
               <span>{formatPrice(subtotal, currencyCode)}</span>
             </div>
-            <p className="mt-3 text-xs leading-6 text-[var(--color-muted)]">
+            <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
               Revisá las opciones y notas por producto antes de pasar al checkout.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               {isPage ? (
                 <Link
                   href={`/locales/${businessSlug}`}
-                  className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                  className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-4 py-3 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
                 >
                   Seguir eligiendo
                 </Link>
