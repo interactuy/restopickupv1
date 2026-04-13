@@ -1,6 +1,7 @@
 export const CUSTOMER_PROFILE_STORAGE_KEY = "restopickup-customer-profile";
 export const CUSTOMER_LOCATION_STORAGE_KEY = "restopickup-customer-location";
 export const RECENT_PURCHASES_STORAGE_KEY = "restopickup-recent-purchases";
+export const ACTIVE_ORDER_STORAGE_KEY = "restopickup-active-order";
 export const CUSTOMER_PROFILE_UPDATED_EVENT = "restopickup-customer-profile-updated";
 
 export type CustomerProfile = {
@@ -29,6 +30,21 @@ export type RecentPurchaseEntry = {
   businessName: string;
   orderNumber: number;
   timestamp: string;
+  itemSummary?: string;
+  totalAmount?: number;
+  currencyCode?: string;
+};
+
+export type StoredActiveOrder = {
+  businessSlug: string;
+  businessName: string;
+  orderNumber: number;
+  statusCode: string;
+  estimatedReadyAt: string | null;
+  placedAt: string;
+  itemSummary?: string;
+  totalAmount?: number;
+  currencyCode?: string;
 };
 
 const DEFAULT_PROFILE: CustomerProfile = {
@@ -178,7 +194,11 @@ export function getRecentPurchases(): RecentPurchaseEntry[] {
             typeof entry.businessSlug === "string" &&
             typeof entry.businessName === "string" &&
             typeof entry.orderNumber === "number" &&
-            typeof entry.timestamp === "string",
+            typeof entry.timestamp === "string" &&
+            (typeof entry.itemSummary === "string" || typeof entry.itemSummary === "undefined") &&
+            (typeof entry.totalAmount === "number" || typeof entry.totalAmount === "undefined") &&
+            (typeof entry.currencyCode === "string" ||
+              typeof entry.currencyCode === "undefined"),
         )
       : [];
   } catch {
@@ -205,4 +225,63 @@ export function upsertRecentPurchase(entry: RecentPurchaseEntry, maxEntries = 12
   saveRecentPurchases(nextEntries);
 
   return nextEntries;
+}
+
+export function getStoredActiveOrder(): StoredActiveOrder | null {
+  if (!canUseStorage()) {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(ACTIVE_ORDER_STORAGE_KEY);
+
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<StoredActiveOrder>;
+
+    if (
+      typeof parsed.businessSlug !== "string" ||
+      typeof parsed.businessName !== "string" ||
+      typeof parsed.orderNumber !== "number" ||
+      typeof parsed.statusCode !== "string" ||
+      typeof parsed.placedAt !== "string" ||
+      !(typeof parsed.estimatedReadyAt === "string" || parsed.estimatedReadyAt === null)
+    ) {
+      return null;
+    }
+
+    return {
+      businessSlug: parsed.businessSlug,
+      businessName: parsed.businessName,
+      orderNumber: parsed.orderNumber,
+      statusCode: parsed.statusCode,
+      estimatedReadyAt: parsed.estimatedReadyAt,
+      placedAt: parsed.placedAt,
+      itemSummary: typeof parsed.itemSummary === "string" ? parsed.itemSummary : undefined,
+      totalAmount: typeof parsed.totalAmount === "number" ? parsed.totalAmount : undefined,
+      currencyCode: typeof parsed.currencyCode === "string" ? parsed.currencyCode : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function saveStoredActiveOrder(order: StoredActiveOrder) {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  window.localStorage.setItem(ACTIVE_ORDER_STORAGE_KEY, JSON.stringify(order));
+  emitCustomerProfileUpdated();
+}
+
+export function clearStoredActiveOrder() {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  window.localStorage.removeItem(ACTIVE_ORDER_STORAGE_KEY);
+  emitCustomerProfileUpdated();
 }

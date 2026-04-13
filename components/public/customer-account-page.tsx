@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 
 import {
+  clearStoredActiveOrder,
   CUSTOMER_PROFILE_UPDATED_EVENT,
   type CustomerProfile,
   getRecentPurchases,
@@ -284,6 +285,7 @@ export function CustomerAccountPage() {
   function handleSignOut() {
     startTransition(async () => {
       await signOutCustomer();
+      clearStoredActiveOrder();
       setAuthState("guest");
       setCurrentUserEmail(null);
       setActiveOrders([]);
@@ -706,7 +708,7 @@ export function CustomerAccountPage() {
                         {recentPurchases.map((purchase) => (
                           <Link
                             key={`${purchase.businessSlug}-${purchase.orderNumber}`}
-                            href={`/locales/${purchase.businessSlug}`}
+                            href={`/locales/${purchase.businessSlug}/pedido/${purchase.orderNumber}`}
                             className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-[var(--color-border)] bg-white p-4 transition hover:border-[var(--color-accent)]"
                           >
                             <div className="min-w-0">
@@ -714,11 +716,16 @@ export function CustomerAccountPage() {
                                 {purchase.businessName}
                               </p>
                               <p className="mt-1 text-sm text-[var(--color-muted)]">
-                                Pedido anterior
+                                {purchase.itemSummary || `Pedido #${purchase.orderNumber}`}
                               </p>
+                              {typeof purchase.totalAmount === "number" && purchase.currencyCode ? (
+                                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                  {formatOrderAmount(purchase.totalAmount, purchase.currencyCode)}
+                                </p>
+                              ) : null}
                             </div>
                             <span className="shrink-0 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)]">
-                              Ver local
+                              Ver pedido
                             </span>
                           </Link>
                         ))}

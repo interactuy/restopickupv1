@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { ActiveOrderLink } from "@/components/public/active-order-link";
 import {
   CUSTOMER_PROFILE_UPDATED_EVENT,
   getStoredCustomerProfile,
@@ -26,11 +27,14 @@ export function CustomerAccountLink() {
   }, []);
 
   return (
-    <Link
-      href="/cuenta"
-      className="text-sm font-medium text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
-    >
-      {label}
-    </Link>
+    <div className="flex flex-wrap items-center gap-3">
+      <ActiveOrderLink />
+      <Link
+        href="/cuenta"
+        className="text-sm font-medium text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
+      >
+        {label}
+      </Link>
+    </div>
   );
 }

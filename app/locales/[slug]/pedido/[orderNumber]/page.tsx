@@ -192,6 +192,9 @@ export default async function ConfirmationPage({
       : null;
   const contactAction = getBusinessContactAction(finalConfirmation.business);
   const businessTimezone = finalConfirmation.business.timezone;
+  const itemSummary = finalConfirmation.order.items
+    .map((item) => `${item.quantity}x ${item.productName}`)
+    .join(" · ");
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] px-6 py-10 md:px-10 lg:px-12">
@@ -201,6 +204,12 @@ export default async function ConfirmationPage({
         businessName={finalConfirmation.business.name}
         orderNumber={finalConfirmation.order.orderNumber}
         paymentStatus={finalConfirmation.order.paymentStatus}
+        statusCode={finalConfirmation.order.statusCode}
+        placedAt={finalConfirmation.order.placedAt}
+        estimatedReadyAt={finalConfirmation.order.estimatedReadyAt}
+        itemSummary={itemSummary}
+        totalAmount={finalConfirmation.order.totalAmount}
+        currencyCode={finalConfirmation.order.currencyCode}
       />
       <AutoRefresh enabled={shouldAutoRefresh} intervalMs={12000} />
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
