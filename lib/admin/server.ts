@@ -287,11 +287,17 @@ type AdminBusinessPlatformSettingsRow = {
 
 type AdminSupportIncidentRow = {
   id: string;
-  business_id: string;
+  ticket_number: number | null;
+  business_id: string | null;
   title: string;
+  source: "internal" | "commercial" | "support";
   status: "open" | "in_progress" | "resolved";
   severity: "low" | "normal" | "high";
   notes: string | null;
+  requester_name: string | null;
+  requester_email: string | null;
+  requester_phone: string | null;
+  requester_business_name: string | null;
   created_at: string;
   business?: {
     name: string;
@@ -354,13 +360,18 @@ export type AdminGlobalOrder = {
 
 export type AdminSupportIncident = {
   id: string;
-  businessId: string;
+  ticketNumber: number | null;
+  businessId: string | null;
   businessName: string;
   businessSlug: string;
   title: string;
+  source: "internal" | "commercial" | "support";
   status: "open" | "in_progress" | "resolved";
   severity: "low" | "normal" | "high";
   notes: string | null;
+  requesterName: string | null;
+  requesterEmail: string | null;
+  requesterPhone: string | null;
   createdAt: string;
 };
 
@@ -1429,7 +1440,7 @@ export async function getAdminSupportIncidents() {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("business_support_incidents")
-    .select("id, business_id, title, status, severity, notes, created_at, business:businesses(name, slug)")
+    .select("id, ticket_number, business_id, title, source, status, severity, notes, requester_name, requester_email, requester_phone, requester_business_name, created_at, business:businesses(name, slug)")
     .order("created_at", { ascending: false })
     .limit(100)
     .returns<AdminSupportIncidentRow[]>();
@@ -1440,13 +1451,21 @@ export async function getAdminSupportIncidents() {
 
   return (data ?? []).map((incident): AdminSupportIncident => ({
     id: incident.id,
+    ticketNumber: incident.ticket_number,
     businessId: incident.business_id,
-    businessName: incident.business?.name ?? "Negocio eliminado",
+    businessName:
+      incident.business?.name ??
+      incident.requester_business_name ??
+      "Sin negocio vinculado",
     businessSlug: incident.business?.slug ?? "",
     title: incident.title,
+    source: incident.source,
     status: incident.status,
     severity: incident.severity,
     notes: incident.notes,
+    requesterName: incident.requester_name,
+    requesterEmail: incident.requester_email,
+    requesterPhone: incident.requester_phone,
     createdAt: incident.created_at,
   }));
 }

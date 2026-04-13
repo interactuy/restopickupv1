@@ -41,16 +41,16 @@ export default async function DashboardStatisticsPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
+      <section className="border-b border-[var(--color-border)] pb-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-muted)]">
               Estadísticas
             </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--color-foreground)]">
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
               Rendimiento de {context.business.name}
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
               Métricas construidas con pedidos pagos reales para entender ventas,
               horarios fuertes y comportamiento del menú.
             </p>
@@ -62,7 +62,7 @@ export default async function DashboardStatisticsPage({
                 <Link
                   key={option.value}
                   href={`/dashboard/estadisticas?range=${option.value}`}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
                     isActive
                       ? "bg-[var(--color-accent)] text-white"
                       : "border border-[var(--color-border)] bg-white text-[var(--color-foreground)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
@@ -74,13 +74,13 @@ export default async function DashboardStatisticsPage({
             })}
           </div>
         </div>
-        <p className="mt-5 text-sm leading-7 text-[var(--color-muted)]">
+        <p className="mt-4 text-sm leading-7 text-[var(--color-muted)]">
           {salesStats.rangeLabel} · {salesStats.totalPaidOrders} pedido
           {salesStats.totalPaidOrders === 1 ? "" : "s"} cobrados
         </p>
       </section>
 
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white md:grid-cols-2 xl:grid-cols-4">
         {[
           {
             label: "Ventas cobradas",
@@ -107,9 +107,11 @@ export default async function DashboardStatisticsPage({
         ].map((item) => (
           <article
             key={item.label}
-            className="rounded-[1.75rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)]"
+            className="border-b border-[var(--color-border)] p-6 last:border-b-0 md:border-r md:last:border-r-0 xl:border-b-0"
           >
-            <p className="text-sm text-[var(--color-muted)]">{item.label}</p>
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--color-muted)]">
+              {item.label}
+            </p>
             <p className="mt-3 text-3xl font-semibold tracking-tight text-[var(--color-foreground)]">
               {item.value}
             </p>
@@ -125,20 +127,22 @@ export default async function DashboardStatisticsPage({
         rows={salesStats.dayHourHeatmap}
       />
 
-      <section className="rounded-[1.75rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-          Top productos
-        </p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+      <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white">
+        <div className="border-b border-[var(--color-border)] px-5 py-4">
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-muted)]">
+            Top productos
+          </p>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight text-[var(--color-foreground)]">
           Lo que más se vende
-        </h2>
+          </h2>
+        </div>
 
         {salesStats.topProducts.length === 0 ? (
-          <p className="mt-5 text-sm leading-7 text-[var(--color-muted)]">
+          <p className="px-5 py-5 text-sm leading-7 text-[var(--color-muted)]">
             Cuando entren pedidos pagos vas a ver acá qué productos empujan más la venta.
           </p>
         ) : (
-          <div className="mt-6 space-y-3">
+          <div className="space-y-3 px-5 py-5">
             {salesStats.topProducts.map((product, index) => (
               <div
                 key={`${product.name}-${index}`}

@@ -29,34 +29,34 @@ export default async function DashboardCategoriesPage({
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
-      <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-          Categorías
-        </p>
-        <div className="mt-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-foreground)]">
+      <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white">
+        <div className="border-b border-[var(--color-border)] px-5 py-4">
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-muted)]">
+            Categorías
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
             Estructura del menú
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
             Creá, ordená y ocultá categorías para que el menú público del local quede
             bien organizado antes de cargar productos.
           </p>
         </div>
 
         {query.error ? (
-          <div className="mt-6 rounded-[1.5rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mx-5 mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {query.error}
           </div>
         ) : null}
 
         {successMessage ? (
-          <div className="mt-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div className="mx-5 mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             {successMessage}
           </div>
         ) : null}
 
         {categories.length === 0 ? (
-          <div className="mt-8">
+          <div className="px-5 py-5">
             <EmptyState
               eyebrow="Sin categorías"
               title="Todavía no armaste secciones para el menú"
@@ -64,7 +64,7 @@ export default async function DashboardCategoriesPage({
             />
           </div>
         ) : (
-          <div className="mt-8 space-y-4">
+          <div className="space-y-4 px-5 py-5">
             {categories.map((category) => (
               <article
                 key={category.id}
@@ -97,7 +97,7 @@ export default async function DashboardCategoriesPage({
 
                 <Link
                   href={`/dashboard/categorias/${category.id}/editar`}
-                  className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                  className="inline-flex items-center justify-center rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
                 >
                   Editar
                 </Link>
@@ -107,7 +107,7 @@ export default async function DashboardCategoriesPage({
         )}
       </section>
 
-      <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm xl:sticky xl:top-6">
+      <section className="rounded-2xl border border-[var(--color-border)] bg-white p-8 xl:sticky xl:top-6">
         <CategoryForm
           action={createCategoryAction}
           submitLabel="Crear categoría"

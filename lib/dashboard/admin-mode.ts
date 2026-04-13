@@ -68,5 +68,11 @@ export async function disableAdminMode(params: {
   userId: string;
 }) {
   const store = await cookies();
-  store.delete(getAdminModeCookieName(params));
+  store.set(getAdminModeCookieName(params), "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/dashboard",
+    maxAge: 0,
+  });
 }

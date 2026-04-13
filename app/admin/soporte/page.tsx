@@ -15,6 +15,12 @@ const severityLabels = {
   high: "Alta",
 };
 
+const sourceLabels = {
+  internal: "Interno",
+  commercial: "Comercial",
+  support: "Soporte",
+};
+
 export default async function AdminSupportPage() {
   await requireInternalAdminContext();
   const incidents = await getAdminSupportIncidents();
@@ -41,18 +47,37 @@ export default async function AdminSupportPage() {
               <article key={incident.id} className="px-5 py-4 hover:bg-slate-50">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="font-medium text-slate-950">{incident.title}</h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {incident.ticketNumber ? (
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          Ticket #{incident.ticketNumber}
+                        </span>
+                      ) : null}
+                      <h2 className="font-medium text-slate-950">{incident.title}</h2>
+                    </div>
                     <p className="mt-1 text-sm text-slate-500">
-                      <Link
-                        href={`/admin/negocios/${incident.businessId}`}
-                        className="hover:text-emerald-700"
-                      >
-                        {incident.businessName}
-                      </Link>{" "}
+                      {incident.businessId ? (
+                        <Link
+                          href={`/admin/negocios/${incident.businessId}`}
+                          className="hover:text-emerald-700"
+                        >
+                          {incident.businessName}
+                        </Link>
+                      ) : (
+                        incident.businessName
+                      )}{" "}
                       · {new Date(incident.createdAt).toLocaleString("es-UY")}
                     </p>
+                    {incident.requesterName || incident.requesterEmail ? (
+                      <p className="mt-1 text-sm text-slate-500">
+                        {incident.requesterName ?? "Sin nombre"} · {incident.requesterEmail ?? "Sin email"}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <AdminStatusPill tone="neutral">
+                      {sourceLabels[incident.source]}
+                    </AdminStatusPill>
                     <AdminStatusPill tone={incident.status === "resolved" ? "success" : "warning"}>
                       {statusLabels[incident.status]}
                     </AdminStatusPill>

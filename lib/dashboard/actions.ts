@@ -653,6 +653,10 @@ export async function lockAdminModeAction() {
     userId: context.user.id,
   });
 
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/pedidos");
+  revalidatePath("/dashboard/configuracion");
+
   redirect("/dashboard/pedidos");
 }
 
@@ -1149,6 +1153,29 @@ export async function updateBusinessSettingsAction(formData: FormData) {
   }
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/configuracion");
+  revalidatePath("/dashboard/pedidos");
+  revalidatePath(`/locales/${context.business.slug}`);
+}
+
+export async function toggleBusinessTemporaryClosedAction(formData: FormData) {
+  const context = await requireAdminDashboardContext();
+  const nextClosedState = formData.get("isTemporarilyClosed") === "true";
+  const admin = createAdminClient();
+
+  const { error } = await admin
+    .from("businesses")
+    .update({
+      is_temporarily_closed: nextClosedState,
+    })
+    .eq("id", context.business.id);
+
+  if (error) {
+    throw new Error(`No se pudo actualizar el estado del local: ${error.message}`);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/pedidos");
   revalidatePath("/dashboard/configuracion");
   revalidatePath(`/locales/${context.business.slug}`);
 }

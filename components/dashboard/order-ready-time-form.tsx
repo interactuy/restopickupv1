@@ -7,6 +7,7 @@ type OrderReadyTimeFormProps = {
   businessSlug: string;
   orderNumber: number;
   defaultMinutes: number;
+  submitLabel?: string;
 };
 
 export function OrderReadyTimeForm({
@@ -14,6 +15,7 @@ export function OrderReadyTimeForm({
   businessSlug,
   orderNumber,
   defaultMinutes,
+  submitLabel = "Actualizar retiro",
 }: OrderReadyTimeFormProps) {
   return (
     <form action={updateOrderEstimatedReadyAtAction} className="flex flex-wrap items-end gap-3">
@@ -35,15 +37,15 @@ export function OrderReadyTimeForm({
             min={0}
             max={240}
             defaultValue={defaultMinutes}
-            className="w-24 rounded-full border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-foreground)] outline-none"
+            className="w-24 rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-foreground)] outline-none"
           />
           <span className="text-sm text-[var(--color-muted)]">min</span>
         </div>
       </div>
       <SubmitButton
-        label="Actualizar retiro"
+        label={submitLabel}
         pendingLabel="Guardando..."
-        className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition enabled:hover:border-[var(--color-accent)] enabled:hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center justify-center rounded-lg border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition enabled:hover:border-[var(--color-accent)] enabled:hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-60"
       />
     </form>
   );

@@ -27,21 +27,21 @@ export default async function DashboardHomePage() {
 
   return (
     <>
-      <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
+      <section className="border-b border-[var(--color-border)] pb-4">
         <AutoRefresh intervalMs={15000} />
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-          Dashboard
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-muted)]">
+          Operación
         </p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-[var(--color-foreground)]">
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
           Operación de {context.business.name}
         </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
+        <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
           Desde acá podés seguir pedidos reales, revisar catálogo y ajustar datos
           básicos del local.
         </p>
       </section>
 
-      <section className="grid gap-5 md:grid-cols-3">
+      <section className="grid overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white md:grid-cols-2 xl:grid-cols-3">
         {[
           {
             label: "Pedidos activos",
@@ -58,9 +58,11 @@ export default async function DashboardHomePage() {
         ].map((item) => (
           <article
             key={item.label}
-            className="rounded-[1.75rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)]"
+            className="border-b border-[var(--color-border)] p-6 last:border-b-0 md:border-b-0 md:border-r last:md:border-r-0"
           >
-            <p className="text-sm text-[var(--color-muted)]">{item.label}</p>
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--color-muted)]">
+              {item.label}
+            </p>
             <p className="mt-3 text-4xl font-semibold tracking-tight text-[var(--color-foreground)]">
               {item.value}
             </p>
@@ -68,29 +70,29 @@ export default async function DashboardHomePage() {
         ))}
       </section>
 
-      <section className="rounded-[1.75rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-border)] px-5 py-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-muted)]">
               Estadísticas
             </p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+            <h2 className="mt-1 text-xl font-semibold tracking-tight text-[var(--color-foreground)]">
               Pantallazo rápido
             </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
               Resumen de los últimos 30 días. Desde la sección completa vas a poder
               profundizar por rango, horarios, días y top productos.
             </p>
           </div>
           <Link
             href="/dashboard/estadisticas"
-            className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+            className="inline-flex items-center justify-center rounded-lg bg-[var(--color-accent)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--color-accent-hover)]"
           >
             Ver estadísticas
           </Link>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-4">
+        <div className="grid md:grid-cols-2 xl:grid-cols-4">
           {[
             {
               label: "Ventas cobradas",
@@ -117,9 +119,11 @@ export default async function DashboardHomePage() {
           ].map((item) => (
             <div
               key={item.label}
-              className="rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+              className="border-b border-[var(--color-border)] bg-white px-5 py-4 last:border-b-0 md:border-b-0 md:border-r last:md:border-r-0"
             >
-              <p className="text-sm text-[var(--color-muted)]">{item.label}</p>
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--color-muted)]">
+                {item.label}
+              </p>
               <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
                 {item.value}
               </p>
@@ -128,7 +132,7 @@ export default async function DashboardHomePage() {
         </div>
       </section>
 
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-5 md:grid-cols-2 2xl:grid-cols-4">
         {[
           {
             href: "/dashboard/pedidos",
@@ -154,7 +158,7 @@ export default async function DashboardHomePage() {
           <Link
             key={item.href}
             href={item.href}
-            className="rounded-[1.75rem] border border-[var(--color-border)] bg-white/90 p-6 shadow-[0_24px_80px_rgba(39,24,13,0.08)] transition hover:-translate-y-1"
+            className="rounded-2xl border border-[var(--color-border)] bg-white p-6 transition hover:bg-[var(--color-surface-strong)]"
           >
             <h2 className="text-xl font-semibold tracking-tight text-[var(--color-foreground)]">
               {item.title}

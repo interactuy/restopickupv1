@@ -28,29 +28,29 @@ export default async function DashboardProductsPage({
   const successMessage = query.success ? successLabels[query.success] ?? null : null;
 
   return (
-    <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-        Productos
-      </p>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
+    <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--color-border)] px-5 py-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-foreground)]">
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-muted)]">
+            Productos
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
             Catálogo del local
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
             Gestioná el menú visible del local, la disponibilidad y el orden de cada producto.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link
             href="/dashboard/categorias"
-            className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+            className="inline-flex items-center justify-center rounded-lg border border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
           >
             Gestionar categorías
           </Link>
           <Link
             href="/dashboard/productos/nuevo"
-            className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+            className="inline-flex items-center justify-center rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)]"
           >
             Nuevo producto
           </Link>
@@ -58,19 +58,19 @@ export default async function DashboardProductsPage({
       </div>
 
       {query.error ? (
-        <div className="mt-6 rounded-[1.5rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mx-5 mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {query.error}
         </div>
       ) : null}
 
       {successMessage ? (
-        <div className="mt-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div className="mx-5 mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           {successMessage}
         </div>
       ) : null}
 
       {products.length === 0 ? (
-        <div className="mt-6">
+        <div className="px-5 py-5">
           <EmptyState
             eyebrow="Sin productos"
             title="Todavía no hay productos cargados"
@@ -78,7 +78,7 @@ export default async function DashboardProductsPage({
           />
         </div>
       ) : (
-        <div className="mt-8 space-y-4">
+        <div className="space-y-4 px-5 py-5">
           {products.map((product) => (
             <article
               key={product.id}
@@ -118,8 +118,8 @@ export default async function DashboardProductsPage({
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="text-right sm:min-w-36">
+              <div className="flex w-full flex-wrap items-center justify-between gap-4 xl:w-auto xl:justify-end">
+                <div className="text-left sm:min-w-36 xl:text-right">
                   <p className="text-sm font-medium text-[var(--color-muted)]">
                     {formatPrice(product.priceAmount, product.currencyCode)}
                   </p>
@@ -135,7 +135,7 @@ export default async function DashboardProductsPage({
                 <div className="flex flex-wrap items-center justify-end gap-3">
                   <Link
                     href={`/dashboard/productos/${product.id}/editar`}
-                    className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                    className="inline-flex items-center justify-center rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
                   >
                     Editar
                   </Link>

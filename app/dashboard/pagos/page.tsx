@@ -5,6 +5,7 @@ import {
 import { requireAdminDashboardContext } from "@/lib/dashboard/server";
 import { getBusinessPaymentConnection } from "@/lib/mercadopago/accounts";
 
+import { AccordionSection } from "@/components/dashboard/accordion-section";
 import { SubmitButton } from "@/components/dashboard/submit-button";
 
 type DashboardPaymentsPageProps = {
@@ -35,30 +36,32 @@ export default async function DashboardPaymentsPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
+      <section className="border-b border-[var(--color-border)] pb-4">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--color-muted)]">
           Pagos
         </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--color-foreground)]">
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
           Mercado Pago del local
         </h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--color-muted)]">
+        <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--color-muted)]">
           Conectá la cuenta propia del negocio para que los cobros entren directo ahí. Si todavía no hay una cuenta conectada, los pagos se procesan con la cuenta temporal de Restopickup.
         </p>
 
         {feedback ? (
-          <div className="mt-6 rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-foreground)]">
+          <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm text-[var(--color-foreground)]">
             {feedback}
           </div>
         ) : null}
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)]">
-          <p className="text-sm font-semibold text-[var(--color-foreground)]">
-            Estado de la conexión
-          </p>
-          <div className="mt-4 space-y-3 text-sm text-[var(--color-muted)]">
+      <AccordionSection
+        title="Estado de la conexión"
+        description="Conectá o reconectá la cuenta del negocio para que los cobros entren directo ahí."
+        badge={connection?.status === "connected" ? "Conectado" : "Pendiente"}
+        defaultOpen
+      >
+        <div className="space-y-6">
+          <div className="space-y-3 text-sm text-[var(--color-muted)]">
             <p>
               Estado actual:{" "}
               <span className="font-medium text-[var(--color-foreground)]">
@@ -81,7 +84,7 @@ export default async function DashboardPaymentsPage({
             </p>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3">
             <form action={startMercadoPagoConnectAction}>
               <SubmitButton
                 label={connection?.status === "connected" ? "Reconectar Mercado Pago" : "Conectar Mercado Pago"}
@@ -94,24 +97,25 @@ export default async function DashboardPaymentsPage({
                 <SubmitButton
                   label="Desconectar"
                   pendingLabel="Desconectando..."
-                  className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] px-5 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition enabled:hover:border-[var(--color-accent)] enabled:hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-lg border border-[var(--color-border)] px-5 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition enabled:hover:border-[var(--color-accent)] enabled:hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </form>
             ) : null}
           </div>
         </div>
+      </AccordionSection>
 
-        <aside className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)]">
-          <p className="text-sm font-semibold text-[var(--color-foreground)]">
-            Qué cambia al conectar
-          </p>
-          <ul className="mt-4 space-y-3 text-sm leading-7 text-[var(--color-muted)]">
-            <li>Los pagos nuevos se crean con la cuenta propia del negocio.</li>
-            <li>El dinero de las ventas va directo a ese Mercado Pago.</li>
-            <li>Las comisiones de Restopickup se pueden liquidar aparte, por período.</li>
-          </ul>
-        </aside>
-      </section>
+      <AccordionSection
+        title="Qué cambia al conectar"
+        description="Un resumen rápido del impacto práctico para el local."
+        badge="Contexto"
+      >
+        <ul className="space-y-3 text-sm leading-7 text-[var(--color-muted)]">
+          <li>Los pagos nuevos se crean con la cuenta propia del negocio.</li>
+          <li>El dinero de las ventas va directo a ese Mercado Pago.</li>
+          <li>Las comisiones de Restopickup se pueden liquidar aparte, por período.</li>
+        </ul>
+      </AccordionSection>
     </div>
   );
 }

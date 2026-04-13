@@ -7,6 +7,7 @@ type OrderStatusFormProps = {
   statusCode: string;
   businessSlug: string;
   orderNumber: number;
+  submitLabel?: string;
 };
 
 const statusOptions = [
@@ -22,6 +23,7 @@ export function OrderStatusForm({
   statusCode,
   businessSlug,
   orderNumber,
+  submitLabel = "Actualizar estado",
 }: OrderStatusFormProps) {
   return (
     <form action={updateOrderStatusAction} className="flex flex-wrap gap-3">
@@ -31,7 +33,7 @@ export function OrderStatusForm({
       <select
         name="statusCode"
         defaultValue={statusCode}
-        className="rounded-full border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-foreground)] outline-none"
+        className="rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm text-[var(--color-foreground)] outline-none"
       >
         {statusOptions.map((option) => (
           <option key={option.value} value={option.value}>
@@ -39,7 +41,7 @@ export function OrderStatusForm({
           </option>
         ))}
       </select>
-      <SubmitButton label="Actualizar" pendingLabel="Actualizando..." />
+      <SubmitButton label={submitLabel} pendingLabel="Actualizando..." />
     </form>
   );
 }

@@ -339,12 +339,20 @@ export function HomeLanding({ data }: HomeLandingProps) {
             <Link href="/" className="text-lg font-semibold tracking-tight">
               Restopickup
             </Link>
-            <Link
-              href="/solicitar-acceso"
-              className="text-sm text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
-            >
-              ¿Tenés un local? Solicitar acceso
-            </Link>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--color-muted)]">
+              <Link
+                href="/soporte"
+                className="transition hover:text-[var(--color-accent)]"
+              >
+                Soporte
+              </Link>
+              <Link
+                href="/solicitar-acceso"
+                className="transition hover:text-[var(--color-accent)]"
+              >
+                ¿Tenés un local? Solicitar acceso
+              </Link>
+            </div>
           </header>
 
           <div className="pb-10 md:pb-14">
@@ -877,6 +885,12 @@ export function HomeLanding({ data }: HomeLandingProps) {
           Restopickup para locales que venden online sin enredar la operación.
         </p>
         <div className="flex flex-wrap items-center gap-4">
+          <Link
+            href="/soporte"
+            className="text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
+          >
+            Soporte
+          </Link>
           <Link
             href="/solicitar-acceso"
             className="text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"

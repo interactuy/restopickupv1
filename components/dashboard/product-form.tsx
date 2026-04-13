@@ -109,7 +109,7 @@ export function ProductForm({
           />
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           <div>
             <label
               htmlFor="priceAmount"
@@ -184,7 +184,7 @@ export function ProductForm({
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div>
             <label
               htmlFor="categoryId"
