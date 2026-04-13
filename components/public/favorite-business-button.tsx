@@ -1,25 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
+  CUSTOMER_PROFILE_UPDATED_EVENT,
   getStoredCustomerProfile,
-  toggleFavoriteBusiness,
   type FavoriteBusiness,
 } from "@/lib/customer-profile";
+import { toggleFavoriteBusinessForAccount } from "@/lib/customer-account-client";
 
 type FavoriteBusinessButtonProps = {
   favorite: FavoriteBusiness;
 };
 
 export function FavoriteBusinessButton({ favorite }: FavoriteBusinessButtonProps) {
-  const [isFavorite, setIsFavorite] = useState(() => {
-    const profile = getStoredCustomerProfile();
-    return profile.favoriteBusinesses.some((item) => item.slug === favorite.slug);
-  });
+  const [isFavorite, setIsFavorite] = useState(false);
 
-  function handleToggle() {
-    const nextProfile = toggleFavoriteBusiness(favorite);
+  useEffect(() => {
+    function syncFavoriteState() {
+      const profile = getStoredCustomerProfile();
+      setIsFavorite(profile.favoriteBusinesses.some((item) => item.slug === favorite.slug));
+    }
+
+    syncFavoriteState();
+    window.addEventListener(CUSTOMER_PROFILE_UPDATED_EVENT, syncFavoriteState);
+
+    return () => {
+      window.removeEventListener(CUSTOMER_PROFILE_UPDATED_EVENT, syncFavoriteState);
+    };
+  }, [favorite.slug]);
+
+  async function handleToggle() {
+    const nextProfile = await toggleFavoriteBusinessForAccount(favorite);
     setIsFavorite(nextProfile.favoriteBusinesses.some((item) => item.slug === favorite.slug));
   }
 

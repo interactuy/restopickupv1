@@ -2,14 +2,10 @@
 
 import { useEffect } from "react";
 
-import {
-  RECENT_PURCHASES_STORAGE_KEY,
-  type RecentPurchaseEntry,
-} from "@/lib/customer-profile";
-
-const MAX_RECENT_PURCHASES = 12;
+import { saveRecentPurchaseToAccount } from "@/lib/customer-account-client";
 
 type RecentOrderMemoryProps = {
+  businessId: string;
   businessSlug: string;
   businessName: string;
   orderNumber: number;
@@ -21,6 +17,7 @@ function isPurchaseConfirmed(paymentStatus: string) {
 }
 
 export function RecentOrderMemory({
+  businessId,
   businessSlug,
   businessName,
   orderNumber,
@@ -32,28 +29,17 @@ export function RecentOrderMemory({
     }
 
     try {
-      const raw = window.localStorage.getItem(RECENT_PURCHASES_STORAGE_KEY);
-      const parsed = raw ? (JSON.parse(raw) as RecentPurchaseEntry[]) : [];
-      const nextEntry: RecentPurchaseEntry = {
+      void saveRecentPurchaseToAccount({
+        businessId,
         businessSlug,
         businessName,
         orderNumber,
         timestamp: new Date().toISOString(),
-      };
-
-      const nextPurchases = [
-        nextEntry,
-        ...parsed.filter((entry) => entry.businessSlug !== businessSlug),
-      ].slice(0, MAX_RECENT_PURCHASES);
-
-      window.localStorage.setItem(
-        RECENT_PURCHASES_STORAGE_KEY,
-        JSON.stringify(nextPurchases),
-      );
+      });
     } catch {
       // Ignore local persistence issues for this convenience feature.
     }
-  }, [businessName, businessSlug, orderNumber, paymentStatus]);
+  }, [businessId, businessName, businessSlug, orderNumber, paymentStatus]);
 
   return null;
 }

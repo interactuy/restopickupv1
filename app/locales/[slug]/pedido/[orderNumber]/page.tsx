@@ -99,6 +99,7 @@ export default async function ConfirmationPage({
   return (
     <main className="min-h-screen bg-[var(--color-background)] px-6 py-10 md:px-10 lg:px-12">
       <RecentOrderMemory
+        businessId={confirmation.business.id}
         businessSlug={confirmation.business.slug}
         businessName={confirmation.business.name}
         orderNumber={confirmation.order.orderNumber}

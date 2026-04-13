@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import { CustomerAccountLink } from "@/components/public/customer-account-link";
+import { CustomerSessionBootstrap } from "@/components/public/customer-session-bootstrap";
 import { EmptyState } from "@/components/public/empty-state";
 import type { HomePageData } from "@/lib/public-catalog";
 import {
@@ -12,6 +13,8 @@ import {
   getBusinessOpenStatusLabel,
 } from "@/lib/public-catalog";
 import {
+  CUSTOMER_LOCATION_STORAGE_KEY,
+  CUSTOMER_PROFILE_UPDATED_EVENT,
   RECENT_PURCHASES_STORAGE_KEY,
   getStoredCustomerLocation,
   saveStoredCustomerLocation,
@@ -187,24 +190,50 @@ function getRecentPurchaseBusinessSlugs() {
 
 export function HomeLanding({ data }: HomeLandingProps) {
   const [query, setQuery] = useState("");
-  const [userLocation, setUserLocation] = useState<UserLocation | null>(() => {
-    const storedLocation = getStoredCustomerLocation();
-
-    if (!storedLocation) {
-      return null;
-    }
-
-    return {
-      latitude: storedLocation.latitude,
-      longitude: storedLocation.longitude,
-    };
-  });
-  const [locationStatus, setLocationStatus] = useState<LocationStatus>(() =>
-    getStoredCustomerLocation() ? "ready" : "idle",
-  );
-  const [recentPurchaseSlugs] = useState<string[]>(() => getRecentPurchaseBusinessSlugs());
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
   const deferredQuery = useDeferredValue(query.trim());
   const daypart = getDaypart();
+  const customerStorageSnapshot = useSyncExternalStore(
+    (onStoreChange) => {
+      if (typeof window === "undefined") {
+        return () => {};
+      }
+
+      window.addEventListener(CUSTOMER_PROFILE_UPDATED_EVENT, onStoreChange);
+
+      return () => {
+        window.removeEventListener(CUSTOMER_PROFILE_UPDATED_EVENT, onStoreChange);
+      };
+    },
+    () => {
+      if (typeof window === "undefined") {
+        return "";
+      }
+
+      return [
+        window.localStorage.getItem(CUSTOMER_LOCATION_STORAGE_KEY) ?? "",
+        window.localStorage.getItem(RECENT_PURCHASES_STORAGE_KEY) ?? "",
+      ].join("|");
+    },
+    () => "",
+  );
+  void customerStorageSnapshot;
+  const storedLocation = getStoredCustomerLocation();
+  const recentPurchaseSlugs = getRecentPurchaseBusinessSlugs();
+  const effectiveUserLocation = useMemo(
+    () =>
+      userLocation ??
+      (storedLocation
+        ? {
+            latitude: storedLocation.latitude,
+            longitude: storedLocation.longitude,
+          }
+        : null),
+    [storedLocation, userLocation],
+  );
+  const effectiveLocationStatus =
+    locationStatus === "idle" && storedLocation ? "ready" : locationStatus;
 
   function requestUserLocation() {
     if (!navigator.geolocation) {
@@ -257,7 +286,9 @@ export function HomeLanding({ data }: HomeLandingProps) {
   const orderedBusinesses = useMemo(() => {
     return [...data.topBusinesses]
       .map((business, index) => {
-        const distanceKm = userLocation ? getDistanceKm(userLocation, business) : null;
+        const distanceKm = effectiveUserLocation
+          ? getDistanceKm(effectiveUserLocation, business)
+          : null;
         const hasRecentPurchase = recentPurchaseSlugs.includes(business.slug);
         const daypartScore = getDaypartScore(
           [
@@ -283,7 +314,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
           hasRecentPurchase,
           score:
             daypartScore * 12 +
-            (userLocation ? distanceScore * 6 : 0) +
+            (effectiveUserLocation ? distanceScore * 6 : 0) +
             repeatScore +
             openScore +
             salesScore -
@@ -301,7 +332,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
 
         return 0;
       });
-  }, [data.topBusinesses, daypart, recentPurchaseSlugs, userLocation]);
+  }, [data.topBusinesses, daypart, recentPurchaseSlugs, effectiveUserLocation]);
 
   const visibleBusinesses = orderedBusinesses.slice(0, 6);
   const featuredBusiness = visibleBusinesses[0]?.business ?? data.featuredBusiness;
@@ -312,13 +343,20 @@ export function HomeLanding({ data }: HomeLandingProps) {
       )
     : null;
   const featuredDistanceKm =
-    userLocation && featuredBusiness
-      ? getDistanceKm(userLocation, featuredBusiness)
+    effectiveUserLocation && featuredBusiness
+      ? getDistanceKm(effectiveUserLocation, featuredBusiness)
       : null;
+  const featuredOpenStatus = featuredBusiness
+    ? getBusinessOpenStatusLabel(featuredBusiness)
+    : null;
+  const featuredEyebrow = "Recomendado para vos";
+  const featuredContextLine = "Una opción práctica para pedir online y retirar sin esperar.";
   const orderedProducts = useMemo(() => {
     return [...data.featuredProducts]
       .map((product, index) => {
-        const distanceKm = userLocation ? getDistanceKm(userLocation, product.business) : null;
+        const distanceKm = effectiveUserLocation
+          ? getDistanceKm(effectiveUserLocation, product.business)
+          : null;
         const hasRecentPurchase = recentPurchaseSlugs.includes(product.business.slug);
         const daypartScore = getDaypartScore(
           [
@@ -348,7 +386,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
           distanceKm,
           score:
             daypartScore * 12 +
-            (userLocation ? distanceScore * 6 : 0) +
+            (effectiveUserLocation ? distanceScore * 6 : 0) +
             repeatScore +
             openScore +
             salesScore -
@@ -367,7 +405,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
         return 0;
       })
       .slice(0, 6);
-  }, [data.featuredProducts, data.topBusinesses, daypart, recentPurchaseSlugs, userLocation]);
+  }, [data.featuredProducts, data.topBusinesses, daypart, recentPurchaseSlugs, effectiveUserLocation]);
 
   const repeatBusinesses = useMemo(() => {
     if (recentPurchaseSlugs.length === 0) {
@@ -399,16 +437,17 @@ export function HomeLanding({ data }: HomeLandingProps) {
   const businessSuggestions = filteredBusinesses.slice(0, 4);
   const productSuggestions = filteredProducts.slice(0, 4);
   const locationButtonLabel =
-    locationStatus === "loading"
+    effectiveLocationStatus === "loading"
       ? "Buscando..."
-      : locationStatus === "ready"
+      : effectiveLocationStatus === "ready"
         ? "Cerca mío"
-        : locationStatus === "unsupported"
+        : effectiveLocationStatus === "unsupported"
           ? "Sin ubicación"
           : "Cerca mío";
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
+      <CustomerSessionBootstrap />
       <section className="relative z-20 bg-[var(--color-background)]">
 
         <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-8 md:px-10 lg:px-12">
@@ -416,7 +455,15 @@ export function HomeLanding({ data }: HomeLandingProps) {
             <Link href="/" className="text-lg font-semibold tracking-tight">
               Restopickup
             </Link>
-            <CustomerAccountLink />
+            <div className="flex flex-wrap items-center gap-4">
+              <Link
+                href="/locales"
+                className="text-sm font-medium text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
+              >
+                Todos los locales
+              </Link>
+              <CustomerAccountLink />
+            </div>
           </header>
 
           <div className="pb-10 md:pb-14">
@@ -456,16 +503,16 @@ export function HomeLanding({ data }: HomeLandingProps) {
                     <button
                       type="button"
                       onClick={requestUserLocation}
-                      disabled={locationStatus === "loading"}
+                      disabled={effectiveLocationStatus === "loading"}
                       className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                        locationStatus === "ready"
+                        effectiveLocationStatus === "ready"
                           ? "bg-[rgba(47,122,74,0.1)] text-[var(--color-success)]"
                           : "border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
                       }`}
                     >
                       <span
                         className={`h-2 w-2 rounded-full ${
-                          locationStatus === "ready"
+                          effectiveLocationStatus === "ready"
                             ? "bg-[var(--color-success)]"
                             : "bg-[var(--color-accent)]"
                         }`}
@@ -497,7 +544,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
                   ) : null}
                 </div>
 
-                {locationStatus === "denied" || locationStatus === "unsupported" ? (
+                {effectiveLocationStatus === "denied" || effectiveLocationStatus === "unsupported" ? (
                   <p className="mt-3 text-sm text-[var(--color-muted)]">
                     Podés seguir explorando locales sin activar ubicación.
                   </p>
@@ -682,10 +729,10 @@ export function HomeLanding({ data }: HomeLandingProps) {
         <div className="flex items-end justify-between gap-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-              {userLocation ? "Locales cerca tuyo" : "Locales con más movimiento"}
+              {effectiveUserLocation ? "Locales cerca tuyo" : "Locales con más movimiento"}
             </p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-              {userLocation
+              {effectiveUserLocation
                 ? "Los 6 más convenientes para retirar"
                 : "Encontrá tu próximo pedido para retirar"}
             </h2>
@@ -792,10 +839,10 @@ export function HomeLanding({ data }: HomeLandingProps) {
       <section className="mx-auto w-full max-w-7xl px-6 pb-16 md:px-10 lg:px-12">
         <div className="overflow-hidden rounded-[2.25rem] border border-[var(--color-border)] bg-white shadow-[0_24px_80px_rgba(39,24,13,0.08)]">
           {featuredBusiness ? (
-            <div className="grid gap-0 lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)]">
+            <div className="grid gap-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
               <div className="p-8 md:p-10">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-                  {userLocation ? "Local destacado cerca tuyo" : "Local destacado"}
+                  {featuredEyebrow}
                 </p>
                 <div className="mt-4 flex items-start gap-4">
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
@@ -825,7 +872,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
                       href={buildGoogleMapsUrl(featuredBusiness.pickupAddress)}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-3 inline-flex text-sm font-medium text-[var(--color-muted)] underline decoration-[rgba(39,24,13,0.2)] underline-offset-4 transition hover:text-[var(--color-accent)] hover:decoration-[var(--color-accent)]"
+                      className="mt-3 inline-flex text-sm font-medium text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
                     >
                       {featuredBusiness.pickupAddress}
                     </a>
@@ -836,15 +883,27 @@ export function HomeLanding({ data }: HomeLandingProps) {
                     featuredBusiness.pickupInstructions ??
                     featuredBusiness.pickupAddress}
                 </p>
+                <p className="mt-3 text-sm font-medium text-[var(--color-secondary)]">
+                  {featuredContextLine}
+                </p>
                 <div className="mt-5 flex flex-wrap gap-2">
+                  {featuredOpenStatus ? (
+                    <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-semibold text-rose-700">
+                      {featuredOpenStatus.label}
+                    </span>
+                  ) : (
+                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700">
+                      Abierto ahora
+                    </span>
+                  )}
                   {featuredPrepTimeLabel ? (
                     <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-medium text-[var(--color-foreground)]">
-                      Ideal para retirar en {featuredPrepTimeLabel}
+                      Listo en {featuredPrepTimeLabel}
                     </span>
                   ) : null}
                   {featuredDistanceKm !== null ? (
-                    <span className="rounded-full border border-[rgba(47,122,74,0.22)] bg-[rgba(47,122,74,0.08)] px-3 py-1.5 text-sm font-semibold text-[var(--color-success)]">
-                      Cerca de tu ubicación
+                    <span className="rounded-full border border-[rgba(47,122,74,0.16)] bg-[rgba(47,122,74,0.06)] px-3 py-1.5 text-sm font-medium text-[var(--color-success)]">
+                      Cerca tuyo
                     </span>
                   ) : null}
                 </div>
@@ -873,10 +932,10 @@ export function HomeLanding({ data }: HomeLandingProps) {
                 <div className="absolute inset-0 flex items-end p-8 md:p-10">
                   <div className="rounded-[1.75rem] border border-white/20 bg-white/12 p-6 text-white backdrop-blur-sm">
                     <p className="text-sm uppercase tracking-[0.24em] text-white/80">
-                      Pick up listo
+                      Recomendado para vos
                     </p>
                     <p className="mt-3 text-2xl font-semibold">
-                      Pedí ahora y dejá que la comida te espere a vos.
+                      Cerca, rápido y listo para retirar.
                     </p>
                   </div>
                 </div>
@@ -901,7 +960,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
               Platos para pedir
             </p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-              {userLocation
+              {effectiveUserLocation
                 ? "Productos cerca para este momento"
                 : "Productos que están saliendo fuerte"}
             </h2>

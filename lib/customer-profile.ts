@@ -1,6 +1,7 @@
 export const CUSTOMER_PROFILE_STORAGE_KEY = "restopickup-customer-profile";
 export const CUSTOMER_LOCATION_STORAGE_KEY = "restopickup-customer-location";
 export const RECENT_PURCHASES_STORAGE_KEY = "restopickup-recent-purchases";
+export const CUSTOMER_PROFILE_UPDATED_EVENT = "restopickup-customer-profile-updated";
 
 export type CustomerProfile = {
   name: string;
@@ -9,6 +10,7 @@ export type CustomerProfile = {
 };
 
 export type FavoriteBusiness = {
+  businessId: string;
   slug: string;
   name: string;
   pickupAddress: string;
@@ -22,6 +24,7 @@ export type StoredCustomerLocation = {
 };
 
 export type RecentPurchaseEntry = {
+  businessId: string | null;
   businessSlug: string;
   businessName: string;
   orderNumber: number;
@@ -36,6 +39,14 @@ const DEFAULT_PROFILE: CustomerProfile = {
 
 function canUseStorage() {
   return typeof window !== "undefined";
+}
+
+function emitCustomerProfileUpdated() {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent(CUSTOMER_PROFILE_UPDATED_EVENT));
 }
 
 export function getStoredCustomerProfile(): CustomerProfile {
@@ -59,6 +70,7 @@ export function getStoredCustomerProfile(): CustomerProfile {
         ? parsed.favoriteBusinesses.filter(
             (item): item is FavoriteBusiness =>
               Boolean(item) &&
+              typeof item.businessId === "string" &&
               typeof item.slug === "string" &&
               typeof item.name === "string" &&
               typeof item.pickupAddress === "string",
@@ -76,6 +88,7 @@ export function saveStoredCustomerProfile(profile: CustomerProfile) {
   }
 
   window.localStorage.setItem(CUSTOMER_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+  emitCustomerProfileUpdated();
 }
 
 export function clearStoredCustomerProfile() {
@@ -84,6 +97,7 @@ export function clearStoredCustomerProfile() {
   }
 
   window.localStorage.removeItem(CUSTOMER_PROFILE_STORAGE_KEY);
+  emitCustomerProfileUpdated();
 }
 
 export function toggleFavoriteBusiness(favorite: FavoriteBusiness) {
@@ -140,6 +154,7 @@ export function saveStoredCustomerLocation(location: StoredCustomerLocation) {
   }
 
   window.localStorage.setItem(CUSTOMER_LOCATION_STORAGE_KEY, JSON.stringify(location));
+  emitCustomerProfileUpdated();
 }
 
 export function getRecentPurchases(): RecentPurchaseEntry[] {
@@ -159,6 +174,7 @@ export function getRecentPurchases(): RecentPurchaseEntry[] {
       ? parsed.filter(
           (entry): entry is RecentPurchaseEntry =>
             Boolean(entry) &&
+            (typeof entry.businessId === "string" || entry.businessId === null) &&
             typeof entry.businessSlug === "string" &&
             typeof entry.businessName === "string" &&
             typeof entry.orderNumber === "number" &&
@@ -168,4 +184,25 @@ export function getRecentPurchases(): RecentPurchaseEntry[] {
   } catch {
     return [];
   }
+}
+
+export function saveRecentPurchases(entries: RecentPurchaseEntry[]) {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  window.localStorage.setItem(RECENT_PURCHASES_STORAGE_KEY, JSON.stringify(entries));
+  emitCustomerProfileUpdated();
+}
+
+export function upsertRecentPurchase(entry: RecentPurchaseEntry, maxEntries = 12) {
+  const current = getRecentPurchases();
+  const nextEntries = [
+    entry,
+    ...current.filter((item) => item.businessSlug !== entry.businessSlug),
+  ].slice(0, maxEntries);
+
+  saveRecentPurchases(nextEntries);
+
+  return nextEntries;
 }

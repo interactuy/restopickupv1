@@ -19,6 +19,7 @@ import {
 
 import { EmptyState } from "@/components/public/empty-state";
 import { CustomerAccountLink } from "@/components/public/customer-account-link";
+import { CustomerSessionBootstrap } from "@/components/public/customer-session-bootstrap";
 import { FavoriteBusinessButton } from "@/components/public/favorite-business-button";
 import { ProductCard } from "@/components/public/product-card";
 
@@ -161,6 +162,7 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
+      <CustomerSessionBootstrap />
       <section className="border-b border-[var(--color-border)] pb-6 md:pb-8">
         <div className="relative h-28 overflow-hidden border-b border-[var(--color-border)] sm:h-36 md:h-48">
           {business.coverImageUrl ? (
@@ -232,6 +234,7 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
                 <div className="mt-5 flex flex-wrap gap-3">
                   <FavoriteBusinessButton
                     favorite={{
+                      businessId: business.id,
                       slug: business.slug,
                       name: business.name,
                       pickupAddress: business.pickupAddress,
