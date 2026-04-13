@@ -353,9 +353,36 @@ export async function syncMercadoPagoPayment(
   notificationPayload?: unknown,
   accessToken?: string
 ): Promise<PaymentSyncResult> {
-  const client = getMercadoPagoClient(accessToken ?? getMercadoPagoAccessToken());
-  const paymentClient = new Payment(client);
-  const payment = await paymentClient.get({ id: paymentId });
+  let payment:
+    | Awaited<ReturnType<Payment["get"]>>
+    | null = null;
+  let lastError: unknown = null;
+
+  const accessTokensToTry = accessToken
+    ? [accessToken]
+    : [
+        getMercadoPagoAccessToken(),
+        ...(await listConnectedMercadoPagoBusinessConnections())
+          .map((connection) => connection.accessToken)
+          .filter((token): token is string => Boolean(token)),
+      ];
+
+  for (const token of Array.from(new Set(accessTokensToTry))) {
+    try {
+      const client = getMercadoPagoClient(token);
+      const paymentClient = new Payment(client);
+      payment = await paymentClient.get({ id: paymentId });
+      break;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (!payment) {
+    throw lastError instanceof Error
+      ? lastError
+      : new Error("No pudimos leer el pago de Mercado Pago.");
+  }
 
   const externalReference = payment.external_reference;
 
@@ -483,29 +510,7 @@ export async function syncMercadoPagoPaymentFromWebhook(
   paymentId: string | number,
   notificationPayload?: unknown
 ) {
-  try {
-    return await syncMercadoPagoPayment(paymentId, notificationPayload);
-  } catch (defaultError) {
-    const connections = await listConnectedMercadoPagoBusinessConnections();
-
-    for (const connection of connections) {
-      if (!connection.accessToken) {
-        continue;
-      }
-
-      try {
-        return await syncMercadoPagoPayment(
-          paymentId,
-          notificationPayload,
-          connection.accessToken
-        );
-      } catch {
-        // Seguimos probando con la siguiente cuenta conectada.
-      }
-    }
-
-    throw defaultError;
-  }
+  return syncMercadoPagoPayment(paymentId, notificationPayload);
 }
 
 export function getFormattedPaymentStatus(paymentStatus: string) {
