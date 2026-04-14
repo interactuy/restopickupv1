@@ -163,20 +163,27 @@ export default async function ConfirmationPage({
   const isPaymentConfirmed = ["paid", "authorized"].includes(
     finalConfirmation.order.paymentStatus
   );
+  const isMercadoPagoReturn =
+    Boolean(checkout_status) || Boolean(returnedPaymentId);
+  const isPaymentFailure =
+    finalConfirmation.order.paymentStatus === "failed" ||
+    finalConfirmation.order.paymentStatus === "canceled" ||
+    checkout_status === "failure";
 
-  if (!isPaymentConfirmed) {
+  if (!isPaymentConfirmed && isPaymentFailure) {
     redirect(
       `/locales/${finalConfirmation.business.slug}/checkout?payment=${
-        finalConfirmation.order.paymentStatus === "failed" ||
-        finalConfirmation.order.paymentStatus === "canceled" ||
-        checkout_status === "failure"
-          ? "failed"
-          : "pending"
+        "failed"
       }`
     );
   }
 
+  if (!isPaymentConfirmed && !isMercadoPagoReturn) {
+    redirect(`/locales/${finalConfirmation.business.slug}/checkout?payment=pending`);
+  }
+
   const shouldAutoRefresh =
+    !isPaymentConfirmed ||
     !["completed", "canceled"].includes(finalConfirmation.order.statusCode);
   const googleMapsUrl = buildGoogleMapsUrl(finalConfirmation.order.pickupAddress);
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -241,6 +248,11 @@ export default async function ConfirmationPage({
               </span>
             ) : null}
           </div>
+          {!isPaymentConfirmed && isMercadoPagoReturn ? (
+            <div className="mt-6 rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-900">
+              Estamos confirmando tu pago. Esta pantalla se actualiza sola en unos segundos.
+            </div>
+          ) : null}
           {finalConfirmation.order.statusCode === "ready_for_pickup" ? (
             <div className="mt-6 rounded-[1.5rem] border border-[rgba(18,224,138,0.28)] bg-[rgba(18,224,138,0.14)] px-5 py-4 text-sm font-medium text-[#008F53]">
               Tu pedido ya está listo para retirar.
