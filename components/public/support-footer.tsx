@@ -9,6 +9,12 @@ export function SupportFooter() {
         </p>
         <div className="flex flex-wrap items-center gap-4">
           <Link
+            href="/comercial"
+            className="text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
+          >
+            Comercial
+          </Link>
+          <Link
             href="/soporte"
             className="text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
           >
@@ -24,7 +30,7 @@ export function SupportFooter() {
             href="/solicitar-acceso"
             className="text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
           >
-            Solicitar acceso
+            Registrá tu local
           </Link>
         </div>
       </div>

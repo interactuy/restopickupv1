@@ -11,16 +11,16 @@ type AccessRequestPageProps = {
 
 const processSteps = [
   {
-    label: "Solicitud",
-    title: "Nos pasás los datos reales del local.",
+    label: "Registro",
+    title: "Compartís los datos del local y cómo operan hoy.",
   },
   {
-    label: "Revisión",
-    title: "Revisamos operación, zona y próximos pasos.",
+    label: "Contacto",
+    title: "Coordinamos contigo los próximos pasos para dejarlo listo.",
   },
   {
     label: "Alta",
-    title: "Si avanzamos, creamos tu usuario y vinculamos el negocio.",
+    title: "Creamos el acceso y vinculamos el negocio a tu cuenta.",
   },
   {
     label: "Onboarding",
@@ -63,15 +63,14 @@ export default async function AccessRequestPage({
           <div className="grid flex-1 gap-10 py-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(560px,1.08fr)] lg:items-center lg:py-16">
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[var(--color-secondary)]">
-                Trabajá con Restopickup
+                Registro de local
               </p>
               <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.95] tracking-[-0.06em] text-[#21160f] md:text-7xl lg:text-8xl">
-                Tu local, listo para vender sin sumar filas.
+                Empezá a vender online y ordenar mejor el retiro en mostrador.
               </h1>
               <p className="mt-7 max-w-2xl text-base leading-8 text-[var(--color-muted)] md:text-lg">
-                Restopickup ayuda a locales gastronómicos a recibir pedidos online
-                para retiro. La solicitud no crea acceso automático: revisamos cada
-                negocio y, si avanzamos, dejamos el dashboard listo para operar.
+                Completá el registro de tu local y seguimos contigo para dejar el
+                dashboard listo para operar con menú, pedidos y pagos.
               </p>
 
               <div className="mt-9 grid gap-3 sm:grid-cols-2">
@@ -91,14 +90,14 @@ export default async function AccessRequestPage({
                 <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-border)] pb-5">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-secondary)]">
-                      Solicitud de acceso
+                      Registro de local
                     </p>
                     <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[#21160f]">
-                      Contanos sobre tu local
+                      Cargá los datos principales
                     </h2>
                   </div>
                   <span className="rounded-full border border-[rgba(47,122,74,0.22)] bg-[rgba(47,122,74,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--color-success)]">
-                    Evaluación personalizada
+                    Puesta en marcha guiada
                   </span>
                 </div>
 

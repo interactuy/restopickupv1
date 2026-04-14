@@ -1096,6 +1096,12 @@ export function HomeLanding({ data }: HomeLandingProps) {
         </p>
         <div className="flex flex-wrap items-center gap-4">
           <Link
+            href="/comercial"
+            className="text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
+          >
+            Comercial
+          </Link>
+          <Link
             href="/soporte"
             className="text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
           >
@@ -1105,7 +1111,7 @@ export function HomeLanding({ data }: HomeLandingProps) {
             href="/solicitar-acceso"
             className="text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
           >
-            ¿Tenés un local? Solicitar acceso
+            ¿Tenés un local? Registralo
           </Link>
         </div>
       </footer>

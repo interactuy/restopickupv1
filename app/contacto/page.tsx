@@ -97,17 +97,17 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
 
             <section className="rounded-[2rem] border border-[var(--color-border)] bg-[linear-gradient(135deg,rgba(198,90,46,0.08),rgba(255,255,255,0.96))] p-6">
               <p className="text-lg font-semibold tracking-tight">
-                ¿Querés sumarte con tu local?
+                ¿Querés conocer Restopickup para tu local?
               </p>
               <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
-                Si ya tenés decidido avanzar, podés dejar directamente la solicitud de acceso y seguimos desde ahí.
+                Si estás evaluando cómo encaja en tu operación, podés pasar por comercial y revisar el producto con más contexto.
               </p>
               <div className="mt-5">
                 <Link
-                  href="/solicitar-acceso"
+                  href="/comercial"
                   className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)]"
                 >
-                  Solicitar acceso
+                  Ir a comercial
                 </Link>
               </div>
             </section>

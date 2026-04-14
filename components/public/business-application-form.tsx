@@ -27,7 +27,7 @@ export function BusinessApplicationForm({
 
       {success === "submitted" ? (
         <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          Recibimos tu solicitud. La revisamos y te contactamos con los próximos pasos.
+          Recibimos el registro de tu local. Te contactamos para seguir con la puesta en marcha.
         </div>
       ) : null}
 
@@ -240,11 +240,11 @@ export function BusinessApplicationForm({
 
         <div className="flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-6">
           <SubmitButton
-            label="Enviar solicitud"
+            label="Registrar local"
             pendingLabel="Enviando..."
           />
           <p className="text-sm text-[var(--color-muted)]">
-            No se crea acceso automático. Primero revisamos la solicitud.
+            Te contactamos para seguir con los próximos pasos.
           </p>
         </div>
       </form>
