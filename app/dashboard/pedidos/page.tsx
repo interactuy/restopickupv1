@@ -60,8 +60,11 @@ const tabConfig = {
   },
   delivered: {
     label: "Entregados",
-    description:
-      "Historial de pedidos entregados o cancelados de los ultimos 10 dias.",
+    description: "Historial de pedidos entregados de los ultimos 10 dias.",
+  },
+  canceled: {
+    label: "Cancelados",
+    description: "Pedidos cancelados de los ultimos 10 dias.",
   },
 } as const;
 
@@ -70,7 +73,7 @@ type DashboardOrdersPageProps = {
 };
 
 function getTabFromSearchParam(tab?: string): keyof typeof tabConfig {
-  if (tab === "preparing" || tab === "delivered") {
+  if (tab === "preparing" || tab === "delivered" || tab === "canceled") {
     return tab;
   }
 
@@ -103,19 +106,19 @@ function OrdersList({
   }
 
   return (
-    <div className="mt-8 space-y-5">
+    <div className="mt-6 space-y-4">
       {orders.map((order) => (
         <details
           key={order.id}
-          open={activeTab !== "delivered"}
-          className={`group overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-[var(--color-surface)] ${statusCardStyles[order.statusCode] ?? ""}`}
+          open={activeTab !== "delivered" && activeTab !== "canceled"}
+          className={`group overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] ${statusCardStyles[order.statusCode] ?? ""}`}
         >
           <summary
-            className={`cursor-pointer list-none px-5 py-5 marker:hidden [&::-webkit-details-marker]:hidden ${statusPanelStyles[order.statusCode] ?? ""}`}
+            className={`cursor-pointer list-none px-5 py-4 marker:hidden [&::-webkit-details-marker]:hidden ${statusPanelStyles[order.statusCode] ?? ""}`}
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2.5">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
                     Pedido #{order.orderNumber}
                   </p>
@@ -127,6 +130,11 @@ function OrdersList({
                   >
                     {statusLabels[order.statusCode] ?? order.statusCode}
                   </span>
+                  {order.statusCode === "ready_for_pickup" ? (
+                    <span className="rounded-full border border-[rgba(18,224,138,0.28)] bg-white px-3 py-1 text-xs font-medium text-[#008F53]">
+                      Listo para entregar
+                    </span>
+                  ) : null}
                   <span className="rounded-full border border-[var(--color-border)] bg-white px-3 py-1 text-xs font-medium text-[var(--color-muted)]">
                     {order.items.reduce((total, item) => total + item.quantity, 0)} item
                     {order.items.reduce((total, item) => total + item.quantity, 0) === 1
@@ -156,7 +164,7 @@ function OrdersList({
                 <div className="mt-3 flex flex-wrap gap-2 text-sm">
                   {order.estimatedReadyAt ? (
                     <span className="rounded-full border border-[var(--color-border)] bg-white px-3 py-1.5 text-[var(--color-muted)]">
-                      Retiro estimado{" "}
+                      Retiro{" "}
                       {new Date(order.estimatedReadyAt).toLocaleTimeString("es-UY", {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -176,15 +184,9 @@ function OrdersList({
                   <p className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
                     {formatPrice(order.totalAmount, order.currencyCode)}
                   </p>
-                  {showAdminDetails ? (
-                    <p className="mt-2 text-sm text-[var(--color-muted)]">
-                      Pago {getFormattedPaymentStatus(order.paymentStatus)}
-                    </p>
-                  ) : (
-                    <p className="mt-2 text-sm text-[var(--color-muted)]">
-                      Total del pedido
-                    </p>
-                  )}
+                  <p className="mt-2 text-sm text-[var(--color-muted)]">
+                    Pago {getFormattedPaymentStatus(order.paymentStatus)}
+                  </p>
                 </div>
                 <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--color-border)] bg-white text-lg text-[var(--color-muted)] transition group-open:rotate-180">
                   ↓
@@ -194,24 +196,23 @@ function OrdersList({
           </summary>
 
           <div className="border-t border-[var(--color-border)] px-5 py-5">
-          <div className="rounded-[1.5rem] border border-[var(--color-border)] bg-white/70 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm font-semibold text-[var(--color-foreground)]">
                 Qué pidió el cliente
               </p>
-              <p className="text-xs uppercase tracking-[0.16em] text-[var(--color-muted)]">
-                {order.items.reduce((total, item) => total + item.quantity, 0)} producto
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-[var(--color-muted)]">
+                {order.items.reduce((total, item) => total + item.quantity, 0)} item
                 {order.items.reduce((total, item) => total + item.quantity, 0) === 1
                   ? ""
                   : "s"}
               </p>
             </div>
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-3 border-t border-[var(--color-border)] pt-4">
               {order.items.map((item) => (
                 <div
                   key={`${order.id}-${item.productName}`}
-                  className="flex items-start justify-between gap-4 rounded-[1.25rem] border border-[var(--color-border)] bg-white px-4 py-3"
+                  className="flex items-start justify-between gap-4 rounded-[1rem] border border-[var(--color-border)] bg-white px-4 py-3"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-3">
@@ -275,47 +276,48 @@ function OrdersList({
                 </span>
               </div>
             ) : null}
-          </div>
 
-          <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
-            <div className="flex flex-wrap items-end gap-4">
-              <OrderReadyTimeForm
-                orderId={order.id}
-                businessSlug={businessSlug}
-                orderNumber={order.orderNumber}
-                defaultMinutes={order.estimatedReadyInMinutes}
-                submitLabel={
-                  activeTab === "pending"
-                    ? "Definir retiro"
-                    : activeTab === "preparing"
-                      ? "Ajustar retiro"
-                      : "Actualizar retiro"
-                }
-              />
-              <OrderStatusForm
-                orderId={order.id}
-                statusCode={order.statusCode}
-                businessSlug={businessSlug}
-                orderNumber={order.orderNumber}
-                submitLabel={
-                  activeTab === "pending"
-                    ? "Mover pedido"
-                    : activeTab === "preparing"
-                      ? "Cambiar estado"
-                      : "Actualizar estado"
-                }
-              />
+            <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+              <div className="flex flex-wrap items-end gap-4">
+                <OrderReadyTimeForm
+                  orderId={order.id}
+                  businessSlug={businessSlug}
+                  orderNumber={order.orderNumber}
+                  defaultMinutes={order.estimatedReadyInMinutes}
+                  submitLabel={
+                    activeTab === "pending"
+                      ? "Definir retiro"
+                      : activeTab === "preparing"
+                        ? "Ajustar retiro"
+                        : "Actualizar retiro"
+                  }
+                />
+                <OrderStatusForm
+                  orderId={order.id}
+                  statusCode={order.statusCode}
+                  businessSlug={businessSlug}
+                  orderNumber={order.orderNumber}
+                  submitLabel={
+                    activeTab === "pending"
+                      ? "Mover pedido"
+                      : activeTab === "preparing"
+                        ? "Cambiar estado"
+                        : activeTab === "canceled"
+                          ? "Estado"
+                          : "Actualizar estado"
+                  }
+                />
+              </div>
+
+              {showDeleteAction ? (
+                <Link
+                  href={`/dashboard/pedidos/${order.id}/eliminar`}
+                  className="inline-flex items-center justify-center rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50"
+                >
+                  Eliminar pedido
+                </Link>
+              ) : null}
             </div>
-
-            {showDeleteAction ? (
-              <Link
-                href={`/dashboard/pedidos/${order.id}/eliminar`}
-                className="inline-flex items-center justify-center rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50"
-              >
-                Eliminar pedido
-              </Link>
-            ) : null}
-          </div>
           </div>
         </details>
       ))}
@@ -343,22 +345,21 @@ export default async function DashboardOrdersPage({
           Pedidos del local
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
-          Organizá la operación por etapa y mantené visible el historial reciente
-          de los últimos 10 días.
+          Seguí los pedidos nuevos, en preparación, entregados y cancelados.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-3 px-5 py-4">
+      <div className="flex flex-wrap gap-2 px-5 py-4">
         {(Object.keys(tabConfig) as Array<keyof typeof tabConfig>).map((tab) => {
           const isActive = activeTab === tab;
           return (
             <Link
               key={tab}
               href={`/dashboard/pedidos?tab=${tab}`}
-              className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition ${
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
                 isActive
-                  ? "rounded-lg bg-[var(--color-accent)] text-white"
-                  : "rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-foreground)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                  ? "bg-[var(--color-accent)] text-white"
+                  : "border border-[var(--color-border)] bg-white text-[var(--color-foreground)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
               }`}
             >
               <span>{tabConfig[tab].label}</span>
@@ -382,7 +383,7 @@ export default async function DashboardOrdersPage({
         <OrdersList
           orders={activeOrders}
           businessSlug={context.business.slug}
-          showDeleteAction={activeTab === "delivered"}
+          showDeleteAction={activeTab === "delivered" || activeTab === "canceled"}
           showAdminDetails={context.membership.isAdminRole && context.isAdminModeEnabled}
           activeTab={activeTab}
         />

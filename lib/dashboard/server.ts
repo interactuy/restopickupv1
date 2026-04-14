@@ -504,7 +504,14 @@ export function partitionDashboardOrders(orders: DashboardOrder[]) {
       ["preparing", "ready_for_pickup"].includes(order.statusCode)
     ),
     delivered: orders.filter((order) => {
-      if (!["completed", "canceled"].includes(order.statusCode)) {
+      if (order.statusCode !== "completed") {
+        return false;
+      }
+
+      return new Date(order.placedAt) >= deliveredCutoff;
+    }),
+    canceled: orders.filter((order) => {
+      if (order.statusCode !== "canceled") {
         return false;
       }
 

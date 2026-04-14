@@ -64,7 +64,7 @@ export function DashboardLiveNotifier({
       router.refresh();
     }
 
-    function handleChange(record: OrderRealtimeRecord | null) {
+    function handleInsert(record: OrderRealtimeRecord | null) {
       if (!record?.id) {
         return;
       }
@@ -83,6 +83,10 @@ export function DashboardLiveNotifier({
       refreshDashboard();
     }
 
+    function handleUpdate() {
+      refreshDashboard();
+    }
+
     const channel = supabase
       .channel(`dashboard-orders-${businessId}`)
       .on(
@@ -93,7 +97,7 @@ export function DashboardLiveNotifier({
           table: "orders",
           filter: `business_id=eq.${businessId}`,
         },
-        (payload) => handleChange(payload.new as OrderRealtimeRecord)
+        (payload) => handleInsert(payload.new as OrderRealtimeRecord)
       )
       .on(
         "postgres_changes",
@@ -103,7 +107,7 @@ export function DashboardLiveNotifier({
           table: "orders",
           filter: `business_id=eq.${businessId}`,
         },
-        (payload) => handleChange(payload.new as OrderRealtimeRecord)
+        () => handleUpdate()
       )
       .subscribe();
 
