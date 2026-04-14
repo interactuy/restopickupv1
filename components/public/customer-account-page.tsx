@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import {
@@ -24,6 +25,8 @@ import {
 } from "@/lib/customer-account-client";
 import { CustomerSessionBootstrap } from "@/components/public/customer-session-bootstrap";
 import { createClient } from "@/lib/supabase/client";
+import { useCart } from "@/components/cart/cart-provider";
+import { buildCartLineId } from "@/lib/cart";
 
 function ProfileField({
   label,
@@ -158,6 +161,8 @@ function AccountSection({
 }
 
 export function CustomerAccountPage() {
+  const router = useRouter();
+  const { replaceCart } = useCart();
   const [profile, setProfile] = useState<CustomerProfile>({
     name: "",
     phone: "",
@@ -182,6 +187,15 @@ export function CustomerAccountPage() {
   const [storedActiveOrder, setStoredActiveOrder] = useState<ReturnType<typeof getStoredActiveOrder>>(
     null,
   );
+  const [repeatOrderState, setRepeatOrderState] = useState<{
+    status: "idle" | "loading" | "error";
+    orderId: string | null;
+    message: string | null;
+  }>({
+    status: "idle",
+    orderId: null,
+    message: null,
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -254,6 +268,36 @@ export function CustomerAccountPage() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (authState !== "authenticated") {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function refreshOrders() {
+      try {
+        const orders = await getCustomerActiveOrders();
+
+        if (cancelled) {
+          return;
+        }
+
+        setActiveOrders(orders.activeOrders);
+        setPreviousOrders(orders.previousOrders);
+      } catch {
+        // Ignore transient refresh issues for this convenience polling.
+      }
+    }
+
+    const intervalId = window.setInterval(refreshOrders, 15000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [authState]);
 
   function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -351,7 +395,129 @@ export function CustomerAccountPage() {
     return items.map((item) => `${item.quantity}x ${item.productName}`).join(" · ");
   }
 
+  function getOrderStatusLabel(statusCode: string) {
+    const labels: Record<string, string> = {
+      pending: "Recibido",
+      confirmed: "Confirmado",
+      preparing: "En preparación",
+      ready_for_pickup: "Listo para retirar",
+      completed: "Retirado",
+      canceled: "Cancelado",
+    };
+
+    return labels[statusCode] ?? statusCode;
+  }
+
+  function getOrderStatusClasses(statusCode: string) {
+    if (statusCode === "ready_for_pickup") {
+      return "border-[rgba(18,224,138,0.28)] bg-[rgba(18,224,138,0.16)] text-[#008F53]";
+    }
+
+    if (statusCode === "preparing") {
+      return "border-[rgba(201,138,43,0.28)] bg-[rgba(201,138,43,0.14)] text-[#9A6611]";
+    }
+
+    return "border-[var(--color-border)] bg-white text-[var(--color-muted)]";
+  }
+
   const activeOrderFallback = !hasActiveOrders && storedActiveOrder ? storedActiveOrder : null;
+
+  async function handleRepeatOrder(orderId: string) {
+    setRepeatOrderState({
+      status: "loading",
+      orderId,
+      message: null,
+    });
+
+    try {
+      const response = await fetch("/api/customer/repeat-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ orderId }),
+      });
+
+      const payload = (await response.json()) as
+        | {
+            error?: string;
+          }
+        | {
+            business: {
+              businessId: string;
+              businessSlug: string;
+              businessName: string;
+              currencyCode: string;
+            };
+            items: {
+              productId: string;
+              name: string;
+              slug: string;
+              description: string | null;
+              priceAmount: number;
+              currencyCode: string;
+              imageUrl: string | null;
+              imageAlt: string | null;
+              quantity: number;
+              unitOptionsAmount: number;
+              customerNote: string | null;
+              selectedOptions: {
+                groupId: string;
+                groupName: string;
+                itemId: string;
+                itemName: string;
+                priceDeltaAmount: number;
+              }[];
+            }[];
+          };
+
+      if (!response.ok || !("business" in payload)) {
+        throw new Error(
+          "error" in payload && payload.error
+            ? payload.error
+            : "No pudimos repetir ese pedido.",
+        );
+      }
+
+      replaceCart(
+        payload.business,
+        payload.items.map((item) => ({
+          productId: item.productId,
+          name: item.name,
+          slug: item.slug,
+          description: item.description,
+          priceAmount: item.priceAmount,
+          currencyCode: item.currencyCode,
+          imageUrl: item.imageUrl,
+          imageAlt: item.imageAlt,
+          lineId: buildCartLineId(
+            item.productId,
+            item.selectedOptions.map((option) => option.itemId),
+            item.customerNote ?? "",
+          ),
+          quantity: item.quantity,
+          unitOptionsAmount: item.unitOptionsAmount,
+          selectedOptions: item.selectedOptions,
+          customerNote: item.customerNote,
+        })),
+      );
+
+      setRepeatOrderState({
+        status: "idle",
+        orderId: null,
+        message: null,
+      });
+      router.push(`/locales/${payload.business.businessSlug}/carrito`);
+    } catch (error) {
+      setRepeatOrderState({
+        status: "error",
+        orderId,
+        message:
+          error instanceof Error ? error.message : "No pudimos repetir ese pedido.",
+      });
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] px-6 py-6 md:px-10 md:py-8 lg:px-12">
@@ -687,6 +853,11 @@ export function CustomerAccountPage() {
                               <p className="font-semibold text-[var(--color-foreground)]">
                                 {order.businessName}
                               </p>
+                              <span
+                                className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-medium ${getOrderStatusClasses(order.statusCode)}`}
+                              >
+                                {getOrderStatusLabel(order.statusCode)}
+                              </span>
                               <p className="mt-1 text-sm text-[var(--color-muted)]">
                                 {formatOrderItems(order.items)}
                               </p>
@@ -720,6 +891,11 @@ export function CustomerAccountPage() {
                             <p className="font-semibold text-[var(--color-foreground)]">
                               {activeOrderFallback.businessName}
                             </p>
+                            <span
+                              className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-medium ${getOrderStatusClasses(activeOrderFallback.statusCode)}`}
+                            >
+                              {getOrderStatusLabel(activeOrderFallback.statusCode)}
+                            </span>
                             <p className="mt-1 text-sm text-[var(--color-muted)]">
                               {activeOrderFallback.itemSummary || `Pedido #${activeOrderFallback.orderNumber}`}
                             </p>
@@ -753,26 +929,56 @@ export function CustomerAccountPage() {
                           Anteriores
                         </p>
                         {previousOrders.map((order) => (
-                          <Link
+                          <div
                             key={`${order.businessSlug}-${order.orderNumber}`}
-                            href={`/locales/${order.businessSlug}`}
-                            className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-[var(--color-border)] bg-white p-4 transition hover:border-[var(--color-accent)]"
+                            className="rounded-[1.5rem] border border-[var(--color-border)] bg-white p-4"
                           >
-                            <div className="min-w-0">
-                              <p className="font-semibold text-[var(--color-foreground)]">
-                                {order.businessName}
-                              </p>
-                              <p className="mt-1 text-sm text-[var(--color-muted)]">
-                                {formatOrderItems(order.items)}
-                              </p>
-                              <p className="mt-1 text-sm text-[var(--color-muted)]">
-                                {formatOrderTime(order.placedAt, order.businessTimezone)}
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0">
+                                <p className="font-semibold text-[var(--color-foreground)]">
+                                  {order.businessName}
+                                </p>
+                                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                  {formatOrderItems(order.items)}
+                                </p>
+                                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                  {formatOrderTime(order.placedAt, order.businessTimezone)}
+                                </p>
+                              </div>
+                              <p className="shrink-0 text-sm font-semibold text-[var(--color-foreground)]">
+                                {formatOrderAmount(order.totalAmount, order.currencyCode)}
                               </p>
                             </div>
-                            <p className="shrink-0 text-sm font-semibold text-[var(--color-foreground)]">
-                              {formatOrderAmount(order.totalAmount, order.currencyCode)}
-                            </p>
-                          </Link>
+                            <div className="mt-4 flex flex-wrap gap-3">
+                              <Link
+                                href={`/locales/${order.businessSlug}/pedido/${order.orderNumber}`}
+                                className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                              >
+                                Ver pedido
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => handleRepeatOrder(order.id)}
+                                disabled={
+                                  repeatOrderState.status === "loading" &&
+                                  repeatOrderState.orderId === order.id
+                                }
+                                className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
+                              >
+                                {repeatOrderState.status === "loading" &&
+                                repeatOrderState.orderId === order.id
+                                  ? "Repitiendo..."
+                                  : "Repetir pedido"}
+                              </button>
+                            </div>
+                            {repeatOrderState.status === "error" &&
+                            repeatOrderState.orderId === order.id &&
+                            repeatOrderState.message ? (
+                              <p className="mt-3 text-sm text-red-700">
+                                {repeatOrderState.message}
+                              </p>
+                            ) : null}
+                          </div>
                         ))}
                       </div>
                     ) : hasRecentPurchases ? (

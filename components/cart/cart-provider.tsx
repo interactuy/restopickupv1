@@ -23,6 +23,7 @@ type BusinessCartDescriptor = {
 type CartContextValue = {
   isReady: boolean;
   getCart: (businessId: string) => BusinessCart | null;
+  replaceCart: (business: BusinessCartDescriptor, items: CartLineItem[]) => void;
   addItem: (
     business: BusinessCartDescriptor,
     product: CartProductSnapshot,
@@ -128,6 +129,19 @@ export function CartProvider({ children }: CartProviderProps) {
     });
   }
 
+  function replaceCart(business: BusinessCartDescriptor, items: CartLineItem[]) {
+    setCarts((current) => ({
+      ...current,
+      [business.businessId]: {
+        businessId: business.businessId,
+        businessSlug: business.businessSlug,
+        businessName: business.businessName,
+        currencyCode: business.currencyCode,
+        items,
+      },
+    }));
+  }
+
   function updateQuantity(
     businessId: string,
     lineId: string,
@@ -191,6 +205,7 @@ export function CartProvider({ children }: CartProviderProps) {
       value={{
         isReady,
         getCart,
+        replaceCart,
         addItem,
         updateQuantity,
         removeItem,

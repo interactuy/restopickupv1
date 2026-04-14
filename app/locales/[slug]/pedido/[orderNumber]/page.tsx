@@ -241,6 +241,11 @@ export default async function ConfirmationPage({
               </span>
             ) : null}
           </div>
+          {finalConfirmation.order.statusCode === "ready_for_pickup" ? (
+            <div className="mt-6 rounded-[1.5rem] border border-[rgba(18,224,138,0.28)] bg-[rgba(18,224,138,0.14)] px-5 py-4 text-sm font-medium text-[#008F53]">
+              Tu pedido ya está listo para retirar.
+            </div>
+          ) : null}
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_360px]">
