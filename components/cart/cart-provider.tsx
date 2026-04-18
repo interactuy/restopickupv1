@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   createContext,
   useContext,
   useEffect,
@@ -8,8 +9,15 @@ import {
   type ReactNode,
 } from "react";
 
-import type { BusinessCart, CartLineItem, CartProductSnapshot, CartState } from "@/lib/cart";
+import type {
+  BusinessCart,
+  CartLineItem,
+  CartProductSnapshot,
+  CartSelectedOptionItem,
+  CartState,
+} from "@/lib/cart";
 import { getCartItemCount, getCartSubtotal } from "@/lib/cart";
+import type { PublicProduct } from "@/lib/public-catalog";
 
 const STORAGE_KEY = "restopickup-cart-v2";
 
@@ -24,6 +32,10 @@ type CartContextValue = {
   isReady: boolean;
   getCart: (businessId: string) => BusinessCart | null;
   replaceCart: (business: BusinessCartDescriptor, items: CartLineItem[]) => void;
+  reconcileCart: (
+    business: BusinessCartDescriptor,
+    products: PublicProduct[]
+  ) => void;
   addItem: (
     business: BusinessCartDescriptor,
     product: CartProductSnapshot,
@@ -142,6 +154,132 @@ export function CartProvider({ children }: CartProviderProps) {
     }));
   }
 
+  const reconcileCart = useCallback(function reconcileCart(
+    business: BusinessCartDescriptor,
+    products: PublicProduct[]
+  ) {
+    setCarts((current) => {
+      const existingCart = current[business.businessId];
+
+      if (!existingCart) {
+        return current;
+      }
+
+      const productsById = new Map(products.map((product) => [product.id, product]));
+      let hasChanges =
+        existingCart.businessSlug !== business.businessSlug ||
+        existingCart.businessName !== business.businessName ||
+        existingCart.currencyCode !== business.currencyCode;
+
+      const nextItems = existingCart.items.flatMap<CartLineItem>((item) => {
+        const product = productsById.get(item.productId);
+
+        if (!product) {
+          hasChanges = true;
+          return [];
+        }
+
+        const selectedItemIds = item.selectedOptions.map((option) => option.itemId);
+        const selectedOptionsById = new Map<string, CartSelectedOptionItem>();
+
+        for (const group of product.optionGroups) {
+          const chosenItems = group.items.filter((groupItem) =>
+            selectedItemIds.includes(groupItem.id)
+          );
+
+          if (group.isRequired && chosenItems.length < Math.max(1, group.minSelect)) {
+            hasChanges = true;
+            return [];
+          }
+
+          if (group.maxSelect !== null && chosenItems.length > group.maxSelect) {
+            hasChanges = true;
+            return [];
+          }
+
+          for (const chosenItem of chosenItems) {
+            selectedOptionsById.set(chosenItem.id, {
+              groupId: group.id,
+              groupName: group.name,
+              itemId: chosenItem.id,
+              itemName: chosenItem.name,
+              priceDeltaAmount: chosenItem.priceDeltaAmount,
+            });
+          }
+        }
+
+        if (selectedOptionsById.size !== selectedItemIds.length) {
+          hasChanges = true;
+          return [];
+        }
+
+        const nextSelectedOptions = selectedItemIds.map((optionId) => {
+          const selectedOption = selectedOptionsById.get(optionId);
+
+          if (!selectedOption) {
+            throw new Error("Opción de carrito inválida durante reconciliación.");
+          }
+
+          return selectedOption;
+        });
+
+        const nextUnitOptionsAmount = nextSelectedOptions.reduce(
+          (total, selectedOption) => total + selectedOption.priceDeltaAmount,
+          0
+        );
+        const nextItem: CartLineItem = {
+          ...item,
+          name: product.name,
+          slug: product.slug,
+          description: product.description,
+          priceAmount: product.priceAmount,
+          currencyCode: product.currencyCode,
+          imageUrl: product.image?.publicUrl ?? null,
+          imageAlt: product.image?.altText ?? null,
+          selectedOptions: nextSelectedOptions,
+          unitOptionsAmount: nextUnitOptionsAmount,
+        };
+
+        if (
+          nextItem.name !== item.name ||
+          nextItem.slug !== item.slug ||
+          nextItem.description !== item.description ||
+          nextItem.priceAmount !== item.priceAmount ||
+          nextItem.currencyCode !== item.currencyCode ||
+          nextItem.imageUrl !== item.imageUrl ||
+          nextItem.imageAlt !== item.imageAlt ||
+          nextItem.unitOptionsAmount !== item.unitOptionsAmount ||
+          JSON.stringify(nextItem.selectedOptions) !== JSON.stringify(item.selectedOptions)
+        ) {
+          hasChanges = true;
+        }
+
+        return [nextItem];
+      });
+
+      if (!hasChanges) {
+        return current;
+      }
+
+      if (nextItems.length === 0) {
+        const next = { ...current };
+        delete next[business.businessId];
+        return next;
+      }
+
+      return {
+        ...current,
+        [business.businessId]: {
+          businessId: business.businessId,
+          businessSlug: business.businessSlug,
+          businessName: business.businessName,
+          currencyCode: business.currencyCode,
+          items: nextItems,
+        },
+      };
+    });
+  }, []);
+
   function updateQuantity(
     businessId: string,
     lineId: string,
@@ -206,6 +344,7 @@ export function CartProvider({ children }: CartProviderProps) {
         isReady,
         getCart,
         replaceCart,
+        reconcileCart,
         addItem,
         updateQuantity,
         removeItem,

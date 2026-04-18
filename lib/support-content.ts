@@ -19,6 +19,13 @@ export type SupportCategory = {
   description: string;
 };
 
+export const featuredSupportArticleSlugs = [
+  "configuracion-inicial-del-local",
+  "como-funcionan-los-pedidos",
+  "como-crear-un-producto",
+  "como-conectar-mercado-pago",
+] as const;
+
 export const supportCategories: SupportCategory[] = [
   {
     slug: "primeros-pasos",
@@ -49,6 +56,11 @@ export const supportCategories: SupportCategory[] = [
     slug: "admin-y-seguridad",
     title: "Admin y seguridad",
     description: "Modo admin, PIN y uso del panel en equipos compartidos.",
+  },
+  {
+    slug: "problemas-frecuentes",
+    title: "Problemas frecuentes",
+    description: "Respuestas rápidas para lo que suele trabar la operación del local.",
   },
 ];
 
@@ -245,7 +257,8 @@ export const supportArticles: SupportArticle[] = [
           "En configuración podés definir si cada día está abierto o cerrado, y en qué franja horaria opera el local. La app usa esos datos para decidir si el negocio aparece abierto o cerrado.",
         ],
         bullets: [
-          "Cada día abierto debe tener apertura y cierre.",
+          "Cada día abierto debe tener al menos un turno.",
+          "Podés cargar más de un turno en el mismo día si el local hace horario partido.",
           "Los días cerrados se guardan sin horario.",
           "El horario se evalúa en la zona horaria del negocio.",
         ],
@@ -321,7 +334,12 @@ export const supportArticles: SupportArticle[] = [
       {
         title: "Modo colaborador",
         paragraphs: [
-          "Está pensado para el uso operativo del día a día. Desde ahí el equipo puede entrar a pedidos, productos y categorías sin tocar configuraciones sensibles.",
+          "Está pensado para el uso operativo del día a día. Desde ahí el equipo puede concentrarse en pedidos sin tocar configuraciones sensibles del local.",
+        ],
+        bullets: [
+          "Ve y opera pedidos.",
+          "No entra a configuración, pagos ni catálogo sensible.",
+          "Sirve para dispositivos compartidos en mostrador o cocina.",
         ],
       },
       {
@@ -355,6 +373,105 @@ export const supportArticles: SupportArticle[] = [
         title: "Si lo olvidaste",
         paragraphs: [
           "Desde la misma sección podés pedir un reset. El sistema envía un enlace al email del usuario o al contacto principal disponible para definir un PIN nuevo.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "no-veo-pedidos-nuevos",
+    title: "Qué revisar si no ves pedidos nuevos",
+    description:
+      "Pasos rápidos para entender por qué no entran pedidos al panel del local.",
+    category: "problemas-frecuentes",
+    readTime: "3 min",
+    sections: [
+      {
+        title: "Lo primero que conviene revisar",
+        bullets: [
+          "Confirmá que el local esté abierto y no tenga activado el cierre especial.",
+          "Revisá que el pago haya quedado aprobado desde Mercado Pago.",
+          "Actualizá la pantalla de pedidos para forzar sincronización.",
+          "Verificá que estés dentro del negocio correcto si tenés más de un local de prueba.",
+        ],
+      },
+      {
+        title: "Si el pedido aparece para el cliente pero no para el local",
+        paragraphs: [
+          "Si el cliente ya ve el pedido confirmado, lo normal es que aparezca en el panel en pocos segundos. Si no entra, revisá conexión, refrescá el dashboard y verificá que el pago no haya quedado pendiente.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "un-producto-no-aparece-en-el-menu",
+    title: "Qué revisar si un producto no aparece en el menú",
+    description:
+      "Las causas más comunes cuando un producto está cargado pero el cliente no lo ve.",
+    category: "problemas-frecuentes",
+    readTime: "3 min",
+    sections: [
+      {
+        title: "Checklist rápido",
+        bullets: [
+          "El producto debe estar marcado como disponible.",
+          "La categoría del producto tiene que estar activa.",
+          "El local tiene que estar abierto para que el menú acepte pedidos.",
+          "Si el producto tiene opciones, revisá que esas opciones sigan activas.",
+        ],
+      },
+      {
+        title: "Después de editar",
+        paragraphs: [
+          "Si acabás de cambiar disponibilidad, categoría o precio, actualizá el menú público. En general el cambio impacta rápido, pero un refresh ayuda a verificarlo.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "el-local-figura-cerrado-y-deberia-estar-abierto",
+    title: "Qué revisar si el local figura cerrado y debería estar abierto",
+    description:
+      "Cómo detectar rápido si el cierre viene por horario, turno o cierre especial.",
+    category: "problemas-frecuentes",
+    readTime: "3 min",
+    sections: [
+      {
+        title: "Dónde mirar primero",
+        bullets: [
+          "Revisá si está activo el toggle de cierre especial.",
+          "Confirmá que el día tenga al menos un turno cargado.",
+          "Si usás horarios partidos, revisá que no haya quedado un hueco entre turnos.",
+          "Chequeá que la zona horaria del negocio sea la correcta.",
+        ],
+      },
+      {
+        title: "Qué impacto tiene",
+        paragraphs: [
+          "Cuando el local figura cerrado, el cliente puede seguir viendo información general, pero no debería poder avanzar con el pedido. Por eso conviene revisar ese estado apenas algo no cierra.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "el-pago-quedo-pendiente",
+    title: "Qué pasa si el pago quedó pendiente",
+    description:
+      "Cómo interpretar un pago pendiente y cuándo volver a intentar.",
+    category: "problemas-frecuentes",
+    readTime: "3 min",
+    sections: [
+      {
+        title: "Qué significa",
+        paragraphs: [
+          "Un pago pendiente no se toma como pedido confirmado. El local no debería prepararlo hasta que Mercado Pago lo marque como aprobado o autorizado.",
+        ],
+      },
+      {
+        title: "Qué hacer",
+        bullets: [
+          "Esperá unos segundos y revisá si el estado cambia.",
+          "Si sigue pendiente, volvé al checkout y reintentá el pago.",
+          "No prepares el pedido hasta que el panel lo muestre como pago confirmado.",
         ],
       },
     ],

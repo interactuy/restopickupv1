@@ -51,6 +51,12 @@ type BusinessRow = {
         is_closed: boolean;
         open_time: string | null;
         close_time: string | null;
+        intervals?:
+          | {
+              open_time: string | null;
+              close_time: string | null;
+            }[]
+          | null;
       }[]
     | null;
   is_temporarily_closed: boolean;
@@ -188,13 +194,31 @@ function normalizeBusinessHours(
   const mapped = new Map(
     (rows ?? []).map((entry) => [
       entry.day,
-      {
+      (() => {
+        const intervals = (entry.intervals ?? [])
+          .filter(
+            (interval) => interval.open_time && interval.close_time
+          )
+          .map((interval) => ({
+            openTime: interval.open_time as string,
+            closeTime: interval.close_time as string,
+          }));
+        const fallbackIntervals =
+          intervals.length > 0
+            ? intervals
+            : entry.open_time && entry.close_time
+              ? [{ openTime: entry.open_time, closeTime: entry.close_time }]
+              : [];
+
+        return {
         day: entry.day,
         label: BUSINESS_DAY_LABELS[entry.day] ?? `Dia ${entry.day}`,
         isClosed: entry.is_closed,
-        openTime: entry.open_time,
-        closeTime: entry.close_time,
-      },
+        openTime: fallbackIntervals[0]?.openTime ?? null,
+        closeTime: fallbackIntervals.at(-1)?.closeTime ?? null,
+        intervals: fallbackIntervals,
+      };
+      })(),
     ])
   );
 
@@ -208,6 +232,7 @@ function normalizeBusinessHours(
         isClosed: true,
         openTime: null,
         closeTime: null,
+        intervals: [],
       }
     );
   });
@@ -246,17 +271,13 @@ function getBusinessOpenNow(params: {
   const currentTime = timeFormatter.format(now);
   const todayHours = params.hours.find((entry) => entry.day === weekday);
 
-  if (
-    !todayHours ||
-    todayHours.isClosed ||
-    !todayHours.openTime ||
-    !todayHours.closeTime
-  ) {
+  if (!todayHours || todayHours.isClosed || todayHours.intervals.length === 0) {
     return false;
   }
 
-  return (
-    currentTime >= todayHours.openTime && currentTime <= todayHours.closeTime
+  return todayHours.intervals.some(
+    (interval) =>
+      currentTime >= interval.openTime && currentTime <= interval.closeTime
   );
 }
 
@@ -324,6 +345,12 @@ export async function createGuestOrder(
 
   if (!business) {
     throw new Error("El local no existe o no esta disponible.");
+  }
+
+  const publicBusiness = mapBusiness(business);
+
+  if (publicBusiness.isTemporarilyClosed || !publicBusiness.isOpenNow) {
+    throw new Error("Este local no está recibiendo pedidos ahora.");
   }
 
   const normalizedItems = Object.values(
@@ -510,7 +537,7 @@ export async function createGuestOrder(
   }
 
   return {
-    business: mapBusiness(business),
+    business: publicBusiness,
     order: {
       id: order.id,
       orderNumber: order.order_number,

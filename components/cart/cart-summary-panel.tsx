@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 
 import { useCart } from "@/components/cart/cart-provider";
+import type { PublicProduct } from "@/lib/public-catalog";
 import { formatPrice } from "@/lib/public-catalog";
 
 type CartSummaryPanelProps = {
@@ -10,6 +12,7 @@ type CartSummaryPanelProps = {
   businessSlug: string;
   businessName?: string;
   currencyCode: string;
+  products?: PublicProduct[];
   variant?: "sidebar" | "page";
 };
 
@@ -18,14 +21,42 @@ export function CartSummaryPanel({
   businessSlug,
   businessName,
   currencyCode,
+  products = [],
   variant = "sidebar",
 }: CartSummaryPanelProps) {
-  const { getCart, updateQuantity, removeItem, getItemCount, getSubtotal, isReady } =
+  const {
+    getCart,
+    updateQuantity,
+    removeItem,
+    getItemCount,
+    getSubtotal,
+    isReady,
+    reconcileCart,
+  } =
     useCart();
   const cart = getCart(businessId);
   const itemCount = getItemCount(businessId);
   const subtotal = getSubtotal(businessId);
   const isPage = variant === "page";
+
+  useEffect(() => {
+    reconcileCart(
+      {
+        businessId,
+        businessSlug,
+        businessName: businessName ?? "el local",
+        currencyCode,
+      },
+      products
+    );
+  }, [
+    businessId,
+    businessName,
+    businessSlug,
+    currencyCode,
+    products,
+    reconcileCart,
+  ]);
 
   return (
     <aside

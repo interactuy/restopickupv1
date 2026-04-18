@@ -6,8 +6,8 @@ import { SupportFooter } from "@/components/public/support-footer";
 import { SupportHeader } from "@/components/public/support-header";
 
 export const metadata: Metadata = {
-  title: "Contacto | Restopickup",
-  description: "Contacto comercial y general de Restopickup.",
+  title: "Soporte | Contacto Restopickup",
+  description: "Canal de soporte de Restopickup para resolver dudas y acompañar la operación del local.",
 };
 
 type ContactPageProps = {
@@ -41,15 +41,15 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
 
           <div className="max-w-4xl py-6 md:py-10">
             <p className="text-sm font-semibold uppercase tracking-[0.32em] text-[var(--color-accent)]">
-              Contacto
+              Soporte
             </p>
             <h1 className="mt-6 text-5xl font-semibold tracking-tight sm:text-6xl">
-              Elijamos el mejor canal para ayudarte.
+              ¿Tenés dudas o algo no está funcionando como esperabas? Lo resolvemos.
             </h1>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-[var(--color-muted)]">
-              Si querés sumar tu local, hablar sobre planes o conocer cómo funciona
-              Restopickup, entrá por comercial. Si ya operás con la app, podés
-              apoyarte primero en soporte.
+              Escribinos y lo seguimos con vos hasta que quede resuelto. Cuando
+              nos contactás, tu consulta queda registrada con un número de
+              seguimiento para que sea más fácil continuarla.
             </p>
           </div>
         </div>
@@ -59,14 +59,14 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
           <section className="rounded-[2rem] border border-[var(--color-border)] bg-white p-8 shadow-[0_20px_60px_rgba(39,24,13,0.05)]">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
-              Formulario de contacto
+              Contacto de soporte
             </p>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight">
-              Enviános tu consulta y generamos un ticket.
+              Contanos en qué te podemos ayudar.
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--color-muted)]">
-              El mensaje entra a tu panel admin en la sección Soporte, con número
-              de ticket para hacer seguimiento.
+              Dejanos unos datos básicos y te respondemos con seguimiento claro
+              para que no tengas que empezar de cero cada vez.
             </p>
 
             <div className="mt-8">
@@ -74,7 +74,6 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
                 error={query.error}
                 success={query.success}
                 ticket={query.ticket}
-                source={query.source}
               />
             </div>
           </section>
@@ -82,15 +81,22 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
           <aside className="space-y-6">
             <section className="rounded-[2rem] border border-[var(--color-border)] bg-white p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
-                Antes de escribirnos
+                Soporte directo
               </p>
               <div className="mt-5 space-y-4 text-sm leading-7 text-[var(--color-muted)]">
-                <p>Si ya estás operando con la app, muchas dudas comunes ya están resueltas en soporte.</p>
+                <p>
+                  Si necesitás una mano con la operación del local, este es el
+                  canal más directo para escribirnos.
+                </p>
+                <p>
+                  Si querés resolver algo rápido, el centro de ayuda también
+                  tiene guías y respuestas para el uso diario.
+                </p>
                 <Link
                   href="/soporte"
                   className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
                 >
-                  Ir al centro de ayuda
+                  Ver centro de ayuda
                 </Link>
               </div>
             </section>
@@ -100,7 +106,8 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
                 ¿Querés conocer Restopickup para tu local?
               </p>
               <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
-                Si estás evaluando cómo encaja en tu operación, podés pasar por comercial y revisar el producto con más contexto.
+                Si estás evaluando cómo podría funcionar en tu operación, te
+                conviene pasar por comercial y ver una presentación más completa.
               </p>
               <div className="mt-5">
                 <Link

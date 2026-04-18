@@ -250,12 +250,27 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                                 onChange={() => {
                                   setSelectedByGroup((current) => {
                                     const currentSelected = current[group.id] ?? [];
+                                    const wouldExceedMax =
+                                      group.selectionType === "multiple" &&
+                                      !checked &&
+                                      group.maxSelect !== null &&
+                                      currentSelected.length >= group.maxSelect;
+
+                                    if (wouldExceedMax) {
+                                      setValidationError(
+                                        `"${group.name}" admite hasta ${group.maxSelect} opciones.`
+                                      );
+                                      return current;
+                                    }
+
                                     const nextSelected =
                                       group.selectionType === "single"
                                         ? [item.id]
                                         : checked
                                           ? currentSelected.filter((id) => id !== item.id)
                                           : [...currentSelected, item.id];
+
+                                    setValidationError(null);
 
                                     return {
                                       ...current,

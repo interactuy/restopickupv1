@@ -4,7 +4,6 @@ type ContactFormProps = {
   error?: string;
   success?: string;
   ticket?: string;
-  source?: string;
 };
 
 function getFeedback(error?: string, success?: string, ticket?: string) {
@@ -12,8 +11,8 @@ function getFeedback(error?: string, success?: string, ticket?: string) {
     return {
       tone: "success" as const,
       message: ticket
-        ? `Recibimos tu mensaje. Ticket #${ticket}.`
-        : "Recibimos tu mensaje correctamente.",
+        ? `Ya recibimos tu consulta. Número de seguimiento: #${ticket}.`
+        : "Ya recibimos tu consulta correctamente.",
     };
   }
 
@@ -27,7 +26,7 @@ function getFeedback(error?: string, success?: string, ticket?: string) {
   if (error === "save") {
     return {
       tone: "error" as const,
-      message: "No pudimos guardar el ticket. Intentá nuevamente.",
+      message: "No pudimos registrar tu consulta. Intentá nuevamente.",
     };
   }
 
@@ -38,10 +37,8 @@ export function ContactForm({
   error,
   success,
   ticket,
-  source,
 }: ContactFormProps) {
   const feedback = getFeedback(error, success, ticket);
-  const selectedSource = source === "commercial" ? "commercial" : "support";
 
   return (
     <form action={createSupportTicketAction} className="space-y-5">
@@ -57,22 +54,9 @@ export function ContactForm({
         </div>
       ) : null}
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <div>
-          <label htmlFor="source" className="mb-2 block text-sm font-medium">
-            Tipo de contacto
-          </label>
-          <select
-            id="source"
-            name="source"
-            defaultValue={selectedSource}
-            className="w-full rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none"
-          >
-            <option value="commercial">Comercial</option>
-            <option value="support">Soporte</option>
-          </select>
-        </div>
+      <input type="hidden" name="source" value="support" />
 
+      <div className="grid gap-5 md:grid-cols-2">
         <div>
           <label htmlFor="requesterBusinessName" className="mb-2 block text-sm font-medium">
             Local o empresa
@@ -109,6 +93,43 @@ export function ContactForm({
             required
             className="w-full rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none"
           />
+        </div>
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <div>
+          <label htmlFor="issueType" className="mb-2 block text-sm font-medium">
+            Tema
+          </label>
+          <select
+            id="issueType"
+            name="issueType"
+            defaultValue="other"
+            className="w-full rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none"
+          >
+            <option value="orders">Pedidos</option>
+            <option value="payments">Pagos</option>
+            <option value="menu">Menú o productos</option>
+            <option value="hours">Horarios o disponibilidad</option>
+            <option value="account">Cuenta o acceso</option>
+            <option value="other">Otro</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="severity" className="mb-2 block text-sm font-medium">
+            Prioridad
+          </label>
+          <select
+            id="severity"
+            name="severity"
+            defaultValue="normal"
+            className="w-full rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none"
+          >
+            <option value="low">Baja</option>
+            <option value="normal">Normal</option>
+            <option value="high">Alta</option>
+          </select>
         </div>
       </div>
 
@@ -154,7 +175,7 @@ export function ContactForm({
         type="submit"
         className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)]"
       >
-        Enviar ticket
+        Enviar consulta
       </button>
     </form>
   );

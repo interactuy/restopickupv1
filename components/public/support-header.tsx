@@ -28,7 +28,7 @@ export function SupportHeader({ compact = false }: SupportHeaderProps) {
             href="/contacto"
             className="inline-flex items-center justify-center rounded-2xl border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-secondary)] hover:text-[var(--color-secondary)]"
           >
-            Contacto
+            Contactar soporte
           </Link>
           <Link
             href="/login"

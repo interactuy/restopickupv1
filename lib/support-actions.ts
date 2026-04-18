@@ -11,11 +11,13 @@ function buildContactRedirect(params: Record<string, string>) {
 }
 
 export async function createSupportTicketAction(formData: FormData) {
-  const source = String(formData.get("source") ?? "support").trim();
+  const source = "support";
   const requesterName = String(formData.get("requesterName") ?? "").trim();
   const requesterEmail = String(formData.get("requesterEmail") ?? "").trim();
   const requesterPhone = String(formData.get("requesterPhone") ?? "").trim();
   const requesterBusinessName = String(formData.get("requesterBusinessName") ?? "").trim();
+  const issueType = String(formData.get("issueType") ?? "other").trim();
+  const severity = String(formData.get("severity") ?? "normal").trim();
   const subject = String(formData.get("subject") ?? "").trim();
   const message = String(formData.get("message") ?? "").trim();
 
@@ -23,13 +25,22 @@ export async function createSupportTicketAction(formData: FormData) {
     redirect(
       buildContactRedirect({
         error: "required",
-        source: source === "commercial" ? "commercial" : "support",
+        source,
       })
     );
   }
+  const allowedIssueTypes = new Set([
+    "orders",
+    "payments",
+    "menu",
+    "account",
+    "hours",
+    "other",
+  ]);
+  const allowedSeverities = new Set(["low", "normal", "high"]);
 
-  if (source !== "commercial" && source !== "support") {
-    redirect(buildContactRedirect({ error: "source" }));
+  if (!allowedIssueTypes.has(issueType) || !allowedSeverities.has(severity)) {
+    redirect(buildContactRedirect({ error: "save", source }));
   }
 
   const admin = createAdminClient();
@@ -40,8 +51,8 @@ export async function createSupportTicketAction(formData: FormData) {
       title: subject,
       source,
       status: "open",
-      severity: source === "commercial" ? "low" : "normal",
-      notes: message,
+      severity,
+      notes: `[Tema] ${issueType}\n\n${message}`,
       requester_name: requesterName,
       requester_email: requesterEmail,
       requester_phone: requesterPhone || null,

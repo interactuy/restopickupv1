@@ -34,7 +34,7 @@ export function FloatingCartButton({
           <span className="rounded-full bg-white/15 px-3 py-1 text-xs uppercase tracking-[0.18em]">
             {itemCount} producto{itemCount === 1 ? "" : "s"}
           </span>
-          <span>Ver pedido</span>
+          <span>Ver carrito</span>
         </span>
         <span>{formatPrice(subtotal, currencyCode)}</span>
       </Link>

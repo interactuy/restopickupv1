@@ -131,6 +131,64 @@ function buildBusinessDetailRedirect(
   return `/admin/negocios/${businessId}${query ? `?${query}` : ""}`;
 }
 
+function buildSupportRedirect(params: Record<string, string>) {
+  const searchParams = new URLSearchParams(params);
+  const query = searchParams.toString();
+  return `/admin/soporte${query ? `?${query}` : ""}`;
+}
+
+export async function updateSupportIncidentStatusAction(formData: FormData) {
+  const context = await requireInternalAdminContext("/admin/soporte");
+  const incidentId = String(formData.get("incidentId") ?? "").trim();
+  const status = String(formData.get("status") ?? "").trim();
+
+  const allowedStatuses = new Set(["open", "in_progress", "resolved"]);
+
+  if (!incidentId || !allowedStatuses.has(status)) {
+    redirect(
+      buildSupportRedirect({
+        error: "invalid-support-status",
+      })
+    );
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("business_support_incidents")
+    .update({
+      status,
+      resolved_at: status === "resolved" ? new Date().toISOString() : null,
+    })
+    .eq("id", incidentId);
+
+  if (error) {
+    redirect(
+      buildSupportRedirect({
+        error: "support-save",
+      })
+    );
+  }
+
+  await admin.from("admin_audit_logs").insert({
+    actor_user_id: context.user.id,
+    action: "support_incident.status_updated",
+    entity_type: "support_incident",
+    entity_id: incidentId,
+    metadata: {
+      status,
+    },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/soporte");
+
+  redirect(
+    buildSupportRedirect({
+      success: "support-updated",
+    })
+  );
+}
+
 export async function updateBusinessPlatformSettingsAction(formData: FormData) {
   const context = await requireInternalAdminContext();
   const businessId = String(formData.get("businessId") ?? "").trim();

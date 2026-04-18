@@ -334,22 +334,56 @@ async function geocodePickupAddress(address: string) {
 function parseBusinessHoursFromFormData(formData: FormData) {
   const schedule = Array.from({ length: BUSINESS_DAY_COUNT }, (_, day) => {
     const isClosed = formData.get(`hours_${day}_closed`) === "on";
-    const openTime = String(formData.get(`hours_${day}_open`) ?? "").trim();
-    const closeTime = String(formData.get(`hours_${day}_close`) ?? "").trim();
+    const segmentsCount = Math.max(
+      1,
+      Number.parseInt(String(formData.get(`hours_${day}_segments_count`) ?? "1"), 10) || 1
+    );
+    const intervals = Array.from({ length: segmentsCount }, (_, segmentIndex) => {
+      const openTime = String(
+        formData.get(`hours_${day}_segment_${segmentIndex}_open`) ?? ""
+      ).trim();
+      const closeTime = String(
+        formData.get(`hours_${day}_segment_${segmentIndex}_close`) ?? ""
+      ).trim();
 
-    if (!isClosed && (!openTime || !closeTime)) {
-      throw new Error("Cada día abierto debe tener horario de apertura y cierre.");
+      if (!openTime && !closeTime) {
+        return null;
+      }
+
+      if (!openTime || !closeTime) {
+        throw new Error("Cada turno abierto debe tener hora de apertura y cierre.");
+      }
+
+      if (openTime >= closeTime) {
+        throw new Error("La hora de cierre debe ser mayor a la de apertura.");
+      }
+
+      return {
+        open_time: openTime,
+        close_time: closeTime,
+      };
+    }).filter((interval): interval is { open_time: string; close_time: string } => Boolean(interval));
+
+    const sortedIntervals = [...intervals].sort((left, right) =>
+      left.open_time.localeCompare(right.open_time)
+    );
+
+    for (let index = 1; index < sortedIntervals.length; index += 1) {
+      if (sortedIntervals[index]!.open_time < sortedIntervals[index - 1]!.close_time) {
+        throw new Error("Los turnos del mismo día no pueden superponerse.");
+      }
     }
 
-    if (!isClosed && openTime >= closeTime) {
-      throw new Error("La hora de cierre debe ser mayor a la de apertura.");
+    if (!isClosed && sortedIntervals.length === 0) {
+      throw new Error("Cada día abierto debe tener al menos un turno.");
     }
 
     return {
       day,
       is_closed: isClosed,
-      open_time: isClosed ? null : openTime,
-      close_time: isClosed ? null : closeTime,
+      open_time: isClosed ? null : sortedIntervals[0]?.open_time ?? null,
+      close_time: isClosed ? null : sortedIntervals.at(-1)?.close_time ?? null,
+      intervals: isClosed ? [] : sortedIntervals,
     };
   });
 

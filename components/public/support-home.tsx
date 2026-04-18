@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
 
 import type { SupportArticle, SupportCategory } from "@/lib/support-content";
+import { featuredSupportArticleSlugs } from "@/lib/support-content";
 import { SupportFooter } from "@/components/public/support-footer";
 import { SupportSearchForm } from "@/components/public/support-search-form";
 
@@ -55,7 +56,29 @@ export function SupportHome({
     [categories, filteredArticles]
   );
 
-  const featuredArticles = filteredArticles.slice(0, 4);
+  const featuredArticles = useMemo(() => {
+    const curated = featuredSupportArticleSlugs
+      .map((slug) => articles.find((article) => article.slug === slug))
+      .filter((article): article is SupportArticle => Boolean(article));
+
+    if (normalizedQuery) {
+      return filteredArticles.slice(0, 4);
+    }
+
+    return curated.slice(0, 4);
+  }, [articles, filteredArticles, normalizedQuery]);
+
+  const quickActions = useMemo(
+    () => [
+      featuredArticles[0],
+      articles.find((article) => article.slug === "como-cambiar-el-estado-de-un-pedido"),
+      articles.find((article) => article.slug === "como-configurar-horarios"),
+      articles.find((article) => article.slug === "modo-admin-y-modo-colaborador"),
+    ].filter((article, index, current): article is SupportArticle =>
+      Boolean(article) && current.findIndex((item) => item?.slug === article?.slug) === index
+    ),
+    [articles, featuredArticles]
+  );
 
   return (
     <>
@@ -72,6 +95,20 @@ export function SupportHome({
               Guías pensadas para el dashboard real del local: pedidos, menú,
               horarios, pagos, modo admin y operación diaria.
             </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/contacto"
+                className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)]"
+              >
+                Contactar soporte
+              </Link>
+              <Link
+                href="#temas"
+                className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+              >
+                Explorar artículos
+              </Link>
+            </div>
           </div>
 
           <div className="mx-auto w-full max-w-5xl">
@@ -117,7 +154,37 @@ export function SupportHome({
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-6 pb-16 md:px-10 lg:px-12">
+      <section className="mx-auto w-full max-w-7xl px-6 pb-6 md:px-10 lg:px-12">
+        <div className="flex items-end justify-between gap-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
+              Accesos rápidos
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+              Resolver lo más común
+            </h2>
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {quickActions.map((article) => (
+            <Link
+              key={article.slug}
+              href={`/soporte/${article.slug}`}
+              className="rounded-[1.5rem] border border-[var(--color-border)] bg-white px-5 py-5 transition hover:border-[var(--color-accent)] hover:bg-[var(--color-surface-strong)]"
+            >
+              <p className="text-base font-semibold tracking-tight text-[var(--color-foreground)]">
+                {article.title}
+              </p>
+              <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+                {article.readTime}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section id="temas" className="mx-auto w-full max-w-7xl px-6 pb-16 md:px-10 lg:px-12">
         <div className="flex items-end justify-between gap-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
@@ -150,9 +217,14 @@ export function SupportHome({
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
                     {category.title}
                   </p>
-                  <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--color-muted)]">
-                    {category.description}
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <p className="max-w-3xl text-sm leading-7 text-[var(--color-muted)]">
+                      {category.description}
+                    </p>
+                    <span className="rounded-full bg-[var(--color-surface-strong)] px-3 py-1 text-xs font-semibold text-[var(--color-muted)]">
+                      {categoryArticles.length} artículo{categoryArticles.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 xl:grid-cols-3">

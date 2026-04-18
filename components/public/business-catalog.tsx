@@ -15,6 +15,7 @@ import {
   getBusinessOpenStatusLabel,
   getTodayBusinessHoursLabel,
   formatPrepTimeRange,
+  formatBusinessHoursEntry,
 } from "@/lib/public-catalog";
 
 import { EmptyState } from "@/components/public/empty-state";
@@ -64,7 +65,7 @@ function buildMapboxStaticMapUrl(params: {
 
 export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
   const { business, categories, products } = catalog;
-  const { addItem, getItemCount } = useCart();
+  const { addItem, getItemCount, reconcileCart } = useCart();
   const [isHoursOpen, setIsHoursOpen] = useState(false);
   const hasMounted = useSyncExternalStore(
     () => () => {},
@@ -120,6 +121,25 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isHoursOpen]);
+
+  useEffect(() => {
+    reconcileCart(
+      {
+        businessId: business.id,
+        businessSlug: business.slug,
+        businessName: business.name,
+        currencyCode: business.currencyCode,
+      },
+      products
+    );
+  }, [
+    business.currencyCode,
+    business.id,
+    business.name,
+    business.slug,
+    products,
+    reconcileCart,
+  ]);
 
   const categoriesWithProducts = categories
     .map((category) => ({
@@ -429,11 +449,13 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
         </div>
       </main>
 
-      <FloatingCartButton
-        businessId={business.id}
-        businessSlug={business.slug}
-        currencyCode={business.currencyCode}
-      />
+      {!isBusinessClosed ? (
+        <FloatingCartButton
+          businessId={business.id}
+          businessSlug={business.slug}
+          currencyCode={business.currencyCode}
+        />
+      ) : null}
 
       {isHoursOpen ? (
         <div
@@ -480,9 +502,7 @@ export function BusinessCatalog({ catalog }: BusinessCatalogProps) {
                     {entry.label}
                   </span>
                   <span className="text-sm text-[var(--color-muted)]">
-                    {entry.isClosed || !entry.openTime || !entry.closeTime
-                      ? "Cerrado"
-                      : `${entry.openTime} - ${entry.closeTime}`}
+                    {formatBusinessHoursEntry(entry)}
                   </span>
                 </div>
               ))}

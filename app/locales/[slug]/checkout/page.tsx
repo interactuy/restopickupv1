@@ -39,6 +39,7 @@ export default async function CheckoutPage({
 
         <CheckoutForm
           business={catalog.business}
+          products={catalog.products}
           isMercadoPagoTestMode={isMercadoPagoSandboxMode()}
           paymentFeedback={query.payment === "failed" ? "failed" : query.payment === "pending" ? "pending" : null}
         />

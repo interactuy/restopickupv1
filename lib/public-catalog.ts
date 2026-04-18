@@ -116,7 +116,21 @@ export type BusinessHoursEntry = {
   isClosed: boolean;
   openTime: string | null;
   closeTime: string | null;
+  intervals: {
+    openTime: string;
+    closeTime: string;
+  }[];
 };
+
+export function formatBusinessHoursEntry(entry: BusinessHoursEntry) {
+  if (entry.isClosed || entry.intervals.length === 0) {
+    return "Cerrado";
+  }
+
+  return entry.intervals
+    .map((interval) => `${interval.openTime} - ${interval.closeTime}`)
+    .join(" · ");
+}
 
 export function formatPrepTimeRange(
   minMinutes: number | null,
@@ -201,11 +215,11 @@ export function getTodayBusinessHoursLabel(business: PublicBusiness) {
   const weekday = weekdayMap[weekdayFormatter.format(now)];
   const today = business.businessHours.find((entry) => entry.day === weekday);
 
-  if (!today || today.isClosed || !today.openTime || !today.closeTime) {
+  if (!today || today.isClosed || today.intervals.length === 0) {
     return "Hoy cerrado";
   }
 
-  return `Hoy ${today.openTime} - ${today.closeTime}`;
+  return `Hoy ${formatBusinessHoursEntry(today)}`;
 }
 
 export function formatPrice(amount: number, currencyCode: string) {

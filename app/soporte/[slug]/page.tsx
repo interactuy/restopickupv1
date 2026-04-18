@@ -57,6 +57,18 @@ export default async function SupportArticlePage({
       (item) => item.category === article.category && item.slug !== article.slug
     )
     .slice(0, 3);
+  const categoryArticles = supportArticles.filter(
+    (item) => item.category === article.category
+  );
+  const currentArticleIndex = categoryArticles.findIndex(
+    (item) => item.slug === article.slug
+  );
+  const previousArticle =
+    currentArticleIndex > 0 ? categoryArticles[currentArticleIndex - 1] : null;
+  const nextArticle =
+    currentArticleIndex >= 0 && currentArticleIndex < categoryArticles.length - 1
+      ? categoryArticles[currentArticleIndex + 1]
+      : null;
   const sectionsWithIds = article.sections.map((section) => ({
     ...section,
     id: section.title
@@ -141,6 +153,39 @@ export default async function SupportArticlePage({
               ) : null}
             </section>
           ))}
+
+          {(previousArticle || nextArticle) ? (
+            <section className="grid gap-4 md:grid-cols-2">
+              {previousArticle ? (
+                <Link
+                  href={`/soporte/${previousArticle.slug}`}
+                  className="rounded-[1.5rem] border border-[var(--color-border)] bg-white px-6 py-5 transition hover:border-[var(--color-accent)]"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+                    Artículo anterior
+                  </p>
+                  <p className="mt-3 text-lg font-semibold tracking-tight text-[var(--color-foreground)]">
+                    {previousArticle.title}
+                  </p>
+                </Link>
+              ) : (
+                <div />
+              )}
+              {nextArticle ? (
+                <Link
+                  href={`/soporte/${nextArticle.slug}`}
+                  className="rounded-[1.5rem] border border-[var(--color-border)] bg-white px-6 py-5 transition hover:border-[var(--color-accent)]"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+                    Siguiente artículo
+                  </p>
+                  <p className="mt-3 text-lg font-semibold tracking-tight text-[var(--color-foreground)]">
+                    {nextArticle.title}
+                  </p>
+                </Link>
+              ) : null}
+            </section>
+          ) : null}
         </article>
 
         <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
@@ -169,6 +214,29 @@ export default async function SupportArticlePage({
               ))}
             </div>
           </section>
+
+          {category ? (
+            <section className="rounded-[1.75rem] border border-[var(--color-border)] bg-white p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
+                En {category.title}
+              </p>
+              <div className="mt-5 space-y-3">
+                {categoryArticles.map((categoryArticle) => (
+                  <Link
+                    key={categoryArticle.slug}
+                    href={`/soporte/${categoryArticle.slug}`}
+                    className={`block rounded-[1.1rem] px-3 py-3 text-sm leading-7 transition ${
+                      categoryArticle.slug === article.slug
+                        ? "bg-[var(--color-surface-strong)] font-semibold text-[var(--color-foreground)]"
+                        : "text-[var(--color-muted)] hover:bg-[var(--color-surface-strong)] hover:text-[var(--color-foreground)]"
+                    }`}
+                  >
+                    {categoryArticle.title}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           {relatedArticles.length > 0 ? (
             <section className="rounded-[1.75rem] border border-[var(--color-border)] bg-white p-6">
@@ -214,7 +282,7 @@ export default async function SupportArticlePage({
                 href="/contacto"
                 className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
               >
-                Contacto comercial
+                Contactar soporte
               </Link>
             </div>
           </section>

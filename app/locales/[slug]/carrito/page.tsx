@@ -36,6 +36,7 @@ export default async function CartPage({ params }: CartPageProps) {
           businessSlug={catalog.business.slug}
           businessName={catalog.business.name}
           currencyCode={catalog.business.currencyCode}
+          products={catalog.products}
           variant="page"
         />
       </div>

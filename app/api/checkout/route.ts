@@ -136,9 +136,19 @@ export async function POST(request: Request) {
       requestId,
     });
   } catch (error) {
+    const safeCheckoutMessages = [
+      "Este local no está recibiendo pedidos ahora.",
+      "El local no existe o no esta disponible.",
+      "Uno o mas productos del carrito ya no estan disponibles. Actualiza el carrito e intenta otra vez.",
+    ];
+    const errorMessage = error instanceof Error ? error.message : null;
+    const isSafeCheckoutMessage =
+      errorMessage !== null && safeCheckoutMessages.includes(errorMessage);
     const message =
       error instanceof ZodError
         ? "Revisá los datos del pedido e intentá nuevamente."
+        : isSafeCheckoutMessage
+          ? errorMessage
         : "No pudimos crear el pedido. Probá de nuevo en unos segundos.";
     const errorCode =
       error instanceof ZodError ? "invalid_checkout_payload" : "order_create_failed";

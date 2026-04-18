@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import { CustomerAccountLink } from "@/components/public/customer-account-link";
 import { CustomerSessionBootstrap } from "@/components/public/customer-session-bootstrap";
@@ -13,7 +13,6 @@ import {
   getBusinessOpenStatusLabel,
 } from "@/lib/public-catalog";
 import {
-  CUSTOMER_LOCATION_STORAGE_KEY,
   CUSTOMER_PROFILE_UPDATED_EVENT,
   RECENT_PURCHASES_STORAGE_KEY,
   getStoredCustomerLocation,
@@ -192,35 +191,10 @@ export function HomeLanding({ data }: HomeLandingProps) {
   const [query, setQuery] = useState("");
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
+  const [storedLocation, setStoredLocation] = useState<ReturnType<typeof getStoredCustomerLocation>>(null);
+  const [recentPurchaseSlugs, setRecentPurchaseSlugs] = useState<string[]>([]);
   const deferredQuery = useDeferredValue(query.trim());
   const daypart = getDaypart();
-  const customerStorageSnapshot = useSyncExternalStore(
-    (onStoreChange) => {
-      if (typeof window === "undefined") {
-        return () => {};
-      }
-
-      window.addEventListener(CUSTOMER_PROFILE_UPDATED_EVENT, onStoreChange);
-
-      return () => {
-        window.removeEventListener(CUSTOMER_PROFILE_UPDATED_EVENT, onStoreChange);
-      };
-    },
-    () => {
-      if (typeof window === "undefined") {
-        return "";
-      }
-
-      return [
-        window.localStorage.getItem(CUSTOMER_LOCATION_STORAGE_KEY) ?? "",
-        window.localStorage.getItem(RECENT_PURCHASES_STORAGE_KEY) ?? "",
-      ].join("|");
-    },
-    () => "",
-  );
-  void customerStorageSnapshot;
-  const storedLocation = getStoredCustomerLocation();
-  const recentPurchaseSlugs = getRecentPurchaseBusinessSlugs();
   const effectiveUserLocation = useMemo(
     () =>
       userLocation ??
@@ -265,6 +239,20 @@ export function HomeLanding({ data }: HomeLandingProps) {
       }
     );
   }
+
+  useEffect(() => {
+    function syncCustomerStorage() {
+      setStoredLocation(getStoredCustomerLocation());
+      setRecentPurchaseSlugs(getRecentPurchaseBusinessSlugs());
+    }
+
+    syncCustomerStorage();
+    window.addEventListener(CUSTOMER_PROFILE_UPDATED_EVENT, syncCustomerStorage);
+
+    return () => {
+      window.removeEventListener(CUSTOMER_PROFILE_UPDATED_EVENT, syncCustomerStorage);
+    };
+  }, []);
 
   useEffect(() => {
     if (!navigator.permissions || !navigator.geolocation) {

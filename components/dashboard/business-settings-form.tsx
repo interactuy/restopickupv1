@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
 
 import { updateBusinessSettingsAction } from "@/lib/dashboard/actions";
 import type { DashboardContext } from "@/lib/dashboard/server";
@@ -10,6 +10,8 @@ import { AccordionSection } from "@/components/dashboard/accordion-section";
 import { SubmitButton } from "@/components/dashboard/submit-button";
 
 const DAY_LABELS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const WEEKDAY_DAY_INDEXES = [1, 2, 3, 4, 5];
+const WEEKEND_DAY_INDEXES = [0, 6];
 
 type BusinessSettingsFormProps = {
   business: DashboardContext["business"];
@@ -21,19 +23,67 @@ export function BusinessSettingsForm({ business }: BusinessSettingsFormProps) {
       Object.fromEntries(
         DAY_LABELS.map((_, day) => {
           const entry = business.businessHours.find((item) => item.day === day);
+          const intervals =
+            entry?.intervals?.length
+              ? entry.intervals
+              : entry?.openTime && entry.closeTime
+                ? [{ openTime: entry.openTime, closeTime: entry.closeTime }]
+                : [];
           return [
             day,
             {
               isClosed: entry?.isClosed ?? true,
-              openTime: entry?.openTime ?? "",
-              closeTime: entry?.closeTime ?? "",
+              intervals,
             },
           ];
         })
-      ) as Record<number, { isClosed: boolean; openTime: string; closeTime: string }>,
+      ) as Record<
+        number,
+        { isClosed: boolean; intervals: { openTime: string; closeTime: string }[] }
+      >,
     [business.businessHours]
   );
   const [scheduleByDay, setScheduleByDay] = useState(initialScheduleByDay);
+
+  function cloneDaySchedule(daySchedule: (typeof scheduleByDay)[number]) {
+    const currentDay = daySchedule;
+
+    if (!currentDay) {
+      return {
+        isClosed: true,
+        intervals: [],
+      };
+    }
+
+    return {
+      isClosed: currentDay.isClosed,
+      intervals: currentDay.intervals.map((interval) => ({ ...interval })),
+    };
+  }
+
+  function applyScheduleToDays(sourceDay: number, targetDays: number[]) {
+    setScheduleByDay((current) => {
+      const sourceSchedule = current[sourceDay];
+
+      if (!sourceSchedule) {
+        return current;
+      }
+
+      const nextEntries = Object.fromEntries(
+        Object.entries(current).map(([dayKey, value]) => {
+          const dayIndex = Number(dayKey);
+
+          if (!targetDays.includes(dayIndex)) {
+            return [dayIndex, value];
+          }
+
+          return [dayIndex, cloneDaySchedule(sourceSchedule)];
+        })
+      ) as typeof current;
+
+      return nextEntries;
+    });
+  }
 
   return (
     <form action={updateBusinessSettingsAction} className="space-y-5">
@@ -222,7 +272,7 @@ export function BusinessSettingsForm({ business }: BusinessSettingsFormProps) {
         <div className="space-y-3 border-t border-[var(--color-border)] px-4 pb-4 pt-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="max-w-2xl text-xs text-[var(--color-muted)]">
-              La app calcula automáticamente si el local está abierto según estos horarios y la zona horaria del negocio.
+              La app calcula automáticamente si el local está abierto según estos horarios y la zona horaria del negocio. Podés cargar uno o varios turnos por día.
             </p>
             <label className="flex items-center gap-3 rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm text-[var(--color-foreground)]">
               <span className="whitespace-nowrap">Cierre especial</span>
@@ -239,70 +289,215 @@ export function BusinessSettingsForm({ business }: BusinessSettingsFormProps) {
             {DAY_LABELS.map((label, day) => {
               const daySchedule = scheduleByDay[day] ?? {
                 isClosed: true,
-                openTime: "",
-                closeTime: "",
+                intervals: [],
               };
               const isClosed = daySchedule.isClosed;
+              const visibleIntervals = isClosed
+                ? []
+                : daySchedule.intervals.length > 0
+                  ? daySchedule.intervals
+                  : [{ openTime: "", closeTime: "" }];
 
               return (
                 <div
                   key={label}
-                  className="grid gap-3 rounded-[1.25rem] border border-[var(--color-border)] bg-white p-4 md:grid-cols-2 xl:grid-cols-[140px_minmax(0,1fr)_minmax(0,1fr)_120px]"
+                  className="grid gap-3 rounded-[1.25rem] border border-[var(--color-border)] bg-white p-4 xl:grid-cols-[140px_minmax(0,1fr)_120px]"
                 >
-                  <div className="flex items-center text-sm font-medium text-[var(--color-foreground)] md:col-span-2 xl:col-span-1">
-                    {label}
+                  <div className="flex items-center text-sm font-medium text-[var(--color-foreground)]">
+                    <div>
+                      <p>{label}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setScheduleByDay((current) => {
+                              const sourceDay = current[day];
+
+                              if (!sourceDay) {
+                                return current;
+                              }
+
+                              const nextDay = (day + 1) % DAY_LABELS.length;
+
+                              return {
+                                ...current,
+                                [nextDay]: {
+                                  ...cloneDaySchedule(sourceDay),
+                                },
+                              };
+                            })
+                          }
+                          className="inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                        >
+                          Copiar al siguiente
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setScheduleByDay((current) =>
+                              Object.fromEntries(
+                                DAY_LABELS.map((_, currentDay) => [
+                                  currentDay,
+                                  currentDay === day
+                                    ? cloneDaySchedule(current[day])
+                                    : cloneDaySchedule(current[day]),
+                                ])
+                              ) as typeof current
+                            )
+                          }
+                          className="inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                        >
+                          Copiar a todos
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyScheduleToDays(day, WEEKDAY_DAY_INDEXES)}
+                          className="inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                        >
+                          Copiar Lun a Vie
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyScheduleToDays(day, WEEKEND_DAY_INDEXES)}
+                          className="inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                        >
+                          Copiar Sáb y Dom
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label
-                      htmlFor={`hours-${day}-open`}
-                      className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-muted)]"
-                    >
-                      Abre
-                    </label>
+                  <div className="space-y-3">
                     <input
-                      id={`hours-${day}-open`}
-                      name={`hours_${day}_open`}
-                      type="time"
-                      value={daySchedule.openTime}
-                      onChange={(event) =>
-                        setScheduleByDay((current) => ({
-                          ...current,
-                          [day]: {
-                            ...current[day],
-                            openTime: event.target.value,
-                          },
-                        }))
-                      }
-                      disabled={isClosed}
-                      className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm outline-none disabled:opacity-50"
+                      type="hidden"
+                      name={`hours_${day}_segments_count`}
+                      value={visibleIntervals.length || 1}
                     />
+
+                    {visibleIntervals.map((interval, segmentIndex) => (
+                      <div
+                        key={`${label}-${segmentIndex}`}
+                        className="grid gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                      >
+                        <div className="grid gap-3 sm:grid-cols-2 md:contents">
+                          <label
+                            htmlFor={`hours-${day}-segment-${segmentIndex}-open`}
+                            className="block"
+                          >
+                            <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-muted)]">
+                              {segmentIndex === 0 ? "Abre" : `Turno ${segmentIndex + 1}`}
+                            </span>
+                            <input
+                              id={`hours-${day}-segment-${segmentIndex}-open`}
+                              name={`hours_${day}_segment_${segmentIndex}_open`}
+                              type="time"
+                              value={interval.openTime}
+                              onChange={(event) =>
+                                setScheduleByDay((current) => ({
+                                  ...current,
+                                  [day]: {
+                                    ...current[day],
+                                    intervals: (current[day]?.intervals ?? []).map(
+                                      (currentInterval, currentIndex) =>
+                                        currentIndex === segmentIndex
+                                          ? {
+                                              ...currentInterval,
+                                              openTime: event.target.value,
+                                            }
+                                          : currentInterval
+                                    ),
+                                  },
+                                }))
+                              }
+                              disabled={isClosed}
+                              className="w-full rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none disabled:opacity-50"
+                            />
+                          </label>
+                          <label
+                            htmlFor={`hours-${day}-segment-${segmentIndex}-close`}
+                            className="block"
+                          >
+                            <span className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-muted)]">
+                              Cierra
+                            </span>
+                            <input
+                              id={`hours-${day}-segment-${segmentIndex}-close`}
+                              name={`hours_${day}_segment_${segmentIndex}_close`}
+                              type="time"
+                              value={interval.closeTime}
+                              onChange={(event) =>
+                                setScheduleByDay((current) => ({
+                                  ...current,
+                                  [day]: {
+                                    ...current[day],
+                                    intervals: (current[day]?.intervals ?? []).map(
+                                      (currentInterval, currentIndex) =>
+                                        currentIndex === segmentIndex
+                                          ? {
+                                              ...currentInterval,
+                                              closeTime: event.target.value,
+                                            }
+                                          : currentInterval
+                                    ),
+                                  },
+                                }))
+                              }
+                              disabled={isClosed}
+                              className="w-full rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none disabled:opacity-50"
+                            />
+                          </label>
+                        </div>
+                        <div className="flex items-end sm:justify-end">
+                          {visibleIntervals.length > 1 ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setScheduleByDay((current) => ({
+                                  ...current,
+                                  [day]: {
+                                    ...current[day],
+                                    intervals: (current[day]?.intervals ?? []).filter(
+                                      (_, currentIndex) => currentIndex !== segmentIndex
+                                    ),
+                                  },
+                                }))
+                              }
+                              className="inline-flex h-12 w-12 items-center justify-center self-end rounded-full border border-[var(--color-border)] bg-white text-[var(--color-muted)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                              aria-label={`Eliminar turno ${segmentIndex + 1} de ${label}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+
+                    {!isClosed ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setScheduleByDay((current) => ({
+                            ...current,
+                            [day]: {
+                              ...current[day],
+                              intervals:
+                                (current[day]?.intervals ?? []).length >= 3
+                                  ? current[day]!.intervals
+                                  : [
+                                      ...(current[day]?.intervals ?? []),
+                                      { openTime: "", closeTime: "" },
+                                    ],
+                            },
+                          }))
+                        }
+                        disabled={visibleIntervals.length >= 3}
+                        className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Agregar turno
+                      </button>
+                    ) : null}
                   </div>
-                  <div>
-                    <label
-                      htmlFor={`hours-${day}-close`}
-                      className="mb-2 block text-xs font-medium uppercase tracking-[0.18em] text-[var(--color-muted)]"
-                    >
-                      Cierra
-                    </label>
-                    <input
-                      id={`hours-${day}-close`}
-                      name={`hours_${day}_close`}
-                      type="time"
-                      value={daySchedule.closeTime}
-                      onChange={(event) =>
-                        setScheduleByDay((current) => ({
-                          ...current,
-                          [day]: {
-                            ...current[day],
-                            closeTime: event.target.value,
-                          },
-                        }))
-                      }
-                      disabled={isClosed}
-                      className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm outline-none disabled:opacity-50"
-                    />
-                  </div>
-                  <label className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-foreground)] md:col-span-2 xl:col-span-1">
+                  <label className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-foreground)] xl:col-span-1">
                     <span>Cerrado</span>
                     <input
                       type="checkbox"
@@ -313,14 +508,12 @@ export function BusinessSettingsForm({ business }: BusinessSettingsFormProps) {
                           ...current,
                           [day]: {
                             isClosed: event.target.checked,
-                            openTime:
-                              !event.target.checked && !current[day]?.openTime
-                                ? "12:00"
-                                : current[day]?.openTime ?? "",
-                            closeTime:
-                              !event.target.checked && !current[day]?.closeTime
-                                ? "23:00"
-                                : current[day]?.closeTime ?? "",
+                            intervals:
+                              event.target.checked
+                                ? current[day]?.intervals ?? []
+                                : (current[day]?.intervals?.length ?? 0) > 0
+                                  ? current[day]?.intervals ?? []
+                                  : [{ openTime: "12:00", closeTime: "23:00" }],
                           },
                         }))
                       }

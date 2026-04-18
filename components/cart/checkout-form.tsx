@@ -12,7 +12,7 @@ import {
   getStoredCustomerProfile,
   saveStoredCustomerProfile,
 } from "@/lib/customer-profile";
-import { formatPrice, type PublicBusiness } from "@/lib/public-catalog";
+import { formatPrice, type PublicBusiness, type PublicProduct } from "@/lib/public-catalog";
 
 const checkoutFormSchema = z.object({
   customerName: z.string().trim().min(1, "Ingresa tu nombre."),
@@ -24,18 +24,20 @@ type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
 
 type CheckoutFormProps = {
   business: PublicBusiness;
+  products: PublicProduct[];
   isMercadoPagoTestMode: boolean;
   paymentFeedback: "failed" | "pending" | null;
 };
 
 export function CheckoutForm({
   business,
+  products,
   isMercadoPagoTestMode,
   paymentFeedback,
 }: CheckoutFormProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const { getCart, isReady } = useCart();
+  const { getCart, isReady, reconcileCart } = useCart();
   const hasTrackedCheckout = useRef(false);
   const cart = getCart(business.id);
   const subtotal =
@@ -62,6 +64,25 @@ export function CheckoutForm({
       customerPhone: storedProfile.phone,
     }));
   }, [form]);
+
+  useEffect(() => {
+    reconcileCart(
+      {
+        businessId: business.id,
+        businessSlug: business.slug,
+        businessName: business.name,
+        currencyCode: business.currencyCode,
+      },
+      products
+    );
+  }, [
+    business.currencyCode,
+    business.id,
+    business.name,
+    business.slug,
+    products,
+    reconcileCart,
+  ]);
 
   useEffect(() => {
     if (hasTrackedCheckout.current || !cart || cart.items.length === 0) {
