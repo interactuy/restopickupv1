@@ -7,7 +7,7 @@ import {
 } from "@/lib/dashboard/actions";
 import {
   getDashboardCategoryById,
-  requireDashboardContext,
+  requireAdminDashboardContext,
 } from "@/lib/dashboard/server";
 
 import { CategoryForm } from "@/components/dashboard/category-form";
@@ -27,7 +27,7 @@ export default async function DashboardEditCategoryPage({
   params,
   searchParams,
 }: DashboardEditCategoryPageProps) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/categorias");
   const { categoryId } = await params;
   const [category, query] = await Promise.all([
     getDashboardCategoryById(context.business.id, categoryId),

@@ -24,7 +24,7 @@ function formatPercent(bps: number) {
 }
 
 export default async function AdminCommissionsPage() {
-  await requireInternalAdminContext();
+  await requireInternalAdminContext("/admin/comisiones");
   const [overview, businesses] = await Promise.all([
     getAdminOverview(),
     getAdminBusinesses(),

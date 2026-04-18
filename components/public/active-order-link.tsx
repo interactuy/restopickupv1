@@ -10,6 +10,7 @@ import {
 } from "@/lib/customer-account-client";
 import {
   CUSTOMER_PROFILE_UPDATED_EVENT,
+  clearStoredActiveOrder,
   getStoredActiveOrder,
   saveStoredActiveOrder,
   type StoredActiveOrder,
@@ -98,16 +99,8 @@ export function ActiveOrderLink() {
           return;
         }
 
-        if (storedOrder) {
-          setActiveOrder({
-            businessSlug: storedOrder.businessSlug,
-            businessName: storedOrder.businessName,
-            orderNumber: storedOrder.orderNumber,
-            statusCode: storedOrder.statusCode,
-          });
-        } else {
-          setActiveOrder(null);
-        }
+        clearStoredActiveOrder();
+        setActiveOrder(null);
       } catch {
         if (!cancelled && storedOrder) {
           setActiveOrder({

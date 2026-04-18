@@ -426,11 +426,15 @@ export async function getInternalAdminContext(): Promise<InternalAdminContext | 
   };
 }
 
-export async function requireInternalAdminContext() {
+export async function requireInternalAdminContext(nextPath = "/admin/solicitudes") {
   const context = await getInternalAdminContext();
 
   if (!context) {
-    redirect("/login?redirectTo=/admin/solicitudes");
+    const safeNextPath =
+      nextPath.startsWith("/") && !nextPath.startsWith("//")
+        ? nextPath
+        : "/admin/solicitudes";
+    redirect(`/login?redirectTo=${encodeURIComponent(safeNextPath)}`);
   }
 
   return context;

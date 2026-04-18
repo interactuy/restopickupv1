@@ -29,11 +29,11 @@ export function CartSummaryPanel({
 
   return (
     <aside
-      className={`overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-white ${
+      className={`overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-white/96 ${
         isPage ? "" : "lg:sticky lg:top-6"
       }`}
     >
-      <div className="border-b border-[var(--color-border)] px-6 py-5">
+      <div className="border-b border-[var(--color-border)] px-6 py-5 md:px-7 md:py-6">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
@@ -44,7 +44,7 @@ export function CartSummaryPanel({
           </h2>
           {isPage ? (
             <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
-              Revisá cantidades, opciones y notas por producto antes de pasar al checkout.
+              Revisá el pedido antes de confirmar.
             </p>
           ) : null}
         </div>
@@ -55,8 +55,8 @@ export function CartSummaryPanel({
       </div>
 
       {!isReady || !cart || cart.items.length === 0 ? (
-        <div className="px-6 py-6">
-        <div className="rounded-[1.25rem] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+        <div className="px-6 py-6 md:px-7">
+        <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <p className="text-sm leading-7 text-[var(--color-muted)]">
             Agregá productos del menú para ver el resumen del pedido antes de pasar
             al checkout.
@@ -77,7 +77,7 @@ export function CartSummaryPanel({
             {cart.items.map((item) => (
               <div
                 key={item.lineId}
-                className="px-6 py-5"
+                className="px-6 py-5 md:px-7"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -159,13 +159,13 @@ export function CartSummaryPanel({
             ))}
           </div>
 
-          <div className="bg-[var(--color-surface)] px-6 py-5">
+          <div className="border-t border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-5 md:px-7">
             <div className="flex items-center justify-between text-base font-medium text-[var(--color-foreground)]">
               <span>Subtotal</span>
               <span>{formatPrice(subtotal, currencyCode)}</span>
             </div>
             <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
-              Revisá las opciones y notas por producto antes de pasar al checkout.
+              Podés seguir sumando productos o pasar al pago.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               {isPage ? (

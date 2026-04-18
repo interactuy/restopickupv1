@@ -41,13 +41,64 @@ const statusCardStyles: Record<string, string> = {
 };
 
 const statusPanelStyles: Record<string, string> = {
-  pending: "bg-[rgba(198,90,46,0.06)]",
-  confirmed: "bg-[rgba(198,90,46,0.06)]",
-  preparing: "bg-[rgba(201,138,43,0.08)]",
-  ready_for_pickup: "bg-[rgba(18,224,138,0.12)]",
-  completed: "bg-[rgba(16,201,121,0.1)]",
-  canceled: "bg-[rgba(181,66,50,0.06)]",
+  pending: "bg-[linear-gradient(135deg,rgba(198,90,46,0.12),rgba(198,90,46,0.04))]",
+  confirmed: "bg-[linear-gradient(135deg,rgba(198,90,46,0.12),rgba(198,90,46,0.04))]",
+  preparing: "bg-[linear-gradient(135deg,rgba(201,138,43,0.14),rgba(201,138,43,0.05))]",
+  ready_for_pickup: "bg-[linear-gradient(135deg,rgba(18,224,138,0.18),rgba(18,224,138,0.07))]",
+  completed: "bg-[linear-gradient(135deg,rgba(16,201,121,0.1),rgba(16,201,121,0.03))]",
+  canceled: "bg-[linear-gradient(135deg,rgba(181,66,50,0.08),rgba(181,66,50,0.02))]",
 };
+
+const statusFocusLabels: Record<string, string> = {
+  pending: "Nuevo",
+  confirmed: "Nuevo",
+  preparing: "En cocina",
+  ready_for_pickup: "Retirar ahora",
+  completed: "Histórico",
+  canceled: "Histórico",
+};
+
+const statusFocusStyles: Record<string, string> = {
+  pending: "bg-[var(--color-accent)] text-white",
+  confirmed: "bg-[var(--color-accent)] text-white",
+  preparing: "bg-[#C98A2B] text-white",
+  ready_for_pickup: "bg-[#10C979] text-white",
+  completed: "bg-[rgba(16,201,121,0.14)] text-[#00814A]",
+  canceled: "bg-[rgba(181,66,50,0.12)] text-[#B54232]",
+};
+
+function getReadyPriority(order: Awaited<ReturnType<typeof getDashboardOrders>>[number]) {
+  if (!order.estimatedReadyAt) {
+    return null;
+  }
+
+  const minutesUntilReady = Math.round(
+    (new Date(order.estimatedReadyAt).getTime() - Date.now()) / 60000
+  );
+
+  if (minutesUntilReady <= 0) {
+    return {
+      label: "Atrasado",
+      className: "bg-[rgba(181,66,50,0.12)] text-[#B54232]",
+    };
+  }
+
+  if (minutesUntilReady <= 5) {
+    return {
+      label: "Ahora",
+      className: "bg-[rgba(18,224,138,0.18)] text-[#008F53]",
+    };
+  }
+
+  if (minutesUntilReady <= 12) {
+    return {
+      label: "Próximo",
+      className: "bg-[rgba(201,138,43,0.16)] text-[#9A6514]",
+    };
+  }
+
+  return null;
+}
 
 const tabConfig = {
   pending: {
@@ -105,13 +156,39 @@ function OrdersList({
     );
   }
 
+  const sortedOrders = [...orders].sort((left, right) => {
+    if (activeTab === "preparing") {
+      const leftReadyAt = left.estimatedReadyAt
+        ? new Date(left.estimatedReadyAt).getTime()
+        : Number.POSITIVE_INFINITY;
+      const rightReadyAt = right.estimatedReadyAt
+        ? new Date(right.estimatedReadyAt).getTime()
+        : Number.POSITIVE_INFINITY;
+
+      if (leftReadyAt !== rightReadyAt) {
+        return leftReadyAt - rightReadyAt;
+      }
+
+      return new Date(left.placedAt).getTime() - new Date(right.placedAt).getTime();
+    }
+
+    if (activeTab === "pending") {
+      return new Date(right.placedAt).getTime() - new Date(left.placedAt).getTime();
+    }
+
+    return new Date(right.placedAt).getTime() - new Date(left.placedAt).getTime();
+  });
+
   return (
-    <div className="mt-6 space-y-4">
-      {orders.map((order) => (
+    <div className="mt-6 space-y-3">
+      {sortedOrders.map((order) => {
+        const readyPriority = activeTab === "preparing" ? getReadyPriority(order) : null;
+
+        return (
         <details
           key={order.id}
           open={activeTab !== "delivered" && activeTab !== "canceled"}
-          className={`group overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] ${statusCardStyles[order.statusCode] ?? ""}`}
+          className={`group overflow-hidden rounded-[1.35rem] border border-[var(--color-border)] bg-white ${statusCardStyles[order.statusCode] ?? ""}`}
         >
           <summary
             className={`cursor-pointer list-none px-5 py-4 marker:hidden [&::-webkit-details-marker]:hidden ${statusPanelStyles[order.statusCode] ?? ""}`}
@@ -122,6 +199,14 @@ function OrdersList({
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-accent)]">
                     Pedido #{order.orderNumber}
                   </p>
+                  <span
+                    className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                      statusFocusStyles[order.statusCode] ??
+                      "bg-[var(--color-accent)] text-white"
+                    }`}
+                  >
+                    {statusFocusLabels[order.statusCode] ?? "Activo"}
+                  </span>
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-semibold ${
                       statusBadgeStyles[order.statusCode] ??
@@ -135,6 +220,13 @@ function OrdersList({
                       Listo para entregar
                     </span>
                   ) : null}
+                  {readyPriority ? (
+                    <span
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${readyPriority.className}`}
+                    >
+                      {readyPriority.label}
+                    </span>
+                  ) : null}
                   <span className="rounded-full border border-[var(--color-border)] bg-white px-3 py-1 text-xs font-medium text-[var(--color-muted)]">
                     {order.items.reduce((total, item) => total + item.quantity, 0)} item
                     {order.items.reduce((total, item) => total + item.quantity, 0) === 1
@@ -144,7 +236,7 @@ function OrdersList({
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <h2 className="text-xl font-semibold text-[var(--color-foreground)]">
+                  <h2 className="text-lg font-semibold text-[var(--color-foreground)] md:text-xl">
                     {order.customerName}
                   </h2>
                   <span className="text-sm text-[var(--color-muted)]">
@@ -155,7 +247,7 @@ function OrdersList({
                   </span>
                 </div>
 
-                <p className="mt-3 line-clamp-2 text-sm leading-7 text-[var(--color-muted)]">
+                <p className="mt-2 line-clamp-2 text-sm leading-6 text-[var(--color-muted)]">
                   {order.items
                     .map((item) => `${item.quantity}x ${item.productName}`)
                     .join(" · ")}
@@ -181,7 +273,7 @@ function OrdersList({
 
               <div className="flex w-full items-start justify-between gap-4 sm:w-auto sm:flex-col sm:items-end sm:text-right">
                 <div>
-                  <p className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
+                  <p className="text-xl font-semibold tracking-tight text-[var(--color-foreground)] md:text-2xl">
                     {formatPrice(order.totalAmount, order.currencyCode)}
                   </p>
                   <p className="mt-2 text-sm text-[var(--color-muted)]">
@@ -195,7 +287,7 @@ function OrdersList({
             </div>
           </summary>
 
-          <div className="border-t border-[var(--color-border)] px-5 py-5">
+          <div className="border-t border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm font-semibold text-[var(--color-foreground)]">
                 Qué pidió el cliente
@@ -208,11 +300,11 @@ function OrdersList({
               </p>
             </div>
 
-            <div className="mt-4 space-y-3 border-t border-[var(--color-border)] pt-4">
+            <div className="mt-4 divide-y divide-[var(--color-border)] rounded-[1rem] border border-[var(--color-border)] bg-white">
               {order.items.map((item) => (
                 <div
                   key={`${order.id}-${item.productName}`}
-                  className="flex items-start justify-between gap-4 rounded-[1rem] border border-[var(--color-border)] bg-white px-4 py-3"
+                  className="flex items-start justify-between gap-4 px-4 py-3"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-3">
@@ -231,7 +323,7 @@ function OrdersList({
                       c/u
                     </p>
                     {item.selectedOptions.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-2">
+                      <div className="mt-2 flex flex-wrap gap-1.5">
                         {item.selectedOptions.map((option) => (
                           <p
                             key={`${order.id}-${item.productName}-${option.groupName}-${option.itemName}`}
@@ -256,7 +348,7 @@ function OrdersList({
             </div>
 
             {order.customerNotes ? (
-              <div className="mt-4 rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
+              <div className="mt-4 rounded-[1rem] border border-[var(--color-border)] bg-white px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
                   Comentario del cliente
                 </p>
@@ -277,7 +369,7 @@ function OrdersList({
               </div>
             ) : null}
 
-            <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+            <div className="mt-5 flex flex-wrap items-end justify-between gap-4 border-t border-[var(--color-border)] pt-4">
               <div className="flex flex-wrap items-end gap-4">
                 <OrderReadyTimeForm
                   orderId={order.id}
@@ -320,7 +412,7 @@ function OrdersList({
             </div>
           </div>
         </details>
-      ))}
+      )})}
     </div>
   );
 }

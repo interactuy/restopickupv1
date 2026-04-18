@@ -121,7 +121,7 @@ function AccountSection({
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-white/35 md:px-6"
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-[var(--color-surface)]/80 md:px-6"
         aria-expanded={isOpen}
       >
         <div className="flex min-w-0 items-center gap-3">
@@ -151,11 +151,7 @@ function AccountSection({
         </span>
       </button>
 
-      {isOpen ? (
-        <div className="border-t border-[var(--color-border)] bg-white px-5 py-5 md:px-6">
-          {children}
-        </div>
-      ) : null}
+      {isOpen ? <div className="border-t border-[var(--color-border)] bg-white px-5 py-5 md:px-6">{children}</div> : null}
     </section>
   );
 }
@@ -286,6 +282,11 @@ export function CustomerAccountPage() {
 
         setActiveOrders(orders.activeOrders);
         setPreviousOrders(orders.previousOrders);
+
+        if (orders.activeOrders.length === 0) {
+          clearStoredActiveOrder();
+          setStoredActiveOrder(null);
+        }
       } catch {
         // Ignore transient refresh issues for this convenience polling.
       }
@@ -524,7 +525,7 @@ export function CustomerAccountPage() {
       <CustomerSessionBootstrap />
 
       <div className="mx-auto w-full max-w-7xl">
-        <div className="overflow-hidden rounded-[2rem] border border-[var(--color-border)] bg-white/96">
+        <div className="overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-white/96">
           <div className="border-b border-[var(--color-border)] px-6 py-6 md:px-8 lg:px-10">
             <div className="flex flex-wrap items-start justify-between gap-5">
               <div className="max-w-3xl">
@@ -563,7 +564,7 @@ export function CustomerAccountPage() {
               </div>
             ) : (
             <div className="grid gap-0 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.85fr)]">
-              <section className="order-2 border-t border-[var(--color-border)] px-6 py-6 md:px-8 lg:order-1 lg:border-t-0 lg:border-r lg:px-10 lg:py-10">
+              <section className="order-2 border-t border-[var(--color-border)] bg-[var(--color-surface)]/55 px-6 py-6 md:px-8 lg:order-1 lg:border-t-0 lg:border-r lg:px-10 lg:py-10">
                 <div className="max-w-xl">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-secondary)]">
                     Tu cuenta
@@ -575,7 +576,7 @@ export function CustomerAccountPage() {
                     Guardá tus datos para comprar más rápido y encontrá fácil los locales que más usás.
                   </p>
 
-                  <div className="mt-6 divide-y divide-[var(--color-border)] overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
+                  <div className="mt-6 overflow-hidden rounded-[1.25rem] border border-[var(--color-border)] bg-white">
                     <div className="p-5">
                       <p className="text-sm font-semibold text-[var(--color-foreground)]">
                         Checkout
@@ -584,7 +585,7 @@ export function CustomerAccountPage() {
                         Tus datos quedan listos para completar el pedido más rápido.
                       </p>
                     </div>
-                    <div className="p-5">
+                    <div className="border-t border-[var(--color-border)] p-5">
                       <p className="text-sm font-semibold text-[var(--color-foreground)]">
                         Favoritos y compras
                       </p>
@@ -689,7 +690,7 @@ export function CustomerAccountPage() {
                 </div>
               </div>
 
-              <div className="mt-6 overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
+              <div className="mt-6 overflow-hidden border-t border-[var(--color-border)]">
                 <AccountSection
                   icon="profile"
                   title="Info personal"
@@ -752,12 +753,12 @@ export function CustomerAccountPage() {
                     </div>
 
                     {savedState === "saved" ? (
-                      <div className="md:col-span-2 rounded-2xl border border-[rgba(63,92,78,0.18)] bg-[rgba(63,92,78,0.08)] px-4 py-3 text-sm text-[var(--color-secondary)]">
+                      <div className="md:col-span-2 rounded-xl border border-[rgba(63,92,78,0.18)] bg-[rgba(63,92,78,0.08)] px-4 py-3 text-sm text-[var(--color-secondary)]">
                         Tus datos quedaron actualizados.
                       </div>
                     ) : null}
 
-                    <div className="md:col-span-2 rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm text-[var(--color-muted)]">
+                    <div className="md:col-span-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-muted)]">
                       {storedLocation
                         ? "Ya hay una ubicación reciente guardada."
                         : "La ubicación se guarda cuando la activás desde la home."}
@@ -780,38 +781,41 @@ export function CustomerAccountPage() {
                 >
                   <div className="space-y-3">
                     {hasFavorites ? (
-                      profile.favoriteBusinesses.map((favorite) => (
-                        <Link
-                          key={favorite.slug}
-                          href={`/locales/${favorite.slug}`}
-                          className="flex items-center gap-4 rounded-[1.5rem] border border-[var(--color-border)] bg-white p-4 transition hover:border-[var(--color-accent)]"
-                        >
-                          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[1rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
-                            {favorite.profileImageUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={favorite.profileImageUrl}
-                                alt={favorite.name}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-lg font-semibold text-[var(--color-foreground)]">
-                                {favorite.name.slice(0, 1).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-[var(--color-foreground)]">
-                              {favorite.name}
-                            </p>
-                            <p className="mt-1 truncate text-sm text-[var(--color-muted)]">
-                              {favorite.pickupAddress}
-                            </p>
-                          </div>
-                        </Link>
-                      ))
+                      <div className="overflow-hidden rounded-[1.25rem] border border-[var(--color-border)] bg-white">
+                        {profile.favoriteBusinesses.map((favorite, index) => (
+                          <Link
+                            key={favorite.slug}
+                            href={`/locales/${favorite.slug}`}
+                            className={`flex items-center gap-4 px-4 py-4 transition hover:bg-[var(--color-surface)] ${index > 0 ? "border-t border-[var(--color-border)]" : ""}`}
+                          >
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[1rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
+                              {favorite.profileImageUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={favorite.profileImageUrl}
+                                  alt={favorite.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-lg font-semibold text-[var(--color-foreground)]">
+                                  {favorite.name.slice(0, 1).toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-[var(--color-foreground)]">
+                                {favorite.name}
+                              </p>
+                              <p className="mt-1 truncate text-sm text-[var(--color-muted)]">
+                                {favorite.pickupAddress}
+                              </p>
+                            </div>
+                            <span className="text-sm text-[var(--color-muted)]">Ver</span>
+                          </Link>
+                        ))}
+                      </div>
                     ) : (
-                      <div className="rounded-[1.5rem] border border-dashed border-[var(--color-border)] bg-white p-5 text-sm leading-7 text-[var(--color-muted)]">
+                      <div className="rounded-[1.25rem] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-sm leading-7 text-[var(--color-muted)]">
                         Todavía no guardaste locales.
                       </div>
                     )}
@@ -843,40 +847,42 @@ export function CustomerAccountPage() {
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
                           En curso
                         </p>
-                        {activeOrders.map((order) => (
-                          <Link
-                            key={order.id}
-                            href={`/locales/${order.businessSlug}/pedido/${order.orderNumber}`}
-                            className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-[rgba(63,92,78,0.16)] bg-[rgba(63,92,78,0.06)] p-4 transition hover:border-[var(--color-accent)]"
-                          >
-                            <div className="min-w-0">
-                              <p className="font-semibold text-[var(--color-foreground)]">
-                                {order.businessName}
-                              </p>
-                              <span
-                                className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-medium ${getOrderStatusClasses(order.statusCode)}`}
-                              >
-                                {getOrderStatusLabel(order.statusCode)}
-                              </span>
-                              <p className="mt-1 text-sm text-[var(--color-muted)]">
-                                {formatOrderItems(order.items)}
-                              </p>
-                              <p className="mt-1 text-sm text-[var(--color-muted)]">
-                                {order.estimatedReadyAt
-                                  ? `Retiro estimado ${formatOrderTime(order.estimatedReadyAt, order.businessTimezone)}`
-                                  : `Hecho el ${formatOrderTime(order.placedAt, order.businessTimezone)}`}
-                              </p>
-                            </div>
-                            <div className="shrink-0 text-right">
-                              <p className="text-sm font-semibold text-[var(--color-foreground)]">
-                                {formatOrderAmount(order.totalAmount, order.currencyCode)}
-                              </p>
-                              <span className="mt-1 inline-flex rounded-full border border-[rgba(63,92,78,0.18)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-secondary)]">
-                                Ver pedido
-                              </span>
-                            </div>
-                          </Link>
-                        ))}
+                        <div className="overflow-hidden rounded-[1.25rem] border border-[rgba(63,92,78,0.14)] bg-[rgba(63,92,78,0.05)]">
+                          {activeOrders.map((order, index) => (
+                            <Link
+                              key={order.id}
+                              href={`/locales/${order.businessSlug}/pedido/${order.orderNumber}`}
+                              className={`flex items-center justify-between gap-4 px-4 py-4 transition hover:bg-white/60 ${index > 0 ? "border-t border-[rgba(63,92,78,0.12)]" : ""}`}
+                            >
+                              <div className="min-w-0">
+                                <p className="font-semibold text-[var(--color-foreground)]">
+                                  {order.businessName}
+                                </p>
+                                <span
+                                  className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-medium ${getOrderStatusClasses(order.statusCode)}`}
+                                >
+                                  {getOrderStatusLabel(order.statusCode)}
+                                </span>
+                                <p className="mt-2 text-sm text-[var(--color-muted)]">
+                                  {formatOrderItems(order.items)}
+                                </p>
+                                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                  {order.estimatedReadyAt
+                                    ? `Retiro estimado ${formatOrderTime(order.estimatedReadyAt, order.businessTimezone)}`
+                                    : `Hecho el ${formatOrderTime(order.placedAt, order.businessTimezone)}`}
+                                </p>
+                              </div>
+                              <div className="shrink-0 text-right">
+                                <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                                  {formatOrderAmount(order.totalAmount, order.currencyCode)}
+                                </p>
+                                <span className="mt-2 inline-flex rounded-full border border-[rgba(63,92,78,0.18)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-secondary)]">
+                                  Ver pedido
+                                </span>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
                       </div>
                     ) : activeOrderFallback ? (
                       <div className="space-y-3">
@@ -885,7 +891,7 @@ export function CustomerAccountPage() {
                         </p>
                         <Link
                           href={`/locales/${activeOrderFallback.businessSlug}/pedido/${activeOrderFallback.orderNumber}`}
-                          className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-[rgba(63,92,78,0.16)] bg-[rgba(63,92,78,0.06)] p-4 transition hover:border-[var(--color-accent)]"
+                          className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-[rgba(63,92,78,0.14)] bg-[rgba(63,92,78,0.05)] px-4 py-4 transition hover:border-[var(--color-accent)]"
                         >
                           <div className="min-w-0">
                             <p className="font-semibold text-[var(--color-foreground)]">
@@ -928,91 +934,95 @@ export function CustomerAccountPage() {
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-muted)]">
                           Anteriores
                         </p>
-                        {previousOrders.map((order) => (
-                          <div
-                            key={`${order.businessSlug}-${order.orderNumber}`}
-                            className="rounded-[1.5rem] border border-[var(--color-border)] bg-white p-4"
-                          >
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="min-w-0">
-                                <p className="font-semibold text-[var(--color-foreground)]">
-                                  {order.businessName}
-                                </p>
-                                <p className="mt-1 text-sm text-[var(--color-muted)]">
-                                  {formatOrderItems(order.items)}
-                                </p>
-                                <p className="mt-1 text-sm text-[var(--color-muted)]">
-                                  {formatOrderTime(order.placedAt, order.businessTimezone)}
+                        <div className="overflow-hidden rounded-[1.25rem] border border-[var(--color-border)] bg-white">
+                          {previousOrders.map((order, index) => (
+                            <div
+                              key={`${order.businessSlug}-${order.orderNumber}`}
+                              className={`px-4 py-4 ${index > 0 ? "border-t border-[var(--color-border)]" : ""}`}
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-[var(--color-foreground)]">
+                                    {order.businessName}
+                                  </p>
+                                  <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                    {formatOrderItems(order.items)}
+                                  </p>
+                                  <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                    {formatOrderTime(order.placedAt, order.businessTimezone)}
+                                  </p>
+                                </div>
+                                <p className="shrink-0 text-sm font-semibold text-[var(--color-foreground)]">
+                                  {formatOrderAmount(order.totalAmount, order.currencyCode)}
                                 </p>
                               </div>
-                              <p className="shrink-0 text-sm font-semibold text-[var(--color-foreground)]">
-                                {formatOrderAmount(order.totalAmount, order.currencyCode)}
-                              </p>
-                            </div>
-                            <div className="mt-4 flex flex-wrap gap-3">
-                              <Link
-                                href={`/locales/${order.businessSlug}/pedido/${order.orderNumber}`}
-                                className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-                              >
-                                Ver pedido
-                              </Link>
-                              <button
-                                type="button"
-                                onClick={() => handleRepeatOrder(order.id)}
-                                disabled={
-                                  repeatOrderState.status === "loading" &&
+                              <div className="mt-4 flex flex-wrap gap-3">
+                                <Link
+                                  href={`/locales/${order.businessSlug}/pedido/${order.orderNumber}`}
+                                  className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                                >
+                                  Ver pedido
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRepeatOrder(order.id)}
+                                  disabled={
+                                    repeatOrderState.status === "loading" &&
+                                    repeatOrderState.orderId === order.id
+                                  }
+                                  className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
+                                >
+                                  {repeatOrderState.status === "loading" &&
                                   repeatOrderState.orderId === order.id
-                                }
-                                className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
-                              >
-                                {repeatOrderState.status === "loading" &&
-                                repeatOrderState.orderId === order.id
-                                  ? "Repitiendo..."
-                                  : "Repetir pedido"}
-                              </button>
+                                    ? "Repitiendo..."
+                                    : "Repetir pedido"}
+                                </button>
+                              </div>
+                              {repeatOrderState.status === "error" &&
+                              repeatOrderState.orderId === order.id &&
+                              repeatOrderState.message ? (
+                                <p className="mt-3 text-sm text-red-700">
+                                  {repeatOrderState.message}
+                                </p>
+                              ) : null}
                             </div>
-                            {repeatOrderState.status === "error" &&
-                            repeatOrderState.orderId === order.id &&
-                            repeatOrderState.message ? (
-                              <p className="mt-3 text-sm text-red-700">
-                                {repeatOrderState.message}
-                              </p>
-                            ) : null}
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     ) : hasRecentPurchases ? (
                       <div className="space-y-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-muted)]">
                           Anteriores
                         </p>
-                        {recentPurchases.map((purchase) => (
-                          <Link
-                            key={`${purchase.businessSlug}-${purchase.orderNumber}`}
-                            href={`/locales/${purchase.businessSlug}/pedido/${purchase.orderNumber}`}
-                            className="flex items-center justify-between gap-4 rounded-[1.5rem] border border-[var(--color-border)] bg-white p-4 transition hover:border-[var(--color-accent)]"
-                          >
-                            <div className="min-w-0">
-                              <p className="font-semibold text-[var(--color-foreground)]">
-                                {purchase.businessName}
-                              </p>
-                              <p className="mt-1 text-sm text-[var(--color-muted)]">
-                                {purchase.itemSummary || `Pedido #${purchase.orderNumber}`}
-                              </p>
-                              {typeof purchase.totalAmount === "number" && purchase.currencyCode ? (
-                                <p className="mt-1 text-sm text-[var(--color-muted)]">
-                                  {formatOrderAmount(purchase.totalAmount, purchase.currencyCode)}
+                        <div className="overflow-hidden rounded-[1.25rem] border border-[var(--color-border)] bg-white">
+                          {recentPurchases.map((purchase, index) => (
+                            <Link
+                              key={`${purchase.businessSlug}-${purchase.orderNumber}`}
+                              href={`/locales/${purchase.businessSlug}/pedido/${purchase.orderNumber}`}
+                              className={`flex items-center justify-between gap-4 px-4 py-4 transition hover:bg-[var(--color-surface)] ${index > 0 ? "border-t border-[var(--color-border)]" : ""}`}
+                            >
+                              <div className="min-w-0">
+                                <p className="font-semibold text-[var(--color-foreground)]">
+                                  {purchase.businessName}
                                 </p>
-                              ) : null}
-                            </div>
-                            <span className="shrink-0 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-muted)]">
-                              Ver pedido
-                            </span>
-                          </Link>
-                        ))}
+                                <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                  {purchase.itemSummary || `Pedido #${purchase.orderNumber}`}
+                                </p>
+                                {typeof purchase.totalAmount === "number" && purchase.currencyCode ? (
+                                  <p className="mt-1 text-sm text-[var(--color-muted)]">
+                                    {formatOrderAmount(purchase.totalAmount, purchase.currencyCode)}
+                                  </p>
+                                ) : null}
+                              </div>
+                              <span className="shrink-0 text-sm text-[var(--color-muted)]">
+                                Ver
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
                       </div>
                     ) : !hasActiveOrders ? (
-                      <div className="rounded-[1.5rem] border border-dashed border-[var(--color-border)] bg-white p-5 text-sm leading-7 text-[var(--color-muted)]">
+                      <div className="rounded-[1.25rem] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-sm leading-7 text-[var(--color-muted)]">
                         Todavía no hay compras guardadas.
                       </div>
                     ) : null}

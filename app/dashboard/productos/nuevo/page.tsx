@@ -1,7 +1,10 @@
 import Link from "next/link";
 
 import { createProductAction } from "@/lib/dashboard/actions";
-import { getDashboardCategories, requireDashboardContext } from "@/lib/dashboard/server";
+import {
+  getDashboardCategories,
+  requireAdminDashboardContext,
+} from "@/lib/dashboard/server";
 
 import { ProductForm } from "@/components/dashboard/product-form";
 
@@ -14,7 +17,7 @@ type DashboardNewProductPageProps = {
 export default async function DashboardNewProductPage({
   searchParams,
 }: DashboardNewProductPageProps) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/productos/nuevo");
   const categories = await getDashboardCategories(context.business.id);
   const query = await searchParams;
 

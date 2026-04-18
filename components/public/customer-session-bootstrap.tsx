@@ -9,6 +9,7 @@ import {
   getCustomerUser,
 } from "@/lib/customer-account-client";
 import {
+  clearStoredActiveOrder,
   getStoredActiveOrder,
   saveStoredActiveOrder,
   type StoredActiveOrder,
@@ -58,7 +59,13 @@ export function CustomerSessionBootstrap() {
       try {
         const { activeOrders } = await getCustomerActiveOrders();
 
-        if (!isMounted || activeOrders.length === 0) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (activeOrders.length === 0) {
+          clearStoredActiveOrder();
+          setReadyOrderToast(null);
           return;
         }
 

@@ -3,12 +3,24 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/server";
 
+function sanitizeNextPath(next: string | null) {
+  if (!next) {
+    return "/dashboard";
+  }
+
+  if (!next.startsWith("/") || next.startsWith("//")) {
+    return "/dashboard";
+  }
+
+  return next;
+}
+
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type");
-  const next = requestUrl.searchParams.get("next") ?? "/dashboard";
+  const next = sanitizeNextPath(requestUrl.searchParams.get("next"));
   const redirectUrl = new URL(next, requestUrl.origin);
 
   try {

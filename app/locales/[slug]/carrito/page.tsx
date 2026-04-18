@@ -18,7 +18,7 @@ export default async function CartPage({ params }: CartPageProps) {
 
   return (
     <main className="min-h-screen bg-[var(--color-background)] px-6 py-6 md:px-10 md:py-8 lg:px-12">
-      <div className="mx-auto w-full max-w-6xl">
+      <div className="mx-auto w-full max-w-7xl">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Link
             href={`/locales/${catalog.business.slug}`}

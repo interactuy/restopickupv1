@@ -219,8 +219,9 @@ export default async function ConfirmationPage({
         currencyCode={finalConfirmation.order.currencyCode}
       />
       <AutoRefresh enabled={shouldAutoRefresh} intervalMs={12000} />
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
-        <div className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+        <div className="overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-white/96">
+          <div className="px-7 py-7 md:px-8 md:py-8">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
             {paymentLabel.eyebrow}
           </p>
@@ -254,18 +255,22 @@ export default async function ConfirmationPage({
             </div>
           ) : null}
           {finalConfirmation.order.statusCode === "ready_for_pickup" ? (
-            <div className="mt-6 rounded-[1.5rem] border border-[rgba(18,224,138,0.28)] bg-[rgba(18,224,138,0.14)] px-5 py-4 text-sm font-medium text-[#008F53]">
+            <div className="mt-6 rounded-xl border border-[rgba(18,224,138,0.28)] bg-[rgba(18,224,138,0.14)] px-5 py-4 text-sm font-medium text-[#008F53]">
               Tu pedido ya está listo para retirar.
             </div>
           ) : null}
+          </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_360px]">
-          <section className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-7 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
+          <section className="overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-white/96">
+            <div className="border-b border-[var(--color-border)] px-7 py-6 md:px-8">
             <h2 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
               Resumen del pedido
             </h2>
-            <div className="mt-4 grid gap-4 rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:grid-cols-2">
+            </div>
+            <div className="px-7 py-6 md:px-8">
+            <div className="grid gap-4 rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:grid-cols-2">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
                   Cliente
@@ -299,7 +304,7 @@ export default async function ConfirmationPage({
               {finalConfirmation.order.items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] pb-4"
+                  className="flex items-start justify-between gap-4 border-b border-[var(--color-border)] pb-4 last:border-b-0"
                 >
                   <div>
                     <p className="text-sm font-semibold text-[var(--color-foreground)]">
@@ -339,7 +344,7 @@ export default async function ConfirmationPage({
             </div>
 
             {finalConfirmation.order.customerNotes ? (
-              <div className="mt-6 rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+              <div className="mt-6 rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
                   Comentario para el local
                 </p>
@@ -348,14 +353,18 @@ export default async function ConfirmationPage({
                 </p>
               </div>
             ) : null}
+            </div>
           </section>
 
-          <aside className="rounded-[2rem] border border-[var(--color-border)] bg-white/90 p-7 shadow-[0_24px_80px_rgba(39,24,13,0.08)] backdrop-blur-sm">
+          <aside className="overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-white/96 lg:sticky lg:top-6">
+            <div className="border-b border-[var(--color-border)] px-7 py-6 md:px-8">
             <h2 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
               Pago y retiro
             </h2>
-            <div className="mt-5 overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
-              <div className="bg-[radial-gradient(circle_at_top_left,_rgba(198,122,48,0.2),_transparent_55%),linear-gradient(135deg,#f5e7d4_0%,#efe4d3_50%,#e6d6be_100%)] p-5">
+            </div>
+            <div className="px-7 py-6 md:px-8">
+            <div className="overflow-hidden rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)]">
+              <div className="bg-[radial-gradient(circle_at_top_left,_rgba(198,122,48,0.18),_transparent_55%),linear-gradient(135deg,#f5e7d4_0%,#efe4d3_50%,#e8dbc9_100%)] p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
                   Punto de retiro
                 </p>
@@ -382,29 +391,31 @@ export default async function ConfirmationPage({
                 </a>
               ) : null}
             </div>
-            <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
-              Estado del pago:{" "}
-              <span className="text-[var(--color-accent)]">
-                {getFormattedPaymentStatus(finalConfirmation.order.paymentStatus)}
-              </span>
-            </p>
-            <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
-              Estado del pedido:{" "}
-              <span className="text-[var(--color-accent)]">
-                {statusLabels[finalConfirmation.order.statusCode] ??
-                  finalConfirmation.order.statusCode}
-              </span>
-            </p>
-            {finalConfirmation.order.estimatedReadyAt ? (
-              <p className="mt-4 text-sm font-medium text-[var(--color-foreground)]">
-                Tiempo aproximado:{" "}
-                <span className="text-[var(--color-accent)]">
-                  hasta las {formatTime(finalConfirmation.order.estimatedReadyAt, businessTimezone)}
+            <div className="mt-5 space-y-3">
+              <div className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] pb-3 text-sm">
+                <span className="text-[var(--color-muted)]">Estado del pago</span>
+                <span className="font-medium text-[var(--color-foreground)]">
+                  {getFormattedPaymentStatus(finalConfirmation.order.paymentStatus)}
                 </span>
-              </p>
+              </div>
+              <div className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] pb-3 text-sm">
+                <span className="text-[var(--color-muted)]">Estado del pedido</span>
+                <span className="font-medium text-[var(--color-foreground)]">
+                  {statusLabels[finalConfirmation.order.statusCode] ??
+                    finalConfirmation.order.statusCode}
+                </span>
+              </div>
+            {finalConfirmation.order.estimatedReadyAt ? (
+              <div className="flex items-center justify-between gap-4 text-sm">
+                <span className="text-[var(--color-muted)]">Retiro estimado</span>
+                <span className="font-medium text-[var(--color-foreground)]">
+                  {formatTime(finalConfirmation.order.estimatedReadyAt, businessTimezone)}
+                </span>
+              </div>
             ) : null}
+            </div>
             {finalConfirmation.order.pickupInstructions ? (
-              <div className="mt-4 rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
+              <div className="mt-5 rounded-[1.25rem] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]">
                   Instrucciones de retiro
                 </p>
@@ -414,7 +425,7 @@ export default async function ConfirmationPage({
               </div>
             ) : null}
             {contactAction ? (
-              <div className="mt-4">
+              <div className="mt-5">
                 <a
                   href={contactAction.href}
                   target={
@@ -436,13 +447,14 @@ export default async function ConfirmationPage({
             <p className="mt-6 text-sm text-[var(--color-muted)]">
               A nombre de {finalConfirmation.order.customerName}
             </p>
-            <div className="mt-8">
+            <div className="mt-7">
               <Link
                 href={`/locales/${finalConfirmation.business.slug}`}
                 className="inline-flex w-full items-center justify-center rounded-full bg-[var(--color-accent)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-95"
               >
-                Volver al menu
+                Volver al menú
               </Link>
+            </div>
             </div>
           </aside>
         </div>

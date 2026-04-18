@@ -552,7 +552,11 @@ function parseCategoryFormData(formData: FormData) {
 export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const redirectTo = String(formData.get("redirectTo") ?? "/dashboard");
+  const redirectToInput = String(formData.get("redirectTo") ?? "/dashboard").trim();
+  const redirectTo =
+    redirectToInput.startsWith("/") && !redirectToInput.startsWith("//")
+      ? redirectToInput
+      : "/dashboard";
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({
@@ -854,6 +858,9 @@ export async function updateOrderStatusAction(formData: FormData) {
   const admin = createAdminClient();
   const updates: Record<string, string | null> = {
     status_code: statusCode,
+    ready_for_pickup_at: null,
+    picked_up_at: null,
+    canceled_at: null,
   };
 
   if (statusCode === "ready_for_pickup") {
@@ -975,7 +982,7 @@ export async function deleteOrderAction(formData: FormData) {
 }
 
 export async function toggleProductAvailabilityAction(formData: FormData) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/productos");
   const productId = String(formData.get("productId") ?? "");
   const nextValue = String(formData.get("nextValue") ?? "") === "true";
 
@@ -1210,7 +1217,7 @@ export async function completeDashboardOnboardingAction() {
 }
 
 export async function createProductAction(formData: FormData) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/productos/nuevo");
 
   try {
     const admin = createAdminClient();
@@ -1281,7 +1288,7 @@ export async function createProductAction(formData: FormData) {
 }
 
 export async function updateProductAction(formData: FormData) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/productos");
   const productId = String(formData.get("productId") ?? "").trim();
 
   if (!productId) {
@@ -1372,7 +1379,7 @@ export async function updateProductAction(formData: FormData) {
 }
 
 export async function deleteProductAction(formData: FormData) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/productos");
   const productId = String(formData.get("productId") ?? "").trim();
 
   if (!productId) {
@@ -1443,7 +1450,7 @@ export async function deleteProductAction(formData: FormData) {
 }
 
 export async function createCategoryAction(formData: FormData) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/categorias");
 
   try {
     const categoryData = parseCategoryFormData(formData);
@@ -1492,7 +1499,7 @@ export async function createCategoryAction(formData: FormData) {
 }
 
 export async function updateCategoryAction(formData: FormData) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/categorias");
   const categoryId = String(formData.get("categoryId") ?? "").trim();
 
   if (!categoryId) {
@@ -1564,7 +1571,7 @@ export async function updateCategoryAction(formData: FormData) {
 }
 
 export async function deleteCategoryAction(formData: FormData) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/categorias");
   const categoryId = String(formData.get("categoryId") ?? "").trim();
 
   if (!categoryId) {

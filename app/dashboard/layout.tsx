@@ -59,17 +59,22 @@ export default async function DashboardLayout({
           icon: ClipboardList,
           badge: overview && overview.pendingOrders > 0 ? overview.pendingOrders : null,
         },
+      ]
+      : showAdminLinks
+        ? [
+        { href: "/dashboard/onboarding", label: "Primeros pasos", icon: Sparkles },
+        { href: "/dashboard/configuracion", label: "Configuración", icon: Settings2 },
         { href: "/dashboard/categorias", label: "Categorías", icon: LayoutGrid },
         { href: "/dashboard/productos", label: "Productos", icon: Package2 },
       ]
-      : [
-        { href: "/dashboard/onboarding", label: "Primeros pasos", icon: Sparkles },
-        ...(showAdminLinks
-          ? [{ href: "/dashboard/configuracion", label: "Configuración", icon: Settings2 }]
-          : []),
-        { href: "/dashboard/categorias", label: "Categorías", icon: LayoutGrid },
-        { href: "/dashboard/productos", label: "Productos", icon: Package2 },
-      ];
+        : [
+          {
+            href: "/dashboard/pedidos",
+            label: "Pedidos",
+            icon: ClipboardList,
+            badge: overview && overview.pendingOrders > 0 ? overview.pendingOrders : null,
+          },
+        ];
 
   return (
     <div

@@ -16,6 +16,10 @@ type LoginPageProps = {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const context = await getDashboardContext();
   const { redirectTo, error } = await searchParams;
+  const safeRedirectTo =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/dashboard";
 
   if (context) {
     redirect("/dashboard");
@@ -35,7 +39,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </p>
 
         <form action={loginAction} className="mt-8 space-y-5">
-          <input type="hidden" name="redirectTo" value={redirectTo ?? "/dashboard"} />
+          <input type="hidden" name="redirectTo" value={safeRedirectTo} />
 
           <div>
             <label

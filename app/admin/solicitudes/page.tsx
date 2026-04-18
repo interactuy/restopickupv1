@@ -34,7 +34,7 @@ const filters: { value: "all" | BusinessApplicationStatus; label: string }[] = [
 export default async function AdminApplicationsPage({
   searchParams,
 }: AdminApplicationsPageProps) {
-  await requireInternalAdminContext();
+  await requireInternalAdminContext("/admin/solicitudes");
   const query = await searchParams;
   const normalizedStatus =
     query.status === "approved" || query.status === "rejected" || query.status === "pending"

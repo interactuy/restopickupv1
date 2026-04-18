@@ -83,7 +83,27 @@ export function DashboardLiveNotifier({
       refreshDashboard();
     }
 
-    function handleUpdate() {
+    function handleUpdate(params: {
+      current: OrderRealtimeRecord | null;
+      previous: OrderRealtimeRecord | null;
+    }) {
+      const currentStatus = params.current?.payment_status ?? "";
+      const previousStatus = params.previous?.payment_status ?? "";
+
+      if (
+        params.current?.id &&
+        VISIBLE_PAYMENT_STATUSES.has(currentStatus) &&
+        !VISIBLE_PAYMENT_STATUSES.has(previousStatus) &&
+        !seenOrdersRef.current.has(params.current.id)
+      ) {
+        seenOrdersRef.current.add(params.current.id);
+        persistSeenOrders();
+        setNotification({
+          orderId: params.current.id,
+          orderNumber: params.current.order_number,
+        });
+      }
+
       refreshDashboard();
     }
 
@@ -107,7 +127,11 @@ export function DashboardLiveNotifier({
           table: "orders",
           filter: `business_id=eq.${businessId}`,
         },
-        () => handleUpdate()
+        (payload) =>
+          handleUpdate({
+            current: payload.new as OrderRealtimeRecord,
+            previous: payload.old as OrderRealtimeRecord,
+          })
       )
       .subscribe();
 

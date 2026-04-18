@@ -138,7 +138,7 @@ export function CheckoutForm({
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_380px] lg:items-start">
-      <section className="overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-white">
+      <section className="overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-white/96">
         <div className="border-b border-[var(--color-border)] px-6 py-6">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
             Checkout invitado
@@ -147,11 +147,11 @@ export function CheckoutForm({
             Confirmá tu pedido
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
-            Dejanos tu nombre y, si querés, un celular o comentario para el pedido.
+            Completá tus datos para pasar al pago.
           </p>
         </div>
 
-        <div className="px-6 py-6">
+        <div className="px-6 py-6 md:px-7">
           <div className="space-y-4">
             <MercadoPagoTestModeNote enabled={isMercadoPagoTestMode} />
 
@@ -203,7 +203,7 @@ export function CheckoutForm({
               id="customerPhone"
               {...form.register("customerPhone")}
               className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm outline-none transition focus:border-[var(--color-accent)]"
-              placeholder="Opcional"
+              placeholder="Opcional, para contactarte si hace falta"
             />
           </div>
 
@@ -219,7 +219,7 @@ export function CheckoutForm({
               {...form.register("customerNotes")}
               rows={4}
               className="w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm outline-none transition focus:border-[var(--color-accent)]"
-              placeholder="Opcional. Ej. retirar despues de las 21:00"
+              placeholder="Opcional. Ej. retirar después de las 21:00"
             />
           </div>
 
@@ -240,8 +240,8 @@ export function CheckoutForm({
         </div>
       </section>
 
-      <aside className="overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-white lg:sticky lg:top-6">
-        <div className="border-b border-[var(--color-border)] px-6 py-5">
+      <aside className="overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-white/96 lg:sticky lg:top-6">
+        <div className="border-b border-[var(--color-border)] px-6 py-5 md:px-7 md:py-6">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
             Resumen
           </p>
@@ -259,17 +259,17 @@ export function CheckoutForm({
         </div>
 
         {!isReady || !cart || cart.items.length === 0 ? (
-          <div className="px-6 py-6">
-          <div className="rounded-[1.25rem] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <div className="px-6 py-6 md:px-7">
+          <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-5">
             <p className="text-sm leading-7 text-[var(--color-muted)]">
-              Tu carrito esta vacio. Volve al menu del local para sumar
+              Tu carrito está vacío. Volvé al menú del local para sumar
               productos antes de confirmar.
             </p>
           </div>
           </div>
         ) : (
           <>
-            <div className="divide-y divide-[var(--color-border)] px-6">
+            <div className="divide-y divide-[var(--color-border)] px-6 md:px-7">
               {cart.items.map((item) => (
                 <div
                   key={item.lineId}
@@ -314,7 +314,7 @@ export function CheckoutForm({
               ))}
             </div>
 
-            <div className="bg-[var(--color-surface)] px-6 py-5">
+            <div className="border-t border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-5 md:px-7">
               <div className="flex items-center justify-between text-base font-semibold text-[var(--color-foreground)]">
                 <span>Subtotal</span>
                 <span>{formatPrice(subtotal, business.currencyCode)}</span>

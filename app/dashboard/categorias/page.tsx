@@ -1,7 +1,10 @@
 import Link from "next/link";
 
 import { createCategoryAction } from "@/lib/dashboard/actions";
-import { getDashboardCategories, requireDashboardContext } from "@/lib/dashboard/server";
+import {
+  getDashboardCategories,
+  requireAdminDashboardContext,
+} from "@/lib/dashboard/server";
 
 import { CategoryForm } from "@/components/dashboard/category-form";
 import { EmptyState } from "@/components/public/empty-state";
@@ -20,7 +23,7 @@ const successLabels: Record<string, string> = {
 export default async function DashboardCategoriesPage({
   searchParams,
 }: DashboardCategoriesPageProps) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/categorias");
   const [categories, query] = await Promise.all([
     getDashboardCategories(context.business.id),
     searchParams,

@@ -2,7 +2,7 @@ import { getAdminAuditLogs, requireInternalAdminContext } from "@/lib/admin/serv
 import { AdminPageHeader, AdminPanel, adminTableClasses } from "@/components/admin/admin-ui";
 
 export default async function AdminAuditPage() {
-  await requireInternalAdminContext();
+  await requireInternalAdminContext("/admin/auditoria");
   const logs = await getAdminAuditLogs();
 
   return (

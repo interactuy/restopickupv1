@@ -5,7 +5,7 @@ import { deleteProductAction, updateProductAction } from "@/lib/dashboard/action
 import {
   getDashboardCategories,
   getDashboardProductById,
-  requireDashboardContext,
+  requireAdminDashboardContext,
 } from "@/lib/dashboard/server";
 
 import { ProductForm } from "@/components/dashboard/product-form";
@@ -25,7 +25,7 @@ export default async function DashboardEditProductPage({
   params,
   searchParams,
 }: DashboardEditProductPageProps) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/productos");
   const { productId } = await params;
   const [categories, product, query] = await Promise.all([
     getDashboardCategories(context.business.id),

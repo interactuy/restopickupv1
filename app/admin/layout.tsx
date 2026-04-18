@@ -14,7 +14,7 @@ import {
 
 import { SubmitButton } from "@/components/dashboard/submit-button";
 import { logoutAction } from "@/lib/dashboard/actions";
-import { requireInternalAdminContext } from "@/lib/admin/server";
+import { getInternalAdminContext } from "@/lib/admin/server";
 
 type AdminLayoutProps = {
   children: React.ReactNode;
@@ -33,7 +33,11 @@ const links = [
 ];
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
-  const context = await requireInternalAdminContext();
+  const context = await getInternalAdminContext();
+
+  if (!context) {
+    return <>{children}</>;
+  }
 
   return (
     <div

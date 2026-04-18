@@ -33,7 +33,7 @@ function formatCurrency(amount: number) {
 }
 
 export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageProps) {
-  await requireInternalAdminContext();
+  await requireInternalAdminContext("/admin/pedidos");
   const query = await searchParams;
   const [businesses, orders] = await Promise.all([
     getAdminBusinesses(),
@@ -56,7 +56,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
         description="Pedidos de todos los locales, con filtros y detección inicial de casos problemáticos."
       />
 
-      <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-5">
+      <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-6">
         <select
           name="businessId"
           defaultValue={query.businessId ?? ""}
@@ -99,6 +99,12 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
           type="date"
           name="dateFrom"
           defaultValue={query.dateFrom ?? ""}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500"
+        />
+        <input
+          type="date"
+          name="dateTo"
+          defaultValue={query.dateTo ?? ""}
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500"
         />
         <button className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700">

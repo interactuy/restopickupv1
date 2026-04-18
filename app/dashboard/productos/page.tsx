@@ -1,7 +1,10 @@
 import Link from "next/link";
 
 import { formatPrice } from "@/lib/public-catalog";
-import { getDashboardProducts, requireDashboardContext } from "@/lib/dashboard/server";
+import {
+  getDashboardProducts,
+  requireAdminDashboardContext,
+} from "@/lib/dashboard/server";
 
 import { ProductAvailabilityForm } from "@/components/dashboard/product-availability-form";
 import { EmptyState } from "@/components/public/empty-state";
@@ -20,7 +23,7 @@ const successLabels: Record<string, string> = {
 export default async function DashboardProductsPage({
   searchParams,
 }: DashboardProductsPageProps) {
-  const context = await requireDashboardContext();
+  const context = await requireAdminDashboardContext("/dashboard/productos");
   const [products, query] = await Promise.all([
     getDashboardProducts(context.business.id),
     searchParams,

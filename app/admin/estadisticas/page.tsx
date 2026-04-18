@@ -55,7 +55,7 @@ function MetricSection({
 }
 
 export default async function AdminStatsPage() {
-  await requireInternalAdminContext();
+  await requireInternalAdminContext("/admin/estadisticas");
   const [stats, businesses] = await Promise.all([
     getAdminPlatformHealthStats(),
     getAdminBusinesses(),

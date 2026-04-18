@@ -29,8 +29,8 @@ export default async function AdminBusinessDetailPage({
   params,
   searchParams,
 }: AdminBusinessDetailPageProps) {
-  await requireInternalAdminContext();
   const { businessId } = await params;
+  await requireInternalAdminContext(`/admin/negocios/${businessId}`);
   const [business, query] = await Promise.all([
     getAdminBusinessById(businessId),
     searchParams,

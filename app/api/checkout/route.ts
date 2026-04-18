@@ -6,6 +6,7 @@ import { ZodError } from "zod";
 import { recordFunnelEvent } from "@/lib/analytics/funnel-server";
 import { createMercadoPagoPreference } from "@/lib/mercadopago/server";
 import { createGuestOrder } from "@/lib/supabase/orders";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -44,21 +45,6 @@ export async function POST(request: Request) {
       businessSlug: order.business.slug,
     });
 
-    await recordFunnelEvent({
-      eventType: "order_created",
-      businessId: order.business.id,
-      orderId: order.order.id,
-      sessionId:
-        payload && typeof payload === "object" && "funnelSessionId" in payload
-          ? String(payload.funnelSessionId ?? "")
-          : null,
-      metadata: {
-        requestId,
-        businessSlug: order.business.slug,
-        orderNumber: order.order.orderNumber,
-      },
-    });
-
     let preference;
 
     try {
@@ -75,6 +61,19 @@ export async function POST(request: Request) {
         items: order.items,
       });
     } catch (error) {
+      try {
+        const admin = createAdminClient();
+        await admin.from("orders").delete().eq("id", order.order.id);
+      } catch (cleanupError) {
+        console.error("[checkout] failed to cleanup order after preference error", {
+          requestId,
+          orderId: order.order.id,
+          orderNumber: order.order.orderNumber,
+          cleanupError:
+            cleanupError instanceof Error ? cleanupError.message : cleanupError,
+        });
+      }
+
       console.error("[checkout] mercado pago preference failed", {
         requestId,
         orderId: order.order.id,
@@ -94,6 +93,31 @@ export async function POST(request: Request) {
         },
         { status: 502 }
       );
+    }
+
+    try {
+      await recordFunnelEvent({
+        eventType: "order_created",
+        businessId: order.business.id,
+        orderId: order.order.id,
+        sessionId:
+          payload && typeof payload === "object" && "funnelSessionId" in payload
+            ? String(payload.funnelSessionId ?? "")
+            : null,
+        metadata: {
+          requestId,
+          businessSlug: order.business.slug,
+          orderNumber: order.order.orderNumber,
+        },
+      });
+    } catch (analyticsError) {
+      console.error("[checkout] funnel tracking failed", {
+        requestId,
+        orderId: order.order.id,
+        orderNumber: order.order.orderNumber,
+        analyticsError:
+          analyticsError instanceof Error ? analyticsError.message : analyticsError,
+      });
     }
 
     console.info("[checkout] preference created", {

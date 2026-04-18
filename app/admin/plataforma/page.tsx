@@ -17,7 +17,7 @@ type AdminPlatformPageProps = {
 export default async function AdminPlatformPage({
   searchParams,
 }: AdminPlatformPageProps) {
-  await requireInternalAdminContext();
+  await requireInternalAdminContext("/admin/plataforma");
   const [settings, query] = await Promise.all([
     getAdminPlatformSettings(),
     searchParams,

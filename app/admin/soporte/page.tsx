@@ -22,7 +22,7 @@ const sourceLabels = {
 };
 
 export default async function AdminSupportPage() {
-  await requireInternalAdminContext();
+  await requireInternalAdminContext("/admin/soporte");
   const incidents = await getAdminSupportIncidents();
 
   return (
