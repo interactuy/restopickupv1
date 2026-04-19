@@ -13,7 +13,7 @@ export function BusinessApplicationForm({
   error,
   success,
   mode = "full",
-  redirectPath = "/solicitar-acceso",
+  redirectPath = "/registrar-local",
 }: BusinessApplicationFormProps) {
   const inputClass =
     "w-full rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm outline-none transition placeholder:text-[rgba(107,98,90,0.55)] focus:border-[var(--color-accent)] focus:ring-4 focus:ring-[rgba(198,90,46,0.1)]";
@@ -32,7 +32,9 @@ export function BusinessApplicationForm({
 
       {success === "submitted" ? (
         <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          Recibimos el registro de tu local. Te contactamos para seguir con la puesta en marcha.
+          {isCommercial
+            ? "Recibimos tu solicitud. Te contactamos para revisar si tiene sentido avanzar."
+            : "Recibimos tu solicitud. Te contactamos para confirmar si tiene sentido avanzar con la activación."}
         </div>
       ) : null}
 
@@ -118,15 +120,18 @@ export function BusinessApplicationForm({
           <>
             <div className="rounded-[1.4rem] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
               <p className="text-sm font-semibold text-[var(--color-foreground)]">
-                Nos sirve para entender cómo opera tu local hoy.
+                Contanos cómo opera tu local.
               </p>
               <p className="mt-1 text-sm leading-7 text-[var(--color-muted)]">
-                Con estos datos revisamos encaje, zona, tipo de operación y la mejor forma de ponerlo en marcha.
+                Con esta información entendemos si Restopickup tiene sentido para tu negocio y cómo sería la activación si avanzamos.
+              </p>
+              <p className="mt-2 text-sm text-[var(--color-muted)]">
+                No lleva más que unos minutos.
               </p>
             </div>
 
             <section className="space-y-5">
-              <p className={sectionTitleClass}>Identidad</p>
+              <p className={sectionTitleClass}>Datos del local</p>
               <div className="grid gap-5 md:grid-cols-2">
                 <div>
                   <label htmlFor="businessName" className={labelClass}>
@@ -143,7 +148,7 @@ export function BusinessApplicationForm({
 
                 <div>
                   <label htmlFor="contactName" className={labelClass}>
-                    Responsable
+                    Nombre del responsable
                   </label>
                   <input
                     id="contactName"
@@ -189,6 +194,13 @@ export function BusinessApplicationForm({
 
               <div className="grid gap-5 md:grid-cols-2">
                 <div>
+                  <label className={labelClass}>Contacto</label>
+                  <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-muted)]">
+                    Podés dejar email, celular o ambos. Cuanta más info tengamos, más fácil es seguir la conversación.
+                  </div>
+                </div>
+
+                <div>
                   <label htmlFor="instagramOrWebsite" className={labelClass}>
                     Instagram o web{" "}
                     <span className="font-normal text-[var(--color-muted)]">(opcional)</span>
@@ -217,7 +229,10 @@ export function BusinessApplicationForm({
             </section>
 
             <section className="space-y-5">
-              <p className={sectionTitleClass}>Operación</p>
+              <p className={sectionTitleClass}>Cómo operan hoy</p>
+              <p className="text-sm leading-7 text-[var(--color-muted)]">
+                Queremos entender cómo manejan hoy la demanda, el retiro y los pedidos.
+              </p>
               <div>
                 <label htmlFor="pickupAddress" className={labelClass}>
                   Dirección de retiro del local{" "}
@@ -306,13 +321,13 @@ export function BusinessApplicationForm({
 
         <div className="flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-6">
           <SubmitButton
-            label={isCommercial ? "Quiero activar mi local" : "Registrar local"}
+            label={isCommercial ? "Quiero activar mi local" : "Enviar solicitud"}
             pendingLabel="Enviando..."
           />
           <p className="text-sm text-[var(--color-muted)]">
             {isCommercial
               ? "Te contactamos para revisar si encaja con tu operación y cómo seguir."
-              : "Te contactamos para revisar próximos pasos y si encaja con tu operación."}
+              : "Revisamos tu solicitud y te contactamos para confirmar si tiene sentido avanzar con la activación."}
           </p>
         </div>
       </form>

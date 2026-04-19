@@ -27,7 +27,7 @@ export function SupportFooter() {
             Contacto
           </Link>
           <Link
-            href="/solicitar-acceso"
+            href="/registrar-local"
             className="text-[var(--color-muted)] transition hover:text-[var(--color-accent)]"
           >
             Registrá tu local

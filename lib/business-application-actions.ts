@@ -9,7 +9,7 @@ function sanitizeRedirectPath(value: FormDataEntryValue | null) {
   const normalized = String(value ?? "").trim();
 
   if (!normalized.startsWith("/") || normalized.startsWith("//")) {
-    return "/solicitar-acceso";
+    return "/registrar-local";
   }
 
   return normalized;
