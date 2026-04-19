@@ -17,9 +17,9 @@ type CommercialPageProps = {
 };
 
 const heroBullets = [
-  "Menos fila y menos abandono",
+  "Captá pedidos incluso cuando el local está lleno",
   "Pago confirmado antes de preparar",
-  "Pedidos más claros para el equipo",
+  "Retiro rápido para clientes que no pueden esperar",
 ];
 
 const quickWins = [
@@ -29,7 +29,7 @@ const quickWins = [
   },
   {
     title: "Más pedidos",
-    body: "Tomá demanda aunque el local esté lleno",
+    body: "Captá demanda aunque el local esté lleno",
   },
   {
     title: "Cobro resuelto",
@@ -42,34 +42,34 @@ const quickWins = [
 ];
 
 const painBullets = [
-  "Pedidos desordenados",
-  "Cobro manual",
-  "Clientes que abandonan la espera",
+  "Fila que espanta ventas",
+  "Cobro y toma de pedido al mismo tiempo",
+  "Clientes con poco tiempo que se van",
 ];
 
 const flowSteps = [
   {
     step: "Paso 1",
-    title: "El cliente pide",
-    body: "Ve el menú, elige y confirma en pocos pasos.",
+    title: "El cliente pide antes de llegar",
+    body: "Hace el pedido con tiempo y evita perder minutos en la fila.",
     visual: ["Burger clásica", "Wrap Caesar", "Confirmar pedido"],
   },
   {
     step: "Paso 2",
     title: "Paga online",
-    body: "El pedido entra ya validado.",
+    body: "El pedido entra ya confirmado y listo para trabajar.",
     visual: ["Pago aprobado", "Tarjeta terminada en 2145"],
   },
   {
     step: "Paso 3",
-    title: "El local prepara",
-    body: "El equipo recibe todo claro y en orden.",
+    title: "El local prepara con claridad",
+    body: "El equipo recibe qué hacer, cuándo entregar y con el cobro resuelto.",
     visual: ["Pedido #28", "En preparación"],
   },
   {
     step: "Paso 4",
     title: "Retira sin fricción",
-    body: "El cliente llega cuando corresponde y retira.",
+    body: "El cliente pasa cuando está pronto y retira sin sumar más espera.",
     visual: ["Listo para retirar", "Cliente en camino"],
   },
 ];
@@ -77,50 +77,50 @@ const flowSteps = [
 const benefits = [
   {
     title: "Más pedidos sin sumar delivery",
-    body: "Captá demanda de retiro sin depender de terceros.",
+    body: "Captá ventas de gente que hoy no entra a la fila.",
   },
   {
     title: "Menos carga en mostrador",
-    body: "Ordená el flujo cuando el local está lleno.",
+    body: "Descargá parte de la presión justo cuando el local se llena.",
   },
   {
     title: "Pago antes de preparar",
-    body: "Evitá pérdidas y validá mejor cada pedido.",
+    body: "Evitá pérdidas y prepará con el pedido ya confirmado.",
   },
   {
     title: "Pedidos más claros",
-    body: "El equipo ve exactamente qué hacer y cuándo.",
+    body: "El equipo sabe qué preparar, en qué estado está y cuándo entregar.",
   },
   {
     title: "Mejor experiencia para el cliente",
-    body: "Menos espera y más previsibilidad al retirar.",
+    body: "Ideal para clientes con poco tiempo en la mañana o al almuerzo.",
   },
   {
     title: "Operación más prolija",
-    body: "Más orden incluso en horas de alta demanda.",
+    body: "Más orden en horas pico sin depender de delivery.",
   },
 ];
 
 const dashboardCapabilities = [
   {
     title: "Catálogo y productos",
-    body: "Actualizá menú, precios y disponibilidad.",
+    body: "Actualizá menú, precios y disponibilidad según el momento del día.",
   },
   {
     title: "Horarios y retiro",
-    body: "Definí cuándo tomar pedidos y cuándo entregar.",
+    body: "Definí cuándo tomar pedidos y cuándo retirarlos sin improvisar.",
   },
   {
     title: "Pedidos en tiempo real",
-    body: "Seguí el estado sin depender de mensajes sueltos.",
+    body: "Seguí cada pedido sin depender de mensajes ni coordinación manual.",
   },
   {
     title: "Cobros online",
-    body: "Recibí pedidos confirmados antes de preparar.",
+    body: "Recibí pedidos confirmados antes de empezar a prepararlos.",
   },
   {
     title: "Estados y seguimiento",
-    body: "Marcá cada pedido y ordená el flujo del local.",
+    body: "Marcá cada pedido y ordená el retiro cuando más movimiento hay.",
   },
 ];
 
@@ -139,27 +139,27 @@ const faqs = [
   {
     question: "¿Sirve para cualquier tipo de local?",
     answer:
-      "Funciona mejor en locales gastronómicos con retiro por mostrador, sobre todo cuando hay alta demanda en poco tiempo.",
+      "Funciona mejor en cafés, locales de almuerzo, panaderías, take away y negocios con retiro por mostrador que tienen horas pico marcadas.",
   },
   {
     question: "¿Reemplaza al delivery?",
     answer:
-      "No necesariamente. Está pensado para resolver mejor el retiro, no para obligarte a cambiar toda tu operación.",
+      "No. Está pensado para resolver mejor el retiro por mostrador. La fortaleza de Restopickup es captar pedidos anticipados para clientes que quieren pasar y retirar rápido.",
   },
   {
     question: "¿Cómo se cobra?",
     answer:
-      "Buscamos un esquema simple y entendible según cómo opera tu local hoy. La idea es que tenga sentido para tu negocio, no marearte con opciones.",
+      "Trabajamos con un esquema simple y entendible según cómo opera tu local. La idea es que tenga sentido para tu negocio y para el tipo de demanda que querés captar.",
   },
   {
     question: "¿Qué necesito para empezar?",
     answer:
-      "Con dejar los datos básicos ya alcanza para la primera conversación comercial. Lo demás se coordina después si vemos buen encaje.",
+      "Con dejar los datos básicos ya alcanza para la primera conversación. Después revisamos juntos menú, horarios, cobros y cómo encajaría en tu operación.",
   },
   {
     question: "¿Cuánto demora activarlo?",
     answer:
-      "Depende del tipo de local y de lo que ya tengan resuelto, pero la puesta en marcha está pensada para ser simple y acompañada.",
+      "Depende del tipo de local y de qué tan pronto quieras salir a probarlo, pero la puesta en marcha está pensada para ser simple y acompañada.",
   },
 ];
 
@@ -207,13 +207,13 @@ export default async function CommercialPage({
 
           <div className="grid min-h-[78vh] gap-16 py-14 lg:grid-cols-[minmax(0,0.96fr)_minmax(420px,0.84fr)] lg:items-center lg:py-20">
             <div className="max-w-4xl">
-              <Eyebrow>Retiro en mostrador, mejor resuelto</Eyebrow>
+              <Eyebrow>Pedidos anticipados para retiro por mostrador</Eyebrow>
               <h1 className="mt-7 max-w-4xl text-5xl font-semibold tracking-[-0.06em] text-[#1f1711] sm:text-6xl lg:text-[5.3rem] lg:leading-[0.95]">
-                Vendé más en horas pico sin sumar delivery ni desorden en mostrador.
+                Que la fila no te haga perder ventas.
               </h1>
               <p className="mt-7 max-w-2xl text-lg leading-8 text-[rgba(31,23,17,0.74)]">
                 Pedidos online, pago resuelto y retiro ordenado para locales gastronómicos
-                que quieren operar mejor.
+                con horas pico fuertes y clientes que no pueden esperar.
               </p>
 
               <div className="mt-10 space-y-4">
@@ -271,7 +271,7 @@ export default async function CommercialPage({
                 <div className="border-t border-[rgba(54,35,22,0.1)] pt-4">
                   <div className="flex items-center gap-3 text-sm text-[rgba(31,23,17,0.72)]">
                     <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-success)]" />
-                    Pedido visible para el equipo
+                    Pedido visible para el equipo y listo para trabajar
                   </div>
                 </div>
               </div>
@@ -351,14 +351,15 @@ export default async function CommercialPage({
           </div>
 
           <div className="max-w-3xl">
-            <Eyebrow>El problema actual</Eyebrow>
-            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
-              Cuando los pedidos entran por todos lados, el mostrador se tranca.
-            </h2>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-[rgba(31,23,17,0.72)]">
-              El cliente espera, el equipo se sobrecarga, algunos pedidos llegan
-              incompletos y en hora pico se pierden ventas que deberían entrar.
-            </p>
+              <Eyebrow>El problema real</Eyebrow>
+              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
+                Cuando los pedidos entran por todos lados, el mostrador se tranca.
+              </h2>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-[rgba(31,23,17,0.72)]">
+                El cliente espera, el equipo se sobrecarga y parte de la demanda se
+                pierde. Hay gente que quiere comprar, pero no puede quedarse 10 o 15
+                minutos haciendo fila.
+              </p>
 
             <div className="mt-8 space-y-3">
               {painBullets.map((item) => (
@@ -377,7 +378,7 @@ export default async function CommercialPage({
           <div className="max-w-3xl">
             <Eyebrow>La solución</Eyebrow>
             <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
-              Un flujo simple para vender online y entregar mejor.
+              Un flujo simple para captar pedidos anticipados y entregar mejor.
             </h2>
           </div>
 
@@ -418,7 +419,7 @@ export default async function CommercialPage({
           <div className="max-w-3xl">
             <Eyebrow>Beneficios para el local</Eyebrow>
             <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
-              Lo que gana el local cuando el retiro deja de depender solo de la fila.
+              Lo que gana el local cuando una parte de la demanda entra antes de llegar al mostrador.
             </h2>
           </div>
 
@@ -495,7 +496,7 @@ export default async function CommercialPage({
 
           <div className="max-w-xl">
             <h2 className="text-4xl font-semibold tracking-tight text-white">
-              Un panel pensado para el negocio, no para verse lindo en una demo.
+              Un panel pensado para horas pico reales, no para verse bien en una demo.
             </h2>
 
             <div className="mt-8 space-y-6">
@@ -515,7 +516,7 @@ export default async function CommercialPage({
           <div className="max-w-3xl">
             <Eyebrow>La diferencia</Eyebrow>
             <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
-              Seguir como hoy no da el mismo resultado que tener un flujo de retiro más claro.
+              No es lo mismo seguir dependiendo de la fila que captar pedidos antes de que el cliente llegue.
             </h2>
           </div>
 
@@ -576,12 +577,12 @@ export default async function CommercialPage({
       <section className="border-b border-[rgba(54,35,22,0.12)] bg-[#f7f2ea]">
         <div className="mx-auto w-full max-w-[1580px] px-6 py-16 md:px-10 lg:px-14">
           <div className="max-w-3xl">
-            <Eyebrow>Para qué locales sirve</Eyebrow>
+            <Eyebrow>Dónde encaja mejor</Eyebrow>
             <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
-              Pensado para locales con alto movimiento en mostrador.
+              Pensado para locales con alto movimiento en mostrador y poco margen para hacer esperar.
             </h2>
             <p className="mt-5 text-base leading-8 text-[rgba(31,23,17,0.72)]">
-              Ideal para negocios que ya venden bien y quieren ordenar mejor el retiro.
+              Ideal para cafés, almuerzos y negocios con alto tráfico en zonas de oficinas, shoppings y puntos gastronómicos.
             </p>
           </div>
 
@@ -607,7 +608,7 @@ export default async function CommercialPage({
                 Contanos sobre tu local
               </h2>
               <p className="mt-4 text-base leading-8 text-[rgba(31,23,17,0.72)]">
-                Te contactamos para mostrarte cómo funcionaría en tu operación.
+                Te contactamos para mostrarte cómo funcionaría en tu operación y si encaja bien con tus horas pico.
               </p>
             </div>
 
@@ -631,7 +632,7 @@ export default async function CommercialPage({
           <div className="max-w-2xl">
             <Eyebrow>FAQ</Eyebrow>
             <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
-              Lo que suele frenarse, respondido sin vueltas.
+              Lo que suele frenar la decisión, respondido sin vueltas.
             </h2>
           </div>
 
@@ -664,10 +665,10 @@ export default async function CommercialPage({
       <section className="bg-[#f3ece3]">
         <div className="mx-auto w-full max-w-[1180px] px-6 py-20 text-center md:px-10">
           <h2 className="mx-auto max-w-4xl text-4xl font-semibold tracking-tight text-[#1f1711] md:text-5xl">
-            Menos fila, más pedidos y un retiro más claro para tu local.
+            Menos tiempo perdido para el cliente. Menos ventas perdidas para el local.
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-[rgba(31,23,17,0.72)]">
-            Si tu mostrador se satura en hora pico, esto puede ayudarte a vender y operar mejor.
+            Si tu local se satura en hora pico, Restopickup puede ayudarte a captar pedidos anticipados y ordenar mejor el retiro.
           </p>
           <div className="mt-8">
             <a
