@@ -33,8 +33,8 @@ export function BusinessApplicationForm({
       {success === "submitted" ? (
         <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           {isCommercial
-            ? "Recibimos tu solicitud. Te contactamos para revisar si tiene sentido avanzar."
-            : "Recibimos tu solicitud. Te contactamos para confirmar si tiene sentido avanzar con la activación."}
+            ? "Recibimos tus datos. Te contactamos para avanzar con los próximos pasos."
+            : "Recibimos tus datos. Te contactamos para avanzar con la configuración y puesta en marcha."}
         </div>
       ) : null}
 
@@ -123,7 +123,7 @@ export function BusinessApplicationForm({
                 Contanos cómo opera tu local.
               </p>
               <p className="mt-1 text-sm leading-7 text-[var(--color-muted)]">
-                Con esta información entendemos si Restopickup tiene sentido para tu negocio y cómo sería la activación si avanzamos.
+                Con esta información preparamos el contacto inicial y definimos contigo la mejor forma de implementarlo en tu local.
               </p>
               <p className="mt-2 text-sm text-[var(--color-muted)]">
                 No lleva más que unos minutos.
@@ -327,7 +327,7 @@ export function BusinessApplicationForm({
           <p className="text-sm text-[var(--color-muted)]">
             {isCommercial
               ? "Te contactamos para revisar si encaja con tu operación y cómo seguir."
-              : "Revisamos tu solicitud y te contactamos para confirmar si tiene sentido avanzar con la activación."}
+              : "Recibimos tus datos y te contactamos para avanzar con los próximos pasos."}
           </p>
         </div>
       </form>

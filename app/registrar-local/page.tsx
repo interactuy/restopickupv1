@@ -11,20 +11,20 @@ type RegisterLocalPageProps = {
 
 const processSteps = [
   {
-    label: "Solicitud",
+    label: "Registro",
     title: "Nos dejás los datos básicos del local y de cómo operan hoy.",
   },
   {
-    label: "Revisión",
-    title: "Evaluamos si Restopickup encaja con tu tipo de operación y zona.",
+    label: "Contacto",
+    title: "Te contactamos para conversar sobre tu local y los próximos pasos.",
   },
   {
-    label: "Contacto",
-    title: "Si avanzamos, coordinamos contigo los próximos pasos y condiciones.",
+    label: "Configuración",
+    title: "Definimos contigo la mejor forma de implementarlo en tu local.",
   },
   {
     label: "Activación",
-    title: "Te enviamos el acceso para crear tu cuenta y empezar la configuración.",
+    title: "Te enviamos el acceso para crear tu cuenta y empezar a operar.",
   },
 ];
 
@@ -79,12 +79,11 @@ export default async function RegisterLocalPage({
               Solicitud de alta
             </p>
             <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-[-0.05em] text-[#21160f] md:text-6xl">
-              Postulá tu local para empezar con Restopickup
+              Registrá tu local para empezar con Restopickup
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-[var(--color-muted)] md:text-lg">
-              Dejanos los datos básicos de tu operación. Revisamos si encaja con el
-              tipo de experiencia que buscamos y, si avanzamos, te enviamos el acceso
-              para configurar tu local.
+              Dejanos los datos básicos de tu local y nos ponemos en contacto para
+              avanzar con la configuración y la puesta en marcha.
             </p>
 
             <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -124,14 +123,14 @@ export default async function RegisterLocalPage({
           <div className="grid gap-12 lg:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)] lg:items-start">
             <div className="max-w-xl">
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
-                Solicitud
+                Registro inicial
               </p>
               <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#21160f]">
-                Empezamos con una revisión simple, no con un alta automática.
+                Empezamos con un registro simple y después seguimos contigo.
               </h2>
               <p className="mt-5 text-base leading-8 text-[var(--color-muted)]">
-                Buscamos entender si Restopickup encaja con la operación del local
-                antes de activar acceso y seguir con la configuración.
+                Este primer paso nos sirve para ordenar el contacto inicial y avanzar
+                contigo en la configuración del local, los cobros y la puesta en marcha.
               </p>
             </div>
 
@@ -139,6 +138,7 @@ export default async function RegisterLocalPage({
               <BusinessApplicationForm
                 error={query.error}
                 success={query.success}
+                mode="commercial"
                 redirectPath="/registrar-local"
               />
             </div>
@@ -172,8 +172,7 @@ export default async function RegisterLocalPage({
       <section className="bg-[#f3ece3]">
         <div className="mx-auto w-full max-w-[980px] px-6 py-14 text-center md:px-10">
           <p className="mx-auto max-w-3xl text-base leading-8 text-[var(--color-muted)]">
-            No es una activación automática. Primero revisamos si el local encaja con
-            la experiencia que queremos construir y después te guiamos en los siguientes pasos.
+            Registrá tu local y nos contactamos para ponerlo en marcha.
           </p>
         </div>
       </section>
