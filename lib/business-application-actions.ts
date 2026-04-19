@@ -5,14 +5,28 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { parseBusinessApplicationForm } from "@/lib/business-applications";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-function buildApplicationRedirect(params: Record<string, string>) {
+function sanitizeRedirectPath(value: FormDataEntryValue | null) {
+  const normalized = String(value ?? "").trim();
+
+  if (!normalized.startsWith("/") || normalized.startsWith("//")) {
+    return "/solicitar-acceso";
+  }
+
+  return normalized;
+}
+
+function buildApplicationRedirect(
+  basePath: string,
+  params: Record<string, string>,
+) {
   const searchParams = new URLSearchParams(params);
   const query = searchParams.toString();
-  return `/solicitar-acceso${query ? `?${query}` : ""}`;
+  return `${basePath}${query ? `?${query}` : ""}`;
 }
 
 export async function submitBusinessApplicationAction(formData: FormData) {
   try {
+    const redirectPath = sanitizeRedirectPath(formData.get("redirectPath"));
     const payload = parseBusinessApplicationForm(formData);
     const admin = createAdminClient();
 
@@ -41,20 +55,21 @@ export async function submitBusinessApplicationAction(formData: FormData) {
     }
 
     redirect(
-      buildApplicationRedirect({
+      buildApplicationRedirect(redirectPath, {
         success: "submitted",
       }),
     );
   } catch (error) {
     unstable_rethrow(error);
 
+    const redirectPath = sanitizeRedirectPath(formData.get("redirectPath"));
     const message =
       error instanceof Error
         ? error.message
         : "No pudimos enviar la solicitud. Probá de nuevo en unos segundos.";
 
     redirect(
-      buildApplicationRedirect({
+      buildApplicationRedirect(redirectPath, {
         error: message,
       }),
     );

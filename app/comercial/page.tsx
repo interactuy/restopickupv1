@@ -6,7 +6,7 @@ import { BusinessApplicationForm } from "@/components/public/business-applicatio
 export const metadata: Metadata = {
   title: "Comercial | Restopickup",
   description:
-    "Conocé cómo Restopickup ayuda a locales gastronómicos a vender online y organizar pedidos para retiro.",
+    "Restopickup ayuda a locales gastronómicos a vender online con retiro en mostrador, reducir filas y ordenar la operación.",
 };
 
 type CommercialPageProps = {
@@ -16,84 +16,158 @@ type CommercialPageProps = {
   }>;
 };
 
-const operationPoints = [
-  "Catálogo con productos, categorías, extras y ofertas",
-  "Horarios normales, horarios partidos y cierres puntuales",
-  "Pedidos en tiempo real con estados claros para el equipo",
-  "Cobros online y seguimiento del retiro",
+const heroBullets = [
+  "Menos fila y menos abandono",
+  "Pago confirmado antes de preparar",
+  "Pedidos más claros para el equipo",
 ];
 
-const flow = [
+const quickWins = [
   {
-    eyebrow: "1. El cliente compra online",
-    title: "Compra sin quedarse atrapado en la fila",
-    body: "Explora el menú, elige productos y confirma el pedido en pocos pasos.",
+    title: "Menos fila",
+    body: "Evitá saturar el mostrador en hora pico",
   },
   {
-    eyebrow: "2. El local recibe",
-    title: "El pedido entra claro y listo para preparar",
-    body: "El equipo trabaja con el pago ya resuelto, detalle claro y seguimiento del estado.",
+    title: "Más pedidos",
+    body: "Tomá demanda aunque el local esté lleno",
   },
   {
-    eyebrow: "3. El cliente retira",
-    title: "Retiro más ágil y predecible",
-    body: "Pasa cuando corresponde y retira con una experiencia más ordenada.",
+    title: "Cobro resuelto",
+    body: "Recibí pedidos ya confirmados",
   },
+  {
+    title: "Retiro claro",
+    body: "El cliente sabe cuándo pasar",
+  },
+];
+
+const painBullets = [
+  "Pedidos desordenados",
+  "Cobro manual",
+  "Clientes que abandonan la espera",
+];
+
+const flowSteps = [
+  {
+    step: "Paso 1",
+    title: "El cliente pide",
+    body: "Ve el menú, elige y confirma en pocos pasos.",
+    visual: ["Burger clásica", "Wrap Caesar", "Confirmar pedido"],
+  },
+  {
+    step: "Paso 2",
+    title: "Paga online",
+    body: "El pedido entra ya validado.",
+    visual: ["Pago aprobado", "Tarjeta terminada en 2145"],
+  },
+  {
+    step: "Paso 3",
+    title: "El local prepara",
+    body: "El equipo recibe todo claro y en orden.",
+    visual: ["Pedido #28", "En preparación"],
+  },
+  {
+    step: "Paso 4",
+    title: "Retira sin fricción",
+    body: "El cliente llega cuando corresponde y retira.",
+    visual: ["Listo para retirar", "Cliente en camino"],
+  },
+];
+
+const benefits = [
+  {
+    title: "Más pedidos sin sumar delivery",
+    body: "Captá demanda de retiro sin depender de terceros.",
+  },
+  {
+    title: "Menos carga en mostrador",
+    body: "Ordená el flujo cuando el local está lleno.",
+  },
+  {
+    title: "Pago antes de preparar",
+    body: "Evitá pérdidas y validá mejor cada pedido.",
+  },
+  {
+    title: "Pedidos más claros",
+    body: "El equipo ve exactamente qué hacer y cuándo.",
+  },
+  {
+    title: "Mejor experiencia para el cliente",
+    body: "Menos espera y más previsibilidad al retirar.",
+  },
+  {
+    title: "Operación más prolija",
+    body: "Más orden incluso en horas de alta demanda.",
+  },
+];
+
+const dashboardCapabilities = [
+  {
+    title: "Catálogo y productos",
+    body: "Actualizá menú, precios y disponibilidad.",
+  },
+  {
+    title: "Horarios y retiro",
+    body: "Definí cuándo tomar pedidos y cuándo entregar.",
+  },
+  {
+    title: "Pedidos en tiempo real",
+    body: "Seguí el estado sin depender de mensajes sueltos.",
+  },
+  {
+    title: "Cobros online",
+    body: "Recibí pedidos confirmados antes de preparar.",
+  },
+  {
+    title: "Estados y seguimiento",
+    body: "Marcá cada pedido y ordená el flujo del local.",
+  },
+];
+
+const localTypes = [
+  "Cafeterías",
+  "Hamburgueserías",
+  "Pizzerías",
+  "Locales de almuerzo",
+  "Panaderías",
+  "Comida rápida",
+  "Take away",
+  "Cocinas con retiro",
 ];
 
 const faqs = [
   {
-    question: "¿Para qué tipo de local sirve mejor?",
+    question: "¿Sirve para cualquier tipo de local?",
     answer:
-      "Para locales gastronómicos con retiro por mostrador que quieren ordenar mejor la venta online y la entrega.",
+      "Funciona mejor en locales gastronómicos con retiro por mostrador, sobre todo cuando hay alta demanda en poco tiempo.",
   },
   {
-    question: "¿Por qué elegir Restopickup y no otras apps?",
+    question: "¿Reemplaza al delivery?",
     answer:
-      "Porque no toda venta necesita delivery, más comisión y más complejidad. Si tu cliente ya pasa por tu local o te tiene cerca, Restopickup te ayuda a cobrar online, reducir filas y ordenar el retiro sin sumar vueltas innecesarias.",
+      "No necesariamente. Está pensado para resolver mejor el retiro, no para obligarte a cambiar toda tu operación.",
   },
   {
-    question: "¿El cliente paga antes de retirar?",
+    question: "¿Cómo se cobra?",
     answer:
-      "Sí. La experiencia está pensada para que el local reciba pedidos con el pago ya resuelto.",
+      "Buscamos un esquema simple y entendible según cómo opera tu local hoy. La idea es que tenga sentido para tu negocio, no marearte con opciones.",
   },
   {
-    question: "¿Puedo manejar menú y horarios desde el panel?",
+    question: "¿Qué necesito para empezar?",
     answer:
-      "Sí. El local puede actualizar productos, disponibilidad, horarios, horarios partidos y cierres puntuales desde su dashboard.",
+      "Con dejar los datos básicos ya alcanza para la primera conversación comercial. Lo demás se coordina después si vemos buen encaje.",
   },
   {
-    question: "¿Cuánto me cobran?",
+    question: "¿Cuánto demora activarlo?",
     answer:
-      "La forma de cobro se define según las necesidades del local y cómo opera hoy. Lo revisamos contigo para encontrar el esquema que mejor encaje.",
-  },
-  {
-    question: "¿Qué pasa después de registrar el local?",
-    answer:
-      "Seguimos con la puesta en marcha para dejar el negocio listo para operar con menú, pedidos, horarios y cobros.",
+      "Depende del tipo de local y de lo que ya tengan resuelto, pero la puesta en marcha está pensada para ser simple y acompañada.",
   },
 ];
 
-function MiniIcon({
-  children,
-  tone = "accent",
-}: {
-  children: React.ReactNode;
-  tone?: "accent" | "success" | "neutral";
-}) {
-  const toneClass =
-    tone === "success"
-      ? "bg-[rgba(47,122,74,0.1)] text-[var(--color-success)]"
-      : tone === "neutral"
-        ? "bg-[var(--color-surface)] text-[var(--color-foreground)]"
-        : "bg-[rgba(198,90,46,0.1)] text-[var(--color-accent)]";
-
+function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <span
-      className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${toneClass}`}
-    >
+    <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--color-accent)]">
       {children}
-    </span>
+    </p>
   );
 }
 
@@ -103,421 +177,519 @@ export default async function CommercialPage({
   const query = await searchParams;
 
   return (
-    <main className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
-      <section className="border-b border-[var(--color-border)]">
-        <div className="mx-auto w-full max-w-[1600px] px-6 py-6 md:px-10 lg:px-14">
+    <main className="min-h-screen bg-[#f5f0e8] text-[#1f1711]">
+      <section className="border-b border-[rgba(54,35,22,0.12)] bg-[linear-gradient(180deg,#f2ece3_0%,#f7f3ec_100%)]">
+        <div className="mx-auto w-full max-w-[1580px] px-6 py-5 md:px-10 lg:px-14">
           <header className="flex flex-wrap items-center justify-between gap-4">
-            <Link href="/" className="text-lg font-semibold tracking-tight">
+            <Link href="/" className="text-lg font-semibold tracking-tight text-[#1f1711]">
               Restopickup
             </Link>
-            <div className="flex flex-wrap items-center gap-3">
-              <a
-                href="#beneficios"
-                className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-              >
-                Ver beneficios
+
+            <nav className="hidden items-center gap-8 text-sm text-[rgba(31,23,17,0.68)] md:flex">
+              <a href="#como-funciona" className="transition hover:text-[#1f1711]">
+                Cómo funciona
               </a>
-              <a
-                href="#registro"
-                className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)]"
-              >
-                Registrá tu local
+              <a href="#beneficios" className="transition hover:text-[#1f1711]">
+                Para locales
               </a>
-            </div>
+              <Link href="/contacto" className="transition hover:text-[#1f1711]">
+                Contacto
+              </Link>
+            </nav>
+
+            <a
+              href="#registro"
+              className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)]"
+            >
+              Registrar mi local
+            </a>
           </header>
 
-          <div className="grid gap-14 py-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(460px,0.95fr)] lg:items-center lg:py-24">
-            <div className="max-w-5xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.32em] text-[var(--color-accent)]">
-                Comercial
-              </p>
-              <h1 className="mt-6 max-w-5xl text-5xl font-semibold tracking-[-0.06em] text-[#21160f] sm:text-6xl lg:text-7xl">
-                Vendé online y ordená el retiro para trabajar con más claridad.
+          <div className="grid min-h-[78vh] gap-16 py-14 lg:grid-cols-[minmax(0,0.96fr)_minmax(420px,0.84fr)] lg:items-center lg:py-20">
+            <div className="max-w-4xl">
+              <Eyebrow>Retiro en mostrador, mejor resuelto</Eyebrow>
+              <h1 className="mt-7 max-w-4xl text-5xl font-semibold tracking-[-0.06em] text-[#1f1711] sm:text-6xl lg:text-[5.3rem] lg:leading-[0.95]">
+                Vendé más en horas pico sin sumar delivery ni desorden en mostrador.
               </h1>
-              <p className="mt-7 max-w-3xl text-lg leading-8 text-[var(--color-muted)]">
-                Restopickup está pensado para locales gastronómicos que quieren
-                recuperar ventas, reducir filas y dar una mejor experiencia desde mostrador.
+              <p className="mt-7 max-w-2xl text-lg leading-8 text-[rgba(31,23,17,0.74)]">
+                Pedidos online, pago resuelto y retiro ordenado para locales gastronómicos
+                que quieren operar mejor.
               </p>
 
-              <div className="mt-10 flex flex-wrap items-center gap-3">
+              <div className="mt-10 space-y-4">
+                {heroBullets.map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[#1f1711]" />
+                    <p className="text-base leading-7 text-[#1f1711]">{item}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-10 flex flex-wrap items-center gap-4">
                 <a
                   href="#registro"
-                  className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)]"
+                  className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)]"
                 >
-                  Registrá tu local
+                  Registrar mi local
                 </a>
                 <a
                   href="#como-funciona"
-                  className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-6 py-3 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                  className="text-sm font-semibold text-[#1f1711] underline decoration-[rgba(31,23,17,0.2)] underline-offset-4 transition hover:text-[var(--color-accent)] hover:decoration-[var(--color-accent)]"
                 >
-                  Cómo funciona
+                  Ver cómo funciona
                 </a>
               </div>
             </div>
 
             <div className="relative">
-              <div className="absolute -left-10 top-8 h-48 w-48 rounded-full bg-[rgba(198,90,46,0.12)] blur-3xl" />
-              <div className="absolute -bottom-10 right-0 h-56 w-56 rounded-full bg-[rgba(47,122,74,0.1)] blur-3xl" />
+              <div className="relative rounded-[2rem] border border-[rgba(54,35,22,0.14)] bg-white p-5 shadow-[0_24px_70px_rgba(56,35,21,0.08)]">
+                <div className="border-b border-[rgba(54,35,22,0.1)] pb-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                    Pedidos en tiempo real
+                  </p>
+                  <p className="mt-3 text-2xl font-semibold tracking-tight text-[#1f1711]">
+                    Pedido #28
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-[rgba(31,23,17,0.7)]">
+                    2 cheeseburgers, 1 papas, 1 coca
+                  </p>
+                </div>
 
-              <div className="relative overflow-hidden rounded-[2.4rem] border border-[rgba(92,59,34,0.14)] bg-[linear-gradient(145deg,#fff9f2_0%,#fff_42%,#f1e4d5_100%)] p-6 shadow-[0_34px_100px_rgba(62,39,20,0.12)]">
-                <div className="rounded-[1.8rem] border border-[rgba(92,59,34,0.12)] bg-white p-5">
+                <div className="space-y-4 py-5">
                   <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
-                        Panel del local
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold tracking-tight text-[#21160f]">
-                        Pedidos claros para el equipo.
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-[rgba(47,122,74,0.1)] px-3 py-1.5 text-xs font-semibold text-[var(--color-success)]">
+                    <span className="text-sm font-medium text-[rgba(31,23,17,0.72)]">Estado</span>
+                    <span className="rounded-full bg-[rgba(47,122,74,0.1)] px-3 py-1 text-sm font-semibold text-[var(--color-success)]">
                       Pago confirmado
                     </span>
                   </div>
-
-                  <div className="mt-6 rounded-[1.6rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                          Pedido #28
-                        </p>
-                        <p className="mt-2 text-lg font-semibold tracking-tight text-[var(--color-foreground)]">
-                          Listo para preparar
-                        </p>
-                        <p className="mt-2 text-sm text-[var(--color-muted)]">
-                          1 Burger Doble Bacon · 1 Coca Cola zero
-                        </p>
-                      </div>
-                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-                        Nuevo
-                      </span>
-                    </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-sm font-medium text-[rgba(31,23,17,0.72)]">Retiro estimado</span>
+                    <span className="text-sm font-semibold text-[#1f1711]">14 min</span>
                   </div>
+                </div>
 
-                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-[1.5rem] border border-[var(--color-border)] bg-white p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-secondary)]">
-                        Operación
-                      </p>
-                      <div className="mt-4 space-y-3 text-sm">
-                        <div className="rounded-2xl bg-[var(--color-surface)] px-3 py-2">
-                          Menú y categorías
-                        </div>
-                        <div className="rounded-2xl bg-[rgba(198,90,46,0.1)] px-3 py-2 text-[var(--color-accent)]">
-                          Pedidos en tiempo real
-                        </div>
-                        <div className="rounded-2xl bg-[var(--color-surface)] px-3 py-2">
-                          Horarios y disponibilidad
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-[1.5rem] border border-[rgba(32,22,14,0.08)] bg-[#201813] p-4 text-white">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
-                        Experiencia del cliente
-                      </p>
-                      <div className="mt-4 space-y-3">
-                        <div className="rounded-2xl border border-white/10 bg-white/6 px-3 py-3">
-                          <p className="text-sm font-semibold">Pago online</p>
-                          <p className="mt-1 text-sm text-white/70">Retiro estimado: 14 min</p>
-                        </div>
-                        <div className="rounded-2xl border border-white/10 bg-white/6 px-3 py-3">
-                          <p className="text-sm font-semibold">Seguimiento claro</p>
-                          <p className="mt-1 text-sm text-white/70">Recibido · En preparación · Listo</p>
-                        </div>
-                      </div>
-                    </div>
+                <div className="border-t border-[rgba(54,35,22,0.1)] pt-4">
+                  <div className="flex items-center gap-3 text-sm text-[rgba(31,23,17,0.72)]">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-success)]" />
+                    Pedido visible para el equipo
                   </div>
                 </div>
               </div>
+
+              <div className="absolute -bottom-5 -left-4 rounded-2xl border border-[rgba(54,35,22,0.12)] bg-white px-4 py-3 shadow-[0_16px_40px_rgba(56,35,21,0.08)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(31,23,17,0.48)]">
+                  Estado
+                </p>
+                <p className="mt-2 text-sm font-semibold text-[#1f1711]">Pago aprobado</p>
+              </div>
+
+              <div className="absolute -right-3 top-12 rounded-2xl border border-[rgba(54,35,22,0.12)] bg-white px-4 py-3 shadow-[0_16px_40px_rgba(56,35,21,0.08)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(31,23,17,0.48)]">
+                  Operación
+                </p>
+                <p className="mt-2 text-sm font-semibold text-[#1f1711]">Listo para preparar</p>
+              </div>
+
+              <div className="absolute bottom-16 right-6 rounded-2xl border border-[rgba(54,35,22,0.12)] bg-white px-4 py-3 shadow-[0_16px_40px_rgba(56,35,21,0.08)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(31,23,17,0.48)]">
+                  Cliente
+                </p>
+                <p className="mt-2 text-sm font-semibold text-[#1f1711]">En camino</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="beneficios" className="border-b border-[var(--color-border)]">
-        <div className="mx-auto w-full max-w-[1600px] px-6 py-20 md:px-10 lg:px-14">
+      <section className="border-b border-[rgba(54,35,22,0.12)] bg-[#ece4d8]">
+        <div className="mx-auto grid w-full max-w-[1580px] gap-0 px-6 py-8 md:px-10 lg:grid-cols-4 lg:px-14">
+          {quickWins.map((item, index) => (
+            <article
+              key={item.title}
+              className={`py-4 lg:px-6 ${index > 0 ? "lg:border-l lg:border-[rgba(54,35,22,0.12)]" : ""}`}
+            >
+              <p className="text-lg font-semibold tracking-tight text-[#1f1711]">{item.title}</p>
+              <p className="mt-2 text-sm leading-7 text-[rgba(31,23,17,0.7)]">{item.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-b border-[rgba(54,35,22,0.12)] bg-white">
+        <div className="mx-auto grid w-full max-w-[1580px] gap-16 px-6 py-20 md:px-10 lg:grid-cols-[minmax(420px,0.95fr)_minmax(0,1.05fr)] lg:px-14 lg:items-center">
+          <div className="relative min-h-[360px]">
+            <div className="absolute left-0 top-0 w-[70%] rounded-[1.8rem] border border-[rgba(54,35,22,0.12)] bg-[#f7f3ec] p-4 shadow-[0_14px_32px_rgba(56,35,21,0.06)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(31,23,17,0.46)]">
+                WhatsApp
+              </p>
+              <p className="mt-3 text-sm leading-7 text-[#1f1711]">
+                “Hola, me guardás 2 cafés y 3 medialunas? Paso en 15”
+              </p>
+            </div>
+
+            <div className="absolute right-0 top-12 w-[60%] rounded-[1.5rem] border border-[rgba(54,35,22,0.12)] bg-white p-4 shadow-[0_14px_32px_rgba(56,35,21,0.06)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(31,23,17,0.46)]">
+                Esperando respuesta
+              </p>
+              <p className="mt-3 text-sm font-semibold text-[#1f1711]">Cobro pendiente</p>
+            </div>
+
+            <div className="absolute bottom-14 left-10 w-[64%] rounded-[1.7rem] border border-[rgba(54,35,22,0.12)] bg-white p-4 shadow-[0_14px_32px_rgba(56,35,21,0.06)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(31,23,17,0.46)]">
+                Lista manual
+              </p>
+              <div className="mt-3 space-y-2 text-sm text-[rgba(31,23,17,0.72)]">
+                <p>- café chico</p>
+                <p>- medialunas x3</p>
+                <p>- confirmar pago</p>
+              </div>
+            </div>
+
+            <div className="absolute bottom-0 right-10 rounded-full bg-[#8b3f2b] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(56,35,21,0.14)]">
+              Fila en mostrador
+            </div>
+          </div>
+
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--color-accent)]">
-              Beneficios
-            </p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#21160f]">
-              Lo que cambia para el cliente y para el local.
+            <Eyebrow>El problema actual</Eyebrow>
+            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
+              Cuando los pedidos entran por todos lados, el mostrador se tranca.
             </h2>
-          </div>
-
-          <div className="mt-14 grid gap-16 lg:grid-cols-2">
-            <section className="max-w-2xl">
-              <div className="flex items-center gap-4">
-                <MiniIcon tone="accent">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-                    <path d="M7 5.5h10v13H7z" stroke="currentColor" strokeWidth="1.7" />
-                    <path d="M10 8.5h4M9 18.5h6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-                  </svg>
-                </MiniIcon>
-                <h3 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-                  Para el cliente
-                </h3>
-              </div>
-              <p className="mt-6 text-lg leading-9 text-[var(--color-muted)]">
-                Imaginate que vas llegando justo al trabajo y tu café favorito,
-                el que te queda de pasada, tiene una fila larguísima. Sabés que
-                no tenés quince o veinte minutos para esperar. Tenés que seguir
-                y terminás quedándote sin ese café y sin ese croissant que querías.
-              </p>
-              <p className="mt-6 text-lg leading-9 text-[var(--color-muted)]">
-                Restopickup resuelve exactamente eso: poder pedir antes, pagar
-                online y retirar en el momento indicado, evitando la fila y sin
-                perder tiempo de más.
-              </p>
-            </section>
-
-            <section className="max-w-2xl">
-              <div className="flex items-center gap-4">
-                <MiniIcon tone="success">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-                    <path d="M5 10.5h14v8H5z" stroke="currentColor" strokeWidth="1.7" />
-                    <path d="m6 10.5 1.2-5h9.6l1.2 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-                    <path d="M9.5 14h5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-                  </svg>
-                </MiniIcon>
-                <h3 className="text-2xl font-semibold tracking-tight text-[var(--color-foreground)]">
-                  Para el local
-                </h3>
-              </div>
-              <p className="mt-6 text-lg leading-9 text-[var(--color-muted)]">
-                Pensá en esas primeras horas de la mañana o en el almuerzo, cuando
-                se junta mucha gente y el equipo no da abasto. Mientras la fila
-                crece, también crece la cantidad de personas que miran, ven la
-                espera y se van.
-              </p>
-              <p className="mt-6 text-lg leading-9 text-[var(--color-muted)]">
-                Ahí es donde Restopickup hace la diferencia: ayuda a recuperar
-                esas ventas, a reducir filas y a trabajar con más tranquilidad,
-                porque parte de la demanda ya entra resuelta antes de llegar al mostrador.
-              </p>
-            </section>
-          </div>
-        </div>
-      </section>
-
-      <section id="como-funciona" className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="mx-auto w-full max-w-[1600px] px-6 py-16 md:px-10 lg:px-14">
-          <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--color-accent)]">
-              Cómo funciona
+            <p className="mt-5 max-w-2xl text-base leading-8 text-[rgba(31,23,17,0.72)]">
+              El cliente espera, el equipo se sobrecarga, algunos pedidos llegan
+              incompletos y en hora pico se pierden ventas que deberían entrar.
             </p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#21160f]">
-              Un flujo simple para el cliente y más ordenado para el local.
-            </h2>
-          </div>
 
-          <div className="mt-12 grid gap-0 border-y border-[var(--color-border)] lg:grid-cols-3">
-            {flow.map((item, index) => (
-              <article
-                key={item.title}
-                className={`border-b border-[var(--color-border)] py-8 last:border-b-0 lg:border-b-0 lg:px-6 ${
-                  index > 0 ? "lg:border-l" : ""
-                } ${index === 1 ? "bg-[linear-gradient(135deg,rgba(198,90,46,0.06),rgba(255,255,255,0.96))]" : ""}`}
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-secondary)]">
-                  {item.eyebrow}
-                </p>
-                <p className="mt-4 text-lg font-semibold tracking-tight text-[var(--color-foreground)]">
-                  {item.title}
-                </p>
-                <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
-                  {item.body}
-                </p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-[var(--color-border)]">
-        <div className="mx-auto w-full max-w-[1600px] px-6 py-16 md:px-10 lg:px-14">
-          <div className="grid gap-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--color-accent)]">
-                Lo que podés manejar
-              </p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#21160f]">
-                Herramientas concretas para vender mejor y operar con más claridad.
-              </h2>
-            </div>
-
-            <div className="border-l-0 lg:border-l lg:border-[var(--color-border)] lg:pl-12">
-              <div className="space-y-4">
-                {operationPoints.map((point) => (
-                  <div key={point} className="flex items-start gap-4">
-                    <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[var(--color-accent)]" />
-                    <p className="text-base leading-8 text-[var(--color-muted)]">{point}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="registro" className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="mx-auto w-full max-w-[1600px] px-6 py-16 md:px-10 lg:px-14">
-          <div className="grid gap-14 lg:grid-cols-[minmax(0,0.82fr)_minmax(520px,1.18fr)] lg:items-start">
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--color-accent)]">
-                Registro de local
-              </p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#21160f]">
-                Si te sirve para tu operación, registrá tu local acá mismo.
-              </h2>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--color-muted)]">
-                Completá los datos principales y seguimos con la puesta en marcha
-                para dejar el negocio listo para vender con menú, pedidos y cobros.
-              </p>
-            </div>
-
-            <div className="rounded-[2.1rem] border border-[var(--color-border)] bg-white p-4 shadow-[0_24px_80px_rgba(39,24,13,0.08)] md:p-6">
-              <BusinessApplicationForm error={query.error} success={query.success} />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-[var(--color-border)]">
-        <div className="mx-auto w-full max-w-[1600px] px-6 py-16 md:px-10 lg:px-14">
-          <div className="grid gap-14 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--color-accent)]">
-                Dudas frecuentes
-              </p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#21160f]">
-                Respuestas claras para decidir si encaja en tu operación.
-              </h2>
-            </div>
-
-            <div className="border-y border-[var(--color-border)] bg-white">
-              {faqs.map((item, index) => (
-                <details
-                  key={item.question}
-                  className={index !== faqs.length - 1 ? "border-b border-[var(--color-border)] group" : "group"}
-                  open={index === 0}
-                >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 px-0 py-6 text-left md:px-6">
-                    <h3 className="text-xl font-semibold tracking-tight text-[var(--color-foreground)]">
-                      {item.question}
-                    </h3>
-                    <span className="text-2xl leading-none text-[var(--color-muted)] transition group-open:rotate-45">
-                      +
-                    </span>
-                  </summary>
-                  <div className="px-0 pb-6 md:px-6">
-                    <p className="max-w-3xl text-base leading-8 text-[var(--color-muted)]">
-                      {item.answer}
-                    </p>
-                  </div>
-                </details>
+            <div className="mt-8 space-y-3">
+              {painBullets.map((item) => (
+                <div key={item} className="flex items-start gap-3">
+                  <span className="mt-2 h-2.5 w-2.5 rounded-full bg-[#8b3f2b]" />
+                  <p className="text-base leading-7 text-[#1f1711]">{item}</p>
+                </div>
               ))}
             </div>
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-[var(--color-border)] bg-white">
-        <div className="mx-auto grid w-full max-w-[1600px] gap-10 px-6 py-10 md:px-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:px-14">
+      <section id="como-funciona" className="border-b border-[rgba(54,35,22,0.12)] bg-[#f8f4ed]">
+        <div className="mx-auto w-full max-w-[1580px] px-6 py-20 md:px-10 lg:px-14">
+          <div className="max-w-3xl">
+            <Eyebrow>La solución</Eyebrow>
+            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
+              Un flujo simple para vender online y entregar mejor.
+            </h2>
+          </div>
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-4">
+            {flowSteps.map((item) => (
+              <article
+                key={item.title}
+                className="rounded-[1.8rem] border border-[rgba(54,35,22,0.12)] bg-white p-6"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-secondary)]">
+                  {item.step}
+                </p>
+                <h3 className="mt-4 text-2xl font-semibold tracking-tight text-[#1f1711]">
+                  {item.title}
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-[rgba(31,23,17,0.72)]">
+                  {item.body}
+                </p>
+
+                <div className="mt-6 space-y-2 rounded-[1.4rem] bg-[#f5f0e8] p-4">
+                  {item.visual.map((line) => (
+                    <div
+                      key={line}
+                      className="rounded-2xl border border-[rgba(54,35,22,0.1)] bg-white px-3 py-2 text-sm text-[#1f1711]"
+                    >
+                      {line}
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="beneficios" className="border-b border-[rgba(54,35,22,0.12)] bg-white">
+        <div className="mx-auto w-full max-w-[1580px] px-6 py-20 md:px-10 lg:px-14">
+          <div className="max-w-3xl">
+            <Eyebrow>Beneficios para el local</Eyebrow>
+            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
+              Lo que gana el local cuando el retiro deja de depender solo de la fila.
+            </h2>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {benefits.map((item) => (
+              <article
+                key={item.title}
+                className="rounded-[1.6rem] border border-[rgba(54,35,22,0.12)] bg-[#faf7f1] p-6"
+              >
+                <p className="text-xl font-semibold tracking-tight text-[#1f1711]">{item.title}</p>
+                <p className="mt-3 text-sm leading-7 text-[rgba(31,23,17,0.72)]">{item.body}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-[rgba(54,35,22,0.12)] bg-[#2c2621] text-white">
+        <div className="mx-auto grid w-full max-w-[1580px] gap-14 px-6 py-20 md:px-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)] lg:px-14 lg:items-start">
           <div>
-            <p className="text-lg font-semibold tracking-tight">Restopickup</p>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
-              Venta online y retiro por mostrador para locales gastronómicos que
-              quieren operar con más claridad.
+            <Eyebrow>Producto real</Eyebrow>
+            <div className="mt-5 rounded-[2rem] border border-white/10 bg-[#1f1a16] p-5">
+              <div className="grid gap-4 border-b border-white/10 pb-5 md:grid-cols-[minmax(0,1fr)_220px]">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/50">
+                    Pedidos del día
+                  </p>
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3">
+                      <p className="text-sm font-semibold">#28 · Nuevo</p>
+                      <p className="mt-1 text-sm text-white/70">2 cheeseburgers · retiro 14 min</p>
+                    </div>
+                    <div className="rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3">
+                      <p className="text-sm font-semibold">#27 · En preparación</p>
+                      <p className="mt-1 text-sm text-white/70">1 pizza napolitana · retiro 8 min</p>
+                    </div>
+                    <div className="rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3">
+                      <p className="text-sm font-semibold">#26 · Listo</p>
+                      <p className="mt-1 text-sm text-white/70">2 wraps Caesar · cliente en camino</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/50">
+                    Resumen
+                  </p>
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3">
+                      <p className="text-sm text-white/70">Pedidos activos</p>
+                      <p className="mt-2 text-2xl font-semibold">12</p>
+                    </div>
+                    <div className="rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3">
+                      <p className="text-sm text-white/70">Cobro resuelto</p>
+                      <p className="mt-2 text-2xl font-semibold">92%</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                <div className="rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3 text-sm">
+                  Nuevo
+                </div>
+                <div className="rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3 text-sm">
+                  En preparación
+                </div>
+                <div className="rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3 text-sm">
+                  Listo
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-xl">
+            <h2 className="text-4xl font-semibold tracking-tight text-white">
+              Un panel pensado para el negocio, no para verse lindo en una demo.
+            </h2>
+
+            <div className="mt-8 space-y-6">
+              {dashboardCapabilities.map((item) => (
+                <div key={item.title} className="border-b border-white/10 pb-6">
+                  <p className="text-lg font-semibold text-white">{item.title}</p>
+                  <p className="mt-2 text-sm leading-7 text-white/70">{item.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-[rgba(54,35,22,0.12)] bg-white">
+        <div className="mx-auto w-full max-w-[1580px] px-6 py-20 md:px-10 lg:px-14">
+          <div className="max-w-3xl">
+            <Eyebrow>La diferencia</Eyebrow>
+            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
+              Seguir como hoy no da el mismo resultado que tener un flujo de retiro más claro.
+            </h2>
+          </div>
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+            <article className="rounded-[1.8rem] border border-[rgba(54,35,22,0.12)] bg-[#f1ece4] p-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(31,23,17,0.48)]">
+                Como hoy
+              </p>
+              <h3 className="mt-4 text-3xl font-semibold tracking-tight text-[#1f1711]">
+                Seguir resolviéndolo como hoy
+              </h3>
+              <div className="mt-6 space-y-3">
+                {[
+                  "Pedidos por WhatsApp",
+                  "Cobro manual",
+                  "Fila en caja",
+                  "Preparación desordenada",
+                  "Clientes preguntando si ya está",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-[1.2rem] border border-[rgba(54,35,22,0.08)] bg-white/70 px-4 py-3 text-sm text-[rgba(31,23,17,0.72)]"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </article>
+
+            <article className="rounded-[1.8rem] border border-[rgba(54,35,22,0.12)] bg-[#fbf8f3] p-8 shadow-[0_18px_40px_rgba(56,35,21,0.05)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent)]">
+                Con Restopickup
+              </p>
+              <h3 className="mt-4 text-3xl font-semibold tracking-tight text-[#1f1711]">
+                Con un flujo de retiro más claro
+              </h3>
+              <div className="mt-6 space-y-3">
+                {[
+                  "Pedido online",
+                  "Pago confirmado",
+                  "Tiempos definidos",
+                  "Estados visibles",
+                  "Retiro más ordenado",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-[1.2rem] border border-[rgba(54,35,22,0.08)] bg-white px-4 py-3 text-sm font-medium text-[#1f1711]"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-[rgba(54,35,22,0.12)] bg-[#f7f2ea]">
+        <div className="mx-auto w-full max-w-[1580px] px-6 py-16 md:px-10 lg:px-14">
+          <div className="max-w-3xl">
+            <Eyebrow>Para qué locales sirve</Eyebrow>
+            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
+              Pensado para locales con alto movimiento en mostrador.
+            </h2>
+            <p className="mt-5 text-base leading-8 text-[rgba(31,23,17,0.72)]">
+              Ideal para negocios que ya venden bien y quieren ordenar mejor el retiro.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <a
-              href="#registro"
-              className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)]"
-            >
-              Registrá tu local
-            </a>
-            <Link
-              href="/soporte"
-              className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-            >
-              Centro de ayuda
-            </Link>
+          <div className="mt-10 flex flex-wrap gap-3">
+            {localTypes.map((item) => (
+              <span
+                key={item}
+                className="rounded-full border border-[rgba(54,35,22,0.12)] bg-white px-5 py-3 text-sm font-medium text-[#1f1711]"
+              >
+                {item}
+              </span>
+            ))}
           </div>
         </div>
+      </section>
 
-        <div className="border-t border-[var(--color-border)]">
-          <div className="mx-auto grid w-full max-w-[1600px] gap-10 px-6 py-10 md:grid-cols-2 md:px-10 lg:grid-cols-4 lg:px-14">
-            <div>
-              <p className="text-sm font-semibold tracking-tight text-[var(--color-foreground)]">
-                Restopickup
+      <section id="registro" className="border-b border-[rgba(54,35,22,0.12)] bg-white">
+        <div className="mx-auto w-full max-w-[1280px] px-6 py-20 md:px-10">
+          <div className="rounded-[2rem] border border-[rgba(54,35,22,0.12)] bg-[#faf6ef] p-8 md:p-10">
+            <div className="mx-auto max-w-2xl text-center">
+              <Eyebrow>Activación comercial</Eyebrow>
+              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
+                Contanos sobre tu local
+              </h2>
+              <p className="mt-4 text-base leading-8 text-[rgba(31,23,17,0.72)]">
+                Te contactamos para mostrarte cómo funcionaría en tu operación.
               </p>
-              <div className="mt-4 space-y-3 text-sm text-[var(--color-muted)]">
-                <Link href="/" className="block transition hover:text-[var(--color-accent)]">
-                  Inicio
-                </Link>
-                <Link href="/comercial" className="block transition hover:text-[var(--color-accent)]">
-                  Comercial
-                </Link>
-                <a href="#registro" className="block transition hover:text-[var(--color-accent)]">
-                  Registrá tu local
-                </a>
-              </div>
             </div>
 
-            <div>
-              <p className="text-sm font-semibold tracking-tight text-[var(--color-foreground)]">
-                Soporte
+            <div className="mx-auto mt-10 max-w-3xl">
+              <BusinessApplicationForm
+                error={query.error}
+                success={query.success}
+                mode="commercial"
+                redirectPath="/comercial"
+              />
+              <p className="mt-4 text-center text-sm text-[rgba(31,23,17,0.62)]">
+                Respuesta comercial simple, sin compromiso.
               </p>
-              <div className="mt-4 space-y-3 text-sm text-[var(--color-muted)]">
-                <Link href="/soporte" className="block transition hover:text-[var(--color-accent)]">
-                  Centro de ayuda
-                </Link>
-                <Link href="/contacto" className="block transition hover:text-[var(--color-accent)]">
-                  Contactar soporte
-                </Link>
-                <Link href="/login" className="block transition hover:text-[var(--color-accent)]">
-                  Iniciar sesión
-                </Link>
-              </div>
             </div>
+          </div>
+        </div>
+      </section>
 
-            <div>
-              <p className="text-sm font-semibold tracking-tight text-[var(--color-foreground)]">
-                Comercial
-              </p>
-              <div className="mt-4 space-y-3 text-sm text-[var(--color-muted)]">
-                <a href="#beneficios" className="block transition hover:text-[var(--color-accent)]">
-                  Beneficios
-                </a>
-                <a href="#como-funciona" className="block transition hover:text-[var(--color-accent)]">
-                  Cómo funciona
-                </a>
-                <a href="#registro" className="block transition hover:text-[var(--color-accent)]">
-                  Registro de local
-                </a>
-              </div>
-            </div>
+      <section className="border-b border-[rgba(54,35,22,0.12)] bg-white">
+        <div className="mx-auto w-full max-w-[1180px] px-6 py-18 md:px-10 md:py-20">
+          <div className="max-w-2xl">
+            <Eyebrow>FAQ</Eyebrow>
+            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-[#1f1711]">
+              Lo que suele frenarse, respondido sin vueltas.
+            </h2>
+          </div>
 
-            <div>
-              <p className="text-sm font-semibold tracking-tight text-[var(--color-foreground)]">
-                Navegación
-              </p>
-              <div className="mt-4 space-y-3 text-sm text-[var(--color-muted)]">
-                <Link href="/solicitar-acceso" className="block transition hover:text-[var(--color-accent)]">
-                  Página de registro
-                </Link>
-                <Link href="/soporte" className="block transition hover:text-[var(--color-accent)]">
-                  Ayuda
-                </Link>
-                <Link href="/" className="block transition hover:text-[var(--color-accent)]">
-                  Volver a la home
-                </Link>
-              </div>
-            </div>
+          <div className="mt-12 border-y border-[rgba(54,35,22,0.12)]">
+            {faqs.map((item, index) => (
+              <details
+                key={item.question}
+                open={index === 0}
+                className={index !== faqs.length - 1 ? "group border-b border-[rgba(54,35,22,0.12)]" : "group"}
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-6 text-left">
+                  <h3 className="text-xl font-semibold tracking-tight text-[#1f1711]">
+                    {item.question}
+                  </h3>
+                  <span className="text-2xl leading-none text-[rgba(31,23,17,0.58)] transition group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <div className="pb-6">
+                  <p className="max-w-3xl text-base leading-8 text-[rgba(31,23,17,0.72)]">
+                    {item.answer}
+                  </p>
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#f3ece3]">
+        <div className="mx-auto w-full max-w-[1180px] px-6 py-20 text-center md:px-10">
+          <h2 className="mx-auto max-w-4xl text-4xl font-semibold tracking-tight text-[#1f1711] md:text-5xl">
+            Menos fila, más pedidos y un retiro más claro para tu local.
+          </h2>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-[rgba(31,23,17,0.72)]">
+            Si tu mostrador se satura en hora pico, esto puede ayudarte a vender y operar mejor.
+          </p>
+          <div className="mt-8">
+            <a
+              href="#registro"
+              className="inline-flex items-center justify-center rounded-full bg-[var(--color-accent)] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--color-accent-hover)]"
+            >
+              Registrar mi local
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-[rgba(54,35,22,0.12)] bg-white">
+        <div className="mx-auto flex w-full max-w-[1180px] flex-wrap items-center justify-between gap-4 px-6 py-8 text-sm text-[rgba(31,23,17,0.62)] md:px-10">
+          <span className="font-semibold text-[#1f1711]">Restopickup</span>
+          <div className="flex flex-wrap items-center gap-5">
+            <Link href="/contacto" className="transition hover:text-[#1f1711]">
+              Contacto
+            </Link>
+            <Link href="/soporte" className="transition hover:text-[#1f1711]">
+              Soporte
+            </Link>
           </div>
         </div>
       </footer>

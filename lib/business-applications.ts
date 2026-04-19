@@ -6,9 +6,9 @@ export type BusinessApplicationInput = {
   email: string;
   phone: string | null;
   instagramOrWebsite: string | null;
-  city: string | null;
-  pickupAddress: string;
-  businessType: string | null;
+  city: string;
+  pickupAddress: string | null;
+  businessType: string;
   currentSalesChannels: string | null;
   estimatedOrderVolume: string | null;
   message: string | null;
@@ -27,9 +27,9 @@ export function parseBusinessApplicationForm(formData: FormData): BusinessApplic
     .toLowerCase();
   const phone = normalizeOptional(formData.get("phone"));
   const instagramOrWebsite = normalizeOptional(formData.get("instagramOrWebsite"));
-  const city = normalizeOptional(formData.get("city"));
-  const pickupAddress = String(formData.get("pickupAddress") ?? "").trim();
-  const businessType = normalizeOptional(formData.get("businessType"));
+  const city = String(formData.get("city") ?? "").trim();
+  const pickupAddress = normalizeOptional(formData.get("pickupAddress"));
+  const businessType = String(formData.get("businessType") ?? "").trim();
   const currentSalesChannels = normalizeOptional(formData.get("currentSalesChannels"));
   const estimatedOrderVolume = normalizeOptional(formData.get("estimatedOrderVolume"));
   const message = normalizeOptional(formData.get("message"));
@@ -54,23 +54,27 @@ export function parseBusinessApplicationForm(formData: FormData): BusinessApplic
     throw new Error("El celular es demasiado largo.");
   }
 
-  if (!pickupAddress) {
-    throw new Error("La dirección de retiro es obligatoria.");
+  if (!city) {
+    throw new Error("La ciudad o zona es obligatoria.");
+  }
+
+  if (!businessType) {
+    throw new Error("El tipo de negocio es obligatorio.");
   }
 
   if (instagramOrWebsite && instagramOrWebsite.length > 160) {
     throw new Error("El Instagram o sitio web es demasiado largo.");
   }
 
-  if (city && city.length > 120) {
+  if (city.length > 120) {
     throw new Error("La ciudad es demasiado larga.");
   }
 
-  if (businessType && businessType.length > 120) {
+  if (businessType.length > 120) {
     throw new Error("El tipo de negocio es demasiado largo.");
   }
 
-  if (pickupAddress.length > 240) {
+  if (pickupAddress && pickupAddress.length > 240) {
     throw new Error("La dirección de retiro es demasiado larga.");
   }
 
